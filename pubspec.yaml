@@ -1,0 +1,102 @@
+name: fitfuel_ai
+description: "A premium AI-powered calorie tracking and nutrition coaching mobile application."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State Management
+  flutter_bloc: ^8.1.4
+  bloc: ^8.1.2
+  equatable: ^2.0.5
+
+  # Routing
+  go_router: ^13.0.0
+
+  # Dependency Injection
+  get_it: ^7.6.0
+  injectable: ^2.3.1
+
+  # Networking
+  dio: ^5.3.1
+  pretty_dio_logger: ^1.3.3
+
+  # Backend & Database
+  supabase_flutter: ^1.10.25
+  supabase: ^1.10.25
+
+  # Local Storage
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  # Secure Storage
+  flutter_secure_storage: ^9.0.0
+
+  # Notifications
+  firebase_messaging: ^14.7.0
+  firebase_core: ^2.24.0
+  flutter_local_notifications: ^17.1.0
+
+  # Analytics & Charts
+  fl_chart: ^0.65.0
+
+  # Camera & Image
+  camera: ^0.10.5+5
+  image_picker: ^1.0.4
+  image: ^4.1.3
+
+  # Barcode Scanner
+  mobile_scanner: ^7.2.0
+
+  # Voice Input
+  speech_to_text: ^6.4.0
+
+  # Animations
+  rive: ^0.13.7
+  lottie: ^2.7.0
+  flutter_animate: ^4.2.0
+
+  # Image Caching
+  cached_network_image: ^3.3.0
+
+  # Connectivity
+  connectivity_plus: ^5.0.2
+
+  # Permissions
+  permission_handler: ^11.0.0
+
+  # UI & Styling
+  google_fonts: ^6.1.0
+  iconsax: ^0.0.8
+
+  # DateTime & Formatting
+  intl: ^0.19.0
+
+  # Device Info
+  device_info_plus: ^9.1.1
+
+  # HTTP Status Codes
+  http: ^1.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^2.0.0
+  build_runner: ^2.3.0
+  injectable_generator: ^2.1.0
+  hive_generator: ^1.1.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/animations/
