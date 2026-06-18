@@ -2,11 +2,6 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 
 class PrimaryButton extends StatelessWidget {
-  final String text;
-  final VoidCallback onPressed;
-  final bool isLoading;
-  final double? width;
-  final double height;
 
   const PrimaryButton({
     Key? key,
@@ -16,10 +11,14 @@ class PrimaryButton extends StatelessWidget {
     this.width,
     this.height = 56,
   }) : super(key: key);
+  final String text;
+  final VoidCallback onPressed;
+  final bool isLoading;
+  final double? width;
+  final double height;
 
   @override
-  Widget build(BuildContext context) {
-    return SizedBox(
+  Widget build(BuildContext context) => SizedBox(
       width: width ?? double.infinity,
       height: height,
       child: ElevatedButton(
@@ -36,13 +35,9 @@ class PrimaryButton extends StatelessWidget {
             : Text(text),
       ),
     );
-  }
 }
 
 class SecondaryButton extends StatelessWidget {
-  final String text;
-  final VoidCallback onPressed;
-  final double? width;
 
   const SecondaryButton({
     Key? key,
@@ -50,10 +45,12 @@ class SecondaryButton extends StatelessWidget {
     required this.onPressed,
     this.width,
   }) : super(key: key);
+  final String text;
+  final VoidCallback onPressed;
+  final double? width;
 
   @override
-  Widget build(BuildContext context) {
-    return SizedBox(
+  Widget build(BuildContext context) => SizedBox(
       width: width ?? double.infinity,
       height: 56,
       child: OutlinedButton(
@@ -61,13 +58,9 @@ class SecondaryButton extends StatelessWidget {
         child: Text(text),
       ),
     );
-  }
 }
 
 class GradientButton extends StatelessWidget {
-  final String text;
-  final VoidCallback onPressed;
-  final double? width;
 
   const GradientButton({
     Key? key,
@@ -75,10 +68,12 @@ class GradientButton extends StatelessWidget {
     required this.onPressed,
     this.width,
   }) : super(key: key);
+  final String text;
+  final VoidCallback onPressed;
+  final double? width;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       width: width ?? double.infinity,
       height: 56,
       decoration: BoxDecoration(
@@ -108,5 +103,4 @@ class GradientButton extends StatelessWidget {
         ),
       ),
     );
-  }
 }

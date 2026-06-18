@@ -2,12 +2,6 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final String? title;
-  final bool centerTitle;
-  final List<Widget>? actions;
-  final Widget? leading;
-  final VoidCallback? onLeadingPressed;
-  final bool showBackButton;
 
   const CustomAppBar({
     Key? key,
@@ -18,10 +12,15 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.onLeadingPressed,
     this.showBackButton = true,
   }) : super(key: key);
+  final String? title;
+  final bool centerTitle;
+  final List<Widget>? actions;
+  final Widget? leading;
+  final VoidCallback? onLeadingPressed;
+  final bool showBackButton;
 
   @override
-  Widget build(BuildContext context) {
-    return AppBar(
+  Widget build(BuildContext context) => AppBar(
       title: title != null ? Text(title!) : null,
       centerTitle: centerTitle,
       actions: actions,
@@ -37,16 +36,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       scrolledUnderElevation: 0,
     );
-  }
 
   @override
-  Size get preferredSize => Size.fromHeight(56);
+  Size get preferredSize => const Size.fromHeight(56);
 }
 
 class CustomBottomNavBar extends StatelessWidget {
-  final int currentIndex;
-  final Function(int) onItemTapped;
-  final List<BottomNavigationBarItem> items;
 
   const CustomBottomNavBar({
     Key? key,
@@ -54,10 +49,12 @@ class CustomBottomNavBar extends StatelessWidget {
     required this.onItemTapped,
     required this.items,
   }) : super(key: key);
+  final int currentIndex;
+  final Function(int) onItemTapped;
+  final List<BottomNavigationBarItem> items;
 
   @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
+  Widget build(BuildContext context) => BottomNavigationBar(
       currentIndex: currentIndex,
       onTap: onItemTapped,
       items: items,
@@ -67,5 +64,4 @@ class CustomBottomNavBar extends StatelessWidget {
       type: BottomNavigationBarType.fixed,
       elevation: 10,
     );
-  }
 }

@@ -4,8 +4,7 @@ class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
         title: Text('Profile'),
         elevation: 0,
@@ -90,41 +89,37 @@ class ProfileScreen extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _StatColumn extends StatelessWidget {
+
+  const _StatColumn({required this.label, required this.value});
   final String label;
   final String value;
 
-  const _StatColumn({required this.label, required this.value});
-
   @override
-  Widget build(BuildContext context) {
-    return Column(
+  Widget build(BuildContext context) => Column(
       children: [
         Text(value, style: Theme.of(context).textTheme.headlineSmall),
         SizedBox(height: 4),
         Text(label, style: Theme.of(context).textTheme.bodySmall),
       ],
     );
-  }
 }
 
 class _SettingsTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final VoidCallback onTap;
 
   const _SettingsTile({
     required this.icon,
     required this.title,
     required this.onTap,
   });
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       margin: EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Color(0xFF1F2937),
@@ -138,5 +133,4 @@ class _SettingsTile extends StatelessWidget {
         onTap: onTap,
       ),
     );
-  }
 }

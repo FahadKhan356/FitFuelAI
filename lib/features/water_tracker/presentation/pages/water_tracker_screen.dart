@@ -13,30 +13,30 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    double percentage = waterIntake / waterGoal;
+    var percentage = waterIntake / waterGoal;
 
     return Scaffold(
-      appBar: AppBar(title: Text('Water Intake')),
+      appBar: AppBar(title: const Text('Water Intake')),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             // Water tracker visualization
             Center(
               child: Container(
                 width: 200,
                 height: 300,
                 decoration: BoxDecoration(
-                  border: Border.all(color: Color(0xFF34D399), width: 2),
+                  border: Border.all(color: const Color(0xFF34D399), width: 2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Stack(
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        color: Color(0xFF34D399).withOpacity(0.3),
+                        color: const Color(0xFF34D399).withOpacity(0.3),
                         borderRadius: BorderRadius.circular(18),
                       ),
                       height: 300 * (1 - percentage),
@@ -54,10 +54,10 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
                             '/ ${waterGoal.toInt()} ml',
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Text(
                             '${(waterIntake / waterGoal * 100).toStringAsFixed(0)}% Done',
-                            style: TextStyle(color: Color(0xFF34D399)),
+                            style: const TextStyle(color: Color(0xFF34D399)),
                           ),
                         ],
                       ),
@@ -66,10 +66,10 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
                 ),
               ),
             ),
-            SizedBox(height: 40),
+            const SizedBox(height: 40),
             // Quick add buttons
             Text('Quick Log', style: Theme.of(context).textTheme.titleLarge),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -90,15 +90,15 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
                 ),
               ],
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             // History
             Text('Today\'s History', style: Theme.of(context).textTheme.titleLarge),
-            SizedBox(height: 12),
-            _HistoryItem(time: '08:30 AM', amount: '+250ml'),
-            SizedBox(height: 8),
-            _HistoryItem(time: '10:15 AM', amount: '+500ml'),
-            SizedBox(height: 8),
-            _HistoryItem(time: '01:00 PM', amount: '+1000ml'),
+            const SizedBox(height: 12),
+            const _HistoryItem(time: '08:30 AM', amount: '+250ml'),
+            const SizedBox(height: 8),
+            const _HistoryItem(time: '10:15 AM', amount: '+500ml'),
+            const SizedBox(height: 8),
+            const _HistoryItem(time: '01:00 PM', amount: '+1000ml'),
           ],
         ),
       ),
@@ -107,19 +107,18 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
 }
 
 class _QuickLogButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final VoidCallback onPressed;
 
   const _QuickLogButton({
     required this.label,
     required this.icon,
     required this.onPressed,
   });
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: onPressed,
       child: Container(
         padding: EdgeInsets.all(16),
@@ -141,18 +140,16 @@ class _QuickLogButton extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _HistoryItem extends StatelessWidget {
+
+  const _HistoryItem({required this.time, required this.amount});
   final String time;
   final String amount;
 
-  const _HistoryItem({required this.time, required this.amount});
-
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Color(0xFF1F2937),
@@ -166,5 +163,4 @@ class _HistoryItem extends StatelessWidget {
         ],
       ),
     );
-  }
 }

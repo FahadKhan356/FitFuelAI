@@ -5,18 +5,18 @@ class SubscriptionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(title: Text('Upgrade to Pro')),
+      appBar: AppBar(title: const Text('Upgrade to Pro')),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             Container(
               alignment: Alignment.center,
-              child: Icon(Icons.star, size: 80, color: Color(0xFFFCD34D)),
+              child: const Icon(Icons.star, size: 80, color: Color(0xFFFCD34D)),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Center(
               child: Text(
                 'Master Your Nutrition',
@@ -24,7 +24,7 @@ class SubscriptionScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Center(
               child: Text(
                 'Unlock all features and reach your goals faster',
@@ -32,64 +32,64 @@ class SubscriptionScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             ),
-            SizedBox(height: 32),
+            const SizedBox(height: 32),
             // Features
             Text('Premium Features', style: Theme.of(context).textTheme.titleLarge),
-            SizedBox(height: 12),
-            _FeatureItem(
+            const SizedBox(height: 12),
+            const _FeatureItem(
               icon: Icons.no_food,
               title: 'Unlimited Scanning',
               description: 'No daily limits',
             ),
-            _FeatureItem(
+            const _FeatureItem(
               icon: Icons.bar_chart,
               title: 'Advanced Analytics',
               description: 'Detailed insights',
             ),
-            _FeatureItem(
+            const _FeatureItem(
               icon: Icons.psychology,
               title: 'AI Meal Planning',
               description: 'Personalized plans',
             ),
-            _FeatureItem(
+            const _FeatureItem(
               icon: Icons.emoji_events,
               title: 'Premium Badges',
               description: 'Exclusive rewards',
             ),
-            SizedBox(height: 32),
+            const SizedBox(height: 32),
             // Pricing
             Text('Choose Your Plan', style: Theme.of(context).textTheme.titleLarge),
-            SizedBox(height: 12),
-            _PricingCard(
+            const SizedBox(height: 12),
+            const _PricingCard(
               title: 'Monthly',
-              price: '\$9.99',
+              price: r'$9.99',
               period: '/month',
               selected: false,
             ),
-            SizedBox(height: 12),
-            _PricingCard(
+            const SizedBox(height: 12),
+            const _PricingCard(
               title: 'Annual',
-              price: '\$4.99',
+              price: r'$4.99',
               period: '/month',
               subtitle: 'Save 50%',
               selected: true,
             ),
-            SizedBox(height: 12),
-            _PricingCard(
+            const SizedBox(height: 12),
+            const _PricingCard(
               title: 'Lifetime',
-              price: '\$99.99',
+              price: r'$99.99',
               period: 'One Time',
               selected: false,
             ),
-            SizedBox(height: 32),
+            const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {},
-                child: Text('Start 7-Day Free Trial'),
+                child: const Text('Start 7-Day Free Trial'),
               ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Center(
               child: Text(
                 'Cancel anytime. No credit card required.',
@@ -104,29 +104,29 @@ class SubscriptionScreen extends StatelessWidget {
 }
 
 class _FeatureItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String description;
 
   const _FeatureItem({
     required this.icon,
     required this.title,
     required this.description,
   });
+  final IconData icon;
+  final String title;
+  final String description;
 
   @override
   Widget build(BuildContext context) => Container(
-      margin: EdgeInsets.only(bottom: 12),
-      padding: EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Color(0xFF1F2937),
+        color: const Color(0xFF1F2937),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Color(0xFF374151)),
+        border: Border.all(color: const Color(0xFF374151)),
       ),
       child: Row(
         children: [
-          Icon(icon, color: Color(0xFF4ADE80), size: 32),
-          SizedBox(width: 16),
+          Icon(icon, color: const Color(0xFF4ADE80), size: 32),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,11 +142,6 @@ class _FeatureItem extends StatelessWidget {
 }
 
 class _PricingCard extends StatelessWidget {
-  final String title;
-  final String price;
-  final String period;
-  final String? subtitle;
-  final bool selected;
 
   const _PricingCard({
     required this.title,
@@ -155,10 +150,14 @@ class _PricingCard extends StatelessWidget {
     this.subtitle,
     required this.selected,
   });
+  final String title;
+  final String price;
+  final String period;
+  final String? subtitle;
+  final bool selected;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Color(0xFF1F2937),
@@ -206,5 +205,4 @@ class _PricingCard extends StatelessWidget {
         ],
       ),
     );
-  }
 }

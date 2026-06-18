@@ -18,8 +18,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
   TextEditingController messageController = TextEditingController();
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(title: Text('AI Nutrition Coach')),
       body: Column(
         children: [
@@ -80,12 +79,11 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
         ],
       ),
     );
-  }
 }
 
 class ChatMessage {
-  final String text;
-  final bool isUser;
 
   ChatMessage({required this.text, required this.isUser});
+  final String text;
+  final bool isUser;
 }

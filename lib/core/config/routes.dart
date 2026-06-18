@@ -1,18 +1,19 @@
 import 'package:go_router/go_router.dart';
-import '../../features/auth/presentation/pages/splash_screen.dart';
+
+import '../../features/achievements/presentation/pages/achievements_screen.dart';
+import '../../features/ai_coach/presentation/pages/ai_coach_screen.dart';
+import '../../features/analytics/presentation/pages/analytics_screen.dart';
 import '../../features/auth/presentation/pages/login_screen.dart';
 import '../../features/auth/presentation/pages/signup_screen.dart';
-import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
-import '../../features/home/presentation/pages/home_screen.dart';
+import '../../features/auth/presentation/pages/splash_screen.dart';
 import '../../features/food_scanner/presentation/pages/food_scanner_screen.dart';
+import '../../features/home/presentation/pages/home_screen.dart';
 import '../../features/meal_tracking/presentation/pages/meal_tracking_screen.dart';
-import '../../features/water_tracker/presentation/pages/water_tracker_screen.dart';
-import '../../features/weight_tracker/presentation/pages/weight_tracker_screen.dart';
-import '../../features/analytics/presentation/pages/analytics_screen.dart';
-import '../../features/ai_coach/presentation/pages/ai_coach_screen.dart';
-import '../../features/achievements/presentation/pages/achievements_screen.dart';
+import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
 import '../../features/profile/presentation/pages/profile_screen.dart';
 import '../../features/subscription/presentation/pages/subscription_screen.dart';
+import '../../features/water_tracker/presentation/pages/water_tracker_screen.dart';
+import '../../features/weight_tracker/presentation/pages/weight_tracker_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -52,7 +53,7 @@ final goRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.home,
-      builder: (context, state) => const HomeScreen(),
+      builder: (context, state) => const OnboardingScreen(),
     ),
     GoRoute(
       path: AppRoutes.foodScanner,

@@ -6,12 +6,10 @@ class FitFuelApp extends StatelessWidget {
   const FitFuelApp({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp.router(
+  Widget build(BuildContext context) => MaterialApp.router(
       title: 'FITFUEL AI',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
       routerConfig: goRouter,
     );
-  }
 }

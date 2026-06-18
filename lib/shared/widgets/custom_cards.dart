@@ -2,11 +2,6 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 
 class ProgressCircle extends StatelessWidget {
-  final double value;
-  final double size;
-  final Color? color;
-  final Color? backgroundColor;
-  final String? label;
 
   const ProgressCircle({
     Key? key,
@@ -16,10 +11,14 @@ class ProgressCircle extends StatelessWidget {
     this.backgroundColor,
     this.label,
   }) : super(key: key);
+  final double value;
+  final double size;
+  final Color? color;
+  final Color? backgroundColor;
+  final String? label;
 
   @override
-  Widget build(BuildContext context) {
-    return SizedBox(
+  Widget build(BuildContext context) => SizedBox(
       width: size,
       height: size,
       child: Stack(
@@ -46,15 +45,9 @@ class ProgressCircle extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 class MacroCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final String goal;
-  final Color color;
-  final double progress;
 
   const MacroCard({
     Key? key,
@@ -64,10 +57,14 @@ class MacroCard extends StatelessWidget {
     required this.color,
     required this.progress,
   }) : super(key: key);
+  final String label;
+  final String value;
+  final String goal;
+  final Color color;
+  final double progress;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Color(AppColors.card),
@@ -95,15 +92,9 @@ class MacroCard extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 class StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final String? change;
-  final bool positive;
-  final Color? backgroundColor;
 
   const StatCard({
     Key? key,
@@ -113,10 +104,14 @@ class StatCard extends StatelessWidget {
     this.positive = true,
     this.backgroundColor,
   }) : super(key: key);
+  final String label;
+  final String value;
+  final String? change;
+  final bool positive;
+  final Color? backgroundColor;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: backgroundColor ?? Color(AppColors.card),
@@ -142,5 +137,4 @@ class StatCard extends StatelessWidget {
         ],
       ),
     );
-  }
 }

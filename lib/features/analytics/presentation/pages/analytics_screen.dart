@@ -11,8 +11,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   String selectedPeriod = 'Weekly';
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(title: Text('Analytics')),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
@@ -102,14 +101,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         ),
       ),
     );
-  }
 }
 
 class _StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final String change;
-  final bool positive;
 
   const _StatCard({
     required this.label,
@@ -117,10 +111,13 @@ class _StatCard extends StatelessWidget {
     required this.change,
     required this.positive,
   });
+  final String label;
+  final String value;
+  final String change;
+  final bool positive;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Color(0xFF1F2937),
@@ -143,5 +140,4 @@ class _StatCard extends StatelessWidget {
         ],
       ),
     );
-  }
 }

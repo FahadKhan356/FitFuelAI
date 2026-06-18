@@ -4,8 +4,7 @@ class BarcodeScannerScreen extends StatelessWidget {
   const BarcodeScannerScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(title: Text('Scan Barcode')),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -49,5 +48,4 @@ class BarcodeScannerScreen extends StatelessWidget {
         ],
       ),
     );
-  }
 }

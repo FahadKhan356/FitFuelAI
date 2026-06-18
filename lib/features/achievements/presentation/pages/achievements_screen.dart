@@ -4,8 +4,7 @@ class AchievementsScreen extends StatelessWidget {
   const AchievementsScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(title: Text('Achievements')),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
@@ -27,7 +26,7 @@ class AchievementsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -60,19 +59,19 @@ class AchievementsScreen extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             // Streak
             Container(
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Color(0xFF1F2937),
+                color: const Color(0xFF1F2937),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Color(0xFF374151)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.local_fire_department, color: Color(0xFFFF8A50), size: 32),
-                  SizedBox(width: 16),
+                  const Icon(Icons.local_fire_department, color: Color(0xFFFF8A50), size: 32),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,10 +89,10 @@ class AchievementsScreen extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
             // Badges
             Text('Badges Gallery', style: Theme.of(context).textTheme.titleLarge),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             GridView.count(
               shrinkWrap: true,
               crossAxisCount: 3,
@@ -142,14 +141,9 @@ class AchievementsScreen extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _BadgeCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final bool unlocked;
 
   const _BadgeCard({
     required this.icon,
@@ -157,10 +151,13 @@ class _BadgeCard extends StatelessWidget {
     required this.color,
     required this.unlocked,
   });
+  final IconData icon;
+  final String label;
+  final Color color;
+  final bool unlocked;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       decoration: BoxDecoration(
         color: unlocked ? Color(0xFF1F2937) : Color(0xFF1F2937).withOpacity(0.5),
         borderRadius: BorderRadius.circular(12),
@@ -181,5 +178,4 @@ class _BadgeCard extends StatelessWidget {
         ],
       ),
     );
-  }
 }

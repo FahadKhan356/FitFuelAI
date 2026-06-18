@@ -4,8 +4,7 @@ class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(title: Text('Notifications')),
       body: ListView(
         padding: EdgeInsets.all(16),
@@ -31,14 +30,9 @@ class NotificationsScreen extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 class _NotificationTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String description;
-  final String time;
 
   const _NotificationTile({
     required this.icon,
@@ -46,10 +40,13 @@ class _NotificationTile extends StatelessWidget {
     required this.description,
     required this.time,
   });
+  final IconData icon;
+  final String title;
+  final String description;
+  final String time;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       margin: EdgeInsets.only(bottom: 12),
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -76,5 +73,4 @@ class _NotificationTile extends StatelessWidget {
         ],
       ),
     );
-  }
 }

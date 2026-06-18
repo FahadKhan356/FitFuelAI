@@ -4,8 +4,7 @@ class SignupScreen extends StatelessWidget {
   const SignupScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(title: Text('Create Account')),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
@@ -74,5 +73,4 @@ class SignupScreen extends StatelessWidget {
         ),
       ),
     );
-  }
 }

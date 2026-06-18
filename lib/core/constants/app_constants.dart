@@ -28,10 +28,10 @@ class AppConstants {
   static const int maxNameLength = 50;
 
   // UI Constants
-  static const double defaultPadding = 16.0;
-  static const double defaultRadius = 12.0;
-  static const double largeRadius = 20.0;
-  static const double smallRadius = 8.0;
+  static const double defaultPadding = 16;
+  static const double defaultRadius = 12;
+  static const double largeRadius = 20;
+  static const double smallRadius = 8;
 
   // Animation Durations
   static const int shortAnimationDuration = 300;

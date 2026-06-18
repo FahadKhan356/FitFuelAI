@@ -4,8 +4,7 @@ class FoodScannerScreen extends StatelessWidget {
   const FoodScannerScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(title: Text('Food Scanner')),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -49,5 +48,4 @@ class FoodScannerScreen extends StatelessWidget {
         ],
       ),
     );
-  }
 }

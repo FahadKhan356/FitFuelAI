@@ -4,8 +4,7 @@ class MealTrackingScreen extends StatelessWidget {
   const MealTrackingScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(title: Text('Meal History')),
       body: ListView(
         padding: EdgeInsets.all(16),
@@ -53,14 +52,9 @@ class MealTrackingScreen extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 class _MealCard extends StatelessWidget {
-  final String category;
-  final String time;
-  final String meal;
-  final int calories;
 
   const _MealCard({
     required this.category,
@@ -68,10 +62,13 @@ class _MealCard extends StatelessWidget {
     required this.meal,
     required this.calories,
   });
+  final String category;
+  final String time;
+  final String meal;
+  final int calories;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Color(0xFF1F2937),
@@ -104,5 +101,4 @@ class _MealCard extends StatelessWidget {
         ],
       ),
     );
-  }
 }

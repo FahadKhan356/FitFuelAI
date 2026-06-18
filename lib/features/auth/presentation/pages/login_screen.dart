@@ -4,8 +4,7 @@ class LoginScreen extends StatelessWidget {
   const LoginScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(title: Text('Login')),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
@@ -71,5 +70,4 @@ class LoginScreen extends StatelessWidget {
         ),
       ),
     );
-  }
 }
