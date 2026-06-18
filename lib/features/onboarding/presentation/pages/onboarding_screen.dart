@@ -5,7 +5,6 @@ import '../../../../core/constants/app_colors.dart';
 
 // ── Design-specific color tokens (not in AppColors) ──
 const Color _kPurple = Color(0xFF5B4EE8);
-const Color _kPurpleLight = Color(0xFF7B6FF0);
 const Color _kDotInactive = Color(0xFFD0CEEA);
 const Color _kImageBg = Color(0xFFEEECF8);
 
@@ -21,12 +20,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
     // Page 0 → Intro hero | Pages 1-8 → form steps
     if (currentStep == 0) {
       return _IntroPage(
-        onGetStarted: () => setState(() => currentStep++),
+        onGetStarted: () => context.go(AppRoutes.goalSelection),
         onSkip: () => context.go(AppRoutes.login),
       );
     }
@@ -280,6 +277,8 @@ class _HeroImageCard extends StatelessWidget {
     final double cardHeight = screenHeight * 0.44;
 
     return Container(
+     
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       width: double.infinity,
       height: cardHeight,
       decoration: const BoxDecoration(
@@ -294,24 +293,68 @@ class _HeroImageCard extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           // ── Gradient bleed at bottom so card blends to white ──
+         
+         Positioned.fill(
+            
+            child: Container(
+              
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.09),
+                    blurRadius: 12,
+                    offset: const Offset(0, 20),
+                  ),
+                ],
+                border: Border.all( color: const Color.fromARGB(255, 255, 255, 255).withOpacity(1), width: 2,style: BorderStyle.solid),
+                // image: DecorationImage(image:NetworkImage("https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",),fit: BoxFit.cover),
+               image: DecorationImage(image:AssetImage('assets/images/onBoarding_Hero_Image.png'),fit: BoxFit.cover),  
+              ),
+            
+            ),
+          ),
           Positioned(
             bottom: 0,
+            
             left: 0,
             right: 0,
-            height: 60,
+            height: 200,
             child: Container(
-              decoration: const BoxDecoration(
+              decoration:  BoxDecoration(
+              
+                // image: DecorationImage(image:NetworkImage("")),
                 gradient: LinearGradient(
-                  colors: [Colors.transparent, _kImageBg],
+                  colors: [const Color.fromARGB(0, 255, 243, 243), Color.fromARGB(255, 133, 129, 129)],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
               ),
+            
             ),
           ),
-
+     Positioned(
+            top: 0,
+            
+            left: 0,
+            right: 0,
+            height: 200,
+            child: Container(
+              decoration: const BoxDecoration(
+                // image: DecorationImage(image:NetworkImage("")),
+                gradient: LinearGradient(
+                  colors: [ Color.fromARGB(255, 255, 255, 255),Colors.transparent,],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            
+            ),
+          ),
+    
           // ── Placeholder for fitness model image ──
-          _ImagePlaceholder(height: cardHeight),
+          
+          
+          // _ImagePlaceholder(height: cardHeight),
         ],
       ),
     );
@@ -319,6 +362,7 @@ class _HeroImageCard extends StatelessWidget {
 }
 
 // ── Placeholder (replace once real asset is ready) ──
+// ignore: unused_element
 class _ImagePlaceholder extends StatelessWidget {
   final double height;
   const _ImagePlaceholder({required this.height});
@@ -327,49 +371,7 @@ class _ImagePlaceholder extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: height,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: _kPurple.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.person_outline_rounded,
-              size: 44,
-              color: _kPurple,
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              'Replace with:\nFit male athlete on yoga mat,\nholding a healthy food bowl.\nFresh fruits in foreground.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                color: _kPurpleLight,
-                height: 1.6,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          // Simulated fruit row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: ['🫐', '🍓', '🥝', '🥑', '🍌']
-                .map((e) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 5),
-                      child: Text(e, style: const TextStyle(fontSize: 26)),
-                    ))
-                .toList(),
-          ),
-        ],
-      ),
+      // child: Image.network("https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",fit: BoxFit.cover)
     );
   }
 }

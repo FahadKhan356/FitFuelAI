@@ -10,6 +10,7 @@ import '../../features/food_scanner/presentation/pages/food_scanner_screen.dart'
 import '../../features/home/presentation/pages/home_screen.dart';
 import '../../features/meal_tracking/presentation/pages/meal_tracking_screen.dart';
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
+import '../../features/onboarding/presentation/pages/goal_selection_screen.dart';
 import '../../features/profile/presentation/pages/profile_screen.dart';
 import '../../features/subscription/presentation/pages/subscription_screen.dart';
 import '../../features/water_tracker/presentation/pages/water_tracker_screen.dart';
@@ -20,6 +21,7 @@ class AppRoutes {
   static const String login = '/login';
   static const String signup = '/signup';
   static const String onboarding = '/onboarding';
+  static const String goalSelection = '/goal-selection';
   static const String home = '/home';
   static const String foodScanner = '/food-scanner';
   static const String mealTracking = '/meal-tracking';
@@ -50,6 +52,10 @@ final goRouter = GoRouter(
     GoRoute(
       path: AppRoutes.onboarding,
       builder: (context, state) => const OnboardingScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.goalSelection,
+      builder: (context, state) => const GoalSelectionScreen(),
     ),
     GoRoute(
       path: AppRoutes.home,
