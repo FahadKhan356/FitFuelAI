@@ -141,7 +141,7 @@ class _GoalSelectionScreenState extends State<GoalSelectionScreen> {
                     // ── Pro Tip banner ──
                     const _ProTipBanner(),
 
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 28), 
                   ],
                 ),
               ),
@@ -149,7 +149,7 @@ class _GoalSelectionScreenState extends State<GoalSelectionScreen> {
 
             // ── Sticky bottom area ──
             _BottomActionArea(
-              onContinue: () => context.go(AppRoutes.home),
+              onContinue: () => context.go(AppRoutes.personalization),
             ),
           ],
         ),
