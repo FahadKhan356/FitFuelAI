@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_colors.dart';
+import 'ScanResultScreen.dart';
 
 class FoodScannerScreen extends StatefulWidget {
   const FoodScannerScreen({super.key});
@@ -31,14 +32,21 @@ class _FoodScannerScreenState extends State<FoodScannerScreen> {
   }
 
   void _analyzeFood() {
+    if (_image == null) return;
     setState(() => _isAnalyzing = true);
-    Future.delayed(const Duration(seconds: 2), () {
+    Future.delayed(const Duration(seconds: 1), () {
       if (mounted) {
         setState(() => _isAnalyzing = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Analysis complete! 340 kcal detected.'),
-            behavior: SnackBarBehavior.floating,
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ScanResultScreen(
+              imagePath: _image!.path,
+              foodName: 'Grilled Chicken Salad',
+              calories: 340,
+              protein: 28,
+              carbs: 12,
+              fats: 18,
+            ),
           ),
         );
       }
