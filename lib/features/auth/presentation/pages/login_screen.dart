@@ -217,10 +217,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 12),
 
                     // ── Sign In button ──
-                    _AuthButton(
-                      label: 'Sign In',
-                      onTap: () {},
-                    ),
+                     _AuthButton(
+                       label: 'Sign In',
+                       onTap: () => context.go(AppRoutes.home),
+                     ),
 
                     const SizedBox(height: 24),
 

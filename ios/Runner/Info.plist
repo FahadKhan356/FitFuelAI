@@ -53,6 +53,12 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<key>NSCameraUsageDescription</key>
+	<string>FitFuel AI needs camera access to scan your meals.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>FitFuel AI needs access to your photo library to select food images for calorie tracking.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>FitFuel AI needs microphone access for optional voice input.</string>
 	<key>UIStatusBarStyle</key>
 	<string></string>
 	<key>UISupportedInterfaceOrientations</key>

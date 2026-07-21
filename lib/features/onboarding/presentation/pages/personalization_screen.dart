@@ -173,7 +173,7 @@ class _PersonalizeScreenState extends State<PersonalizeScreen> {
               ),
             ),
             // After personalization → go to login screen
-            _ConfirmButton(onTap: () => context.go(AppRoutes.login)),
+            _ConfirmButton(onTap: () => context.go(AppRoutes.home)),
           ],
         ),
       ),

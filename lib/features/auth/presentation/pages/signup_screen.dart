@@ -142,10 +142,10 @@ class _SignupScreenState extends State<SignupScreen> {
                     const SizedBox(height: 24),
 
                     // ── Create Account button ──
-                    _AuthButton(
-                      label: 'Create Account',
-                      onTap: () {},
-                    ),
+                     _AuthButton(
+                       label: 'Create Account',
+                       onTap: () => context.go(AppRoutes.home),
+                     ),
 
                     const SizedBox(height: 20),
                   ],

@@ -136,7 +136,7 @@ class _GoalSelectionScreenState extends State<GoalSelectionScreen> {
 
             // ── Sticky bottom area ──
             _BottomActionArea(
-              onContinue: () => context.go(AppRoutes.personalization),
+              onContinue: () => context.go(AppRoutes.home),
             ),
           ],
         ),

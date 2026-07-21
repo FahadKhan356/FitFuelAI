@@ -21,8 +21,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _navigateAfterDelay() async {
     await Future.delayed(const Duration(seconds: 3));
     if (!mounted) return;
-    // Navigate to onboarding (login will come after personalization)
-    context.go(AppRoutes.onboarding);
+    context.go(AppRoutes.home);
   }
 
   @override
@@ -81,7 +80,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
                   // ── Get Started button ──
                   _GetStartedButton(
-                    onTap: () => context.go(AppRoutes.onboarding),
+                    onTap: () => context.go(AppRoutes.home),
                   ),
 
                   const SizedBox(height: 24),
