@@ -3,11 +3,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/config/routes.dart';
 import '../../../../core/constants/app_colors.dart';
 
-// ── Design-specific color tokens (not in AppColors) ──
-const Color _kPurple = Color(0xFF5B4EE8);
-const Color _kDotInactive = Color(0xFFD0CEEA);
-const Color _kImageBg = Color(0xFFEEECF8);
-
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({Key? key}) : super(key: key);
 
@@ -20,7 +15,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Page 0 → Intro hero | Pages 1-8 → form steps
+    // Page 0 → Intro hero | Pages 1-8 → form steps (kept for backwards compat)
     if (currentStep == 0) {
       return _IntroPage(
         onGetStarted: () => context.go(AppRoutes.goalSelection),
@@ -35,10 +30,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         if (currentStep < 8) {
           setState(() => currentStep++);
         } else {
-          context.go(AppRoutes.home);
+          context.go(AppRoutes.goalSelection);
         }
       },
-      onComplete: () => context.go(AppRoutes.home),
+      onComplete: () => context.go(AppRoutes.goalSelection),
     );
   }
 }
@@ -277,12 +272,11 @@ class _HeroImageCard extends StatelessWidget {
     final double cardHeight = screenHeight * 0.44;
 
     return Container(
-     
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       width: double.infinity,
       height: cardHeight,
       decoration: const BoxDecoration(
-        color: _kImageBg,
+        color: Color(0xFFEEECF8),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(36),
           bottomRight: Radius.circular(36),
@@ -292,12 +286,8 @@ class _HeroImageCard extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // ── Gradient bleed at bottom so card blends to white ──
-         
-         Positioned.fill(
-            
+          Positioned.fill(
             child: Container(
-              
               decoration: BoxDecoration(
                 boxShadow: [
                   BoxShadow(
@@ -306,72 +296,50 @@ class _HeroImageCard extends StatelessWidget {
                     offset: const Offset(0, 20),
                   ),
                 ],
-                border: Border.all( color: const Color.fromARGB(255, 255, 255, 255).withOpacity(1), width: 2,style: BorderStyle.solid),
-                // image: DecorationImage(image:NetworkImage("https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",),fit: BoxFit.cover),
-               image: DecorationImage(image:AssetImage('assets/images/onBoarding_Hero_Image.png'),fit: BoxFit.cover),  
+                border: Border.all(
+                  color: const Color.fromARGB(255, 255, 255, 255).withOpacity(1),
+                  width: 2,
+                  style: BorderStyle.solid,
+                ),
+                image: const DecorationImage(
+                  image: AssetImage('assets/images/onBoarding_Hero_Image.png'),
+                  fit: BoxFit.cover,
+                ),
               ),
-            
             ),
           ),
           Positioned(
             bottom: 0,
-            
-            left: 0,
-            right: 0,
-            height: 200,
-            child: Container(
-              decoration:  BoxDecoration(
-              
-                // image: DecorationImage(image:NetworkImage("")),
-                gradient: LinearGradient(
-                  colors: [const Color.fromARGB(0, 255, 243, 243), Color.fromARGB(255, 133, 129, 129)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-              ),
-            
-            ),
-          ),
-     Positioned(
-            top: 0,
-            
             left: 0,
             right: 0,
             height: 200,
             child: Container(
               decoration: const BoxDecoration(
-                // image: DecorationImage(image:NetworkImage("")),
                 gradient: LinearGradient(
-                  colors: [ Color.fromARGB(255, 255, 255, 255),Colors.transparent,],
+                  colors: [Color.fromARGB(0, 255, 243, 243), Color.fromARGB(255, 133, 129, 129)],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
               ),
-            
             ),
           ),
-    
-          // ── Placeholder for fitness model image ──
-          
-          
-          // _ImagePlaceholder(height: cardHeight),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 200,
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color.fromARGB(255, 255, 255, 255), Colors.transparent],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
-    );
-  }
-}
-
-// ── Placeholder (replace once real asset is ready) ──
-// ignore: unused_element
-class _ImagePlaceholder extends StatelessWidget {
-  final double height;
-  const _ImagePlaceholder({required this.height});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      // child: Image.network("https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",fit: BoxFit.cover)
     );
   }
 }
@@ -396,7 +364,7 @@ class _HeadlineText extends StatelessWidget {
           TextSpan(text: 'See Your Food in a '),
           TextSpan(
             text: 'New\nLight',
-            style: TextStyle(color: _kPurple),
+            style: TextStyle(color: Color(AppColors.authPurple)),
           ),
         ],
       ),
@@ -429,7 +397,9 @@ class _PageIndicator extends StatelessWidget {
           width: isActive ? 28 : 8,
           height: 8,
           decoration: BoxDecoration(
-            color: isActive ? _kPurple : _kDotInactive,
+            color: isActive
+                ? const Color(AppColors.authPurple)
+                : const Color(0xFFD0CEEA),
             borderRadius: BorderRadius.circular(100),
           ),
         );
@@ -451,11 +421,11 @@ class _GetStartedButton extends StatelessWidget {
       width: double.infinity,
       height: 58,
       decoration: BoxDecoration(
-        color: _kPurple,
+        color: const Color(AppColors.authPurple),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: _kPurple.withValues(alpha: 0.38),
+            color: const Color(AppColors.authPurple).withValues(alpha: 0.38),
             blurRadius: 22,
             offset: const Offset(0, 9),
           ),

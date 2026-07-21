@@ -4,34 +4,27 @@ class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(
-        title: Text('Profile'),
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+  Widget build(BuildContext context) => SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Profile picture
             Container(
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: Color(0xFF4ADE80).withOpacity(0.2),
+                color: const Color(0xFF4ADE80).withOpacity(0.2),
                 borderRadius: BorderRadius.circular(50),
               ),
-              child: Icon(Icons.person, size: 60, color: Color(0xFF4ADE80)),
+              child: const Icon(Icons.person, size: 60, color: Color(0xFF4ADE80)),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text('Alex Johnson', style: Theme.of(context).textTheme.displaySmall),
             Text('Premium Member', style: Theme.of(context).textTheme.bodyMedium),
-            SizedBox(height: 24),
-            // Stats
+            const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
+              children: const [
                 _StatColumn(
                   label: 'Streak',
                   value: '12 Days',
@@ -46,10 +39,10 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: 32),
-            // Account Settings
-            Text('Account Settings', style: Theme.of(context).textTheme.titleLarge),
-            SizedBox(height: 12),
+            const SizedBox(height: 32),
+            Text('Account Settings',
+                style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 12),
             _SettingsTile(
               icon: Icons.person_outline,
               title: 'Personal Information',
@@ -70,16 +63,15 @@ class ProfileScreen extends StatelessWidget {
               title: 'Health Goals',
               onTap: () {},
             ),
-            SizedBox(height: 24),
-            // Logout
+            const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
                 onPressed: () {},
                 style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: Color(0xFFEF4444)),
+                  side: const BorderSide(color: Color(0xFFEF4444)),
                 ),
-                child: Text(
+                child: const Text(
                   'Logout',
                   style: TextStyle(color: Color(0xFFEF4444)),
                 ),
@@ -87,8 +79,7 @@ class ProfileScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
+      );
 }
 
 class _StatColumn extends StatelessWidget {

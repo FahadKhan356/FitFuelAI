@@ -4,15 +4,13 @@ class FoodScannerScreen extends StatelessWidget {
   const FoodScannerScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(title: Text('Food Scanner')),
-      body: Column(
+  Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
             child: Container(
               color: Colors.black,
-              child: Center(
+              child: const Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -28,7 +26,7 @@ class FoodScannerScreen extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -37,15 +35,14 @@ class FoodScannerScreen extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 24),
+                const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () {},
-                  child: Text('Capture'),
+                  child: const Text('Capture'),
                 ),
               ],
             ),
           ),
         ],
-      ),
-    );
+      );
 }

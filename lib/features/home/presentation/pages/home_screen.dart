@@ -23,10 +23,10 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   final List<String> _titles = const [
-    'Dashboard',
-    'Analytics',
-    'Food Scanner',
-    'AI Coach',
+    'Home',
+    'Stats',
+    'Scan',
+    'Coach',
     'Profile',
   ];
 
@@ -44,10 +44,11 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
+        type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Analytics'),
-          BottomNavigationBarItem(icon: Icon(Icons.camera), label: 'Scan'),
+          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Stats'),
+          BottomNavigationBarItem(icon: Icon(Icons.camera_alt), label: 'Scan'),
           BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Coach'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],

@@ -1,20 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/config/routes.dart';
-
-// ── Design Tokens ──
-const Color kBg = Color(0xFFF5F5FA);
-const Color kWhite = Color(0xFFFFFFFF);
-const Color kPurple = Color(0xFF5B4EE8);
-const Color kPurpleLight = Color(0xFFEDEBFB);
-const Color kPurpleTip = Color(0xFFE8E5FB);
-const Color kHeadline = Color(0xFF14142B);
-const Color kBody = Color(0xFF8A8A9A);
-const Color kCardBg = Color(0xFFF7F7FA);
-const Color kBorderInactive = Color(0xFFE4E4EE);
-const Color kIconBgInactive = Color(0xFFEEEEF4);
-const Color kDotInactive = Color(0xFFD8D6EE);
-const Color kCheckBg = Color(0xFF5B4EE8);
+import '../../../../core/constants/app_colors.dart';
 
 // ── Goal model ──
 class _Goal {
@@ -72,7 +59,7 @@ class _GoalSelectionScreenState extends State<GoalSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: const Color(AppColors.authBackground),
       body: SafeArea(
         child: Column(
           children: [
@@ -102,7 +89,7 @@ class _GoalSelectionScreenState extends State<GoalSelectionScreen> {
                       style: TextStyle(
                         fontSize: 27,
                         fontWeight: FontWeight.w800,
-                        color: kHeadline,
+                        color: Color(AppColors.authHeadline),
                         height: 1.22,
                         letterSpacing: -0.3,
                       ),
@@ -115,7 +102,7 @@ class _GoalSelectionScreenState extends State<GoalSelectionScreen> {
                       "We'll customize your daily targets and AI coaching based on what you want to achieve.",
                       style: TextStyle(
                         fontSize: 14.5,
-                        color: kBody,
+                        color: Color(AppColors.authBody),
                         height: 1.6,
                         fontWeight: FontWeight.w400,
                         letterSpacing: 0.1,
@@ -141,7 +128,7 @@ class _GoalSelectionScreenState extends State<GoalSelectionScreen> {
                     // ── Pro Tip banner ──
                     const _ProTipBanner(),
 
-                    const SizedBox(height: 28), 
+                    const SizedBox(height: 28),
                   ],
                 ),
               ),
@@ -170,7 +157,7 @@ class _AppBarRow extends StatelessWidget {
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: kWhite,
+              color: const Color(AppColors.backgroundLight),
               borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(
@@ -183,7 +170,7 @@ class _AppBarRow extends StatelessWidget {
             child: const Icon(
               Icons.arrow_back_ios_new_rounded,
               size: 16,
-              color: kHeadline,
+              color: Color(AppColors.authHeadline),
             ),
           ),
         ),
@@ -193,7 +180,7 @@ class _AppBarRow extends StatelessWidget {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: kHeadline,
+            color: Color(AppColors.authHeadline),
             letterSpacing: -0.1,
           ),
         ),
@@ -225,7 +212,9 @@ class _StepIndicator extends StatelessWidget {
               width: 36,
               height: 5,
               decoration: BoxDecoration(
-                color: isActive ? kPurple : kDotInactive,
+                color: isActive
+                    ? const Color(AppColors.authPurple)
+                    : const Color(AppColors.authDotInactive),
                 borderRadius: BorderRadius.circular(100),
               ),
             );
@@ -238,7 +227,7 @@ class _StepIndicator extends StatelessWidget {
           style: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w700,
-            color: kBody,
+            color: Color(AppColors.authBody),
             letterSpacing: 1.2,
           ),
         ),
@@ -268,16 +257,20 @@ class _GoalCard extends StatelessWidget {
         curve: Curves.easeOut,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
         decoration: BoxDecoration(
-          color: isSelected ? kWhite : kCardBg,
+          color: isSelected
+              ? const Color(AppColors.backgroundLight)
+              : const Color(AppColors.authCardBg),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? kPurple : kBorderInactive,
+            color: isSelected
+                ? const Color(AppColors.authPurple)
+                : const Color(AppColors.authBorder),
             width: isSelected ? 1.8 : 1.2,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: kPurple.withValues(alpha: 0.10),
+                    color: const Color(AppColors.authPurple).withValues(alpha: 0.10),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
@@ -292,13 +285,17 @@ class _GoalCard extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: isSelected ? kPurpleLight : kIconBgInactive,
+                color: isSelected
+                    ? const Color(AppColors.authPurpleBg)
+                    : const Color(AppColors.authIconBg),
                 borderRadius: BorderRadius.circular(13),
               ),
               child: Icon(
                 goal.icon,
                 size: 24,
-                color: isSelected ? kPurple : const Color(0xFF9A9AB0),
+                color: isSelected
+                    ? const Color(AppColors.authPurple)
+                    : const Color(0xFF9A9AB0),
               ),
             ),
 
@@ -314,16 +311,18 @@ class _GoalCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: isSelected ? kPurple : kHeadline,
+                      color: isSelected
+                          ? const Color(AppColors.authPurple)
+                          : const Color(AppColors.authHeadline),
                       letterSpacing: -0.1,
                     ),
                   ),
                   const SizedBox(height: 3),
                   Text(
                     goal.subtitle,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 12.5,
-                      color: kBody,
+                      color: Color(AppColors.authBody),
                       height: 1.5,
                       fontWeight: FontWeight.w400,
                     ),
@@ -343,12 +342,12 @@ class _GoalCard extends StatelessWidget {
                       width: 26,
                       height: 26,
                       decoration: const BoxDecoration(
-                        color: kCheckBg,
+                        color: Color(AppColors.authPurple),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.check_rounded,
-                        color: kWhite,
+                        color: Color(AppColors.backgroundLight),
                         size: 15,
                       ),
                     )
@@ -359,7 +358,7 @@ class _GoalCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: kBorderInactive,
+                          color: const Color(AppColors.authBorder),
                           width: 1.8,
                         ),
                       ),
@@ -382,7 +381,7 @@ class _ProTipBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       decoration: BoxDecoration(
-        color: kPurpleTip,
+        color: const Color(AppColors.authPurpleTip),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -393,13 +392,13 @@ class _ProTipBanner extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: kPurple.withValues(alpha: 0.14),
+              color: const Color(AppColors.authPurple).withValues(alpha: 0.14),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
               Icons.show_chart_rounded,
               size: 20,
-              color: kPurple,
+              color: Color(AppColors.authPurple),
             ),
           ),
           const SizedBox(width: 12),
@@ -439,7 +438,7 @@ class _BottomActionArea extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: kBg,
+      color: const Color(AppColors.authBackground),
       padding: const EdgeInsets.fromLTRB(22, 14, 22, 20),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -449,11 +448,11 @@ class _BottomActionArea extends StatelessWidget {
             width: double.infinity,
             height: 56,
             decoration: BoxDecoration(
-              color: kPurple,
+              color: const Color(AppColors.authPurple),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: kPurple.withValues(alpha: 0.38),
+                  color: const Color(AppColors.authPurple).withValues(alpha: 0.38),
                   blurRadius: 22,
                   spreadRadius: 0,
                   offset: const Offset(0, 9),
@@ -470,7 +469,7 @@ class _BottomActionArea extends StatelessWidget {
                   child: Text(
                     'Continue',
                     style: TextStyle(
-                      color: kWhite,
+                      color: Color(AppColors.backgroundLight),
                       fontSize: 16.5,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 0.2,
@@ -489,7 +488,7 @@ class _BottomActionArea extends StatelessWidget {
             style: TextStyle(
               fontSize: 9.5,
               letterSpacing: 1.5,
-              color: kBody,
+              color: Color(AppColors.authBody),
               fontWeight: FontWeight.w500,
             ),
           ),

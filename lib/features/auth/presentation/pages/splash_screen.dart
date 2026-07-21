@@ -4,13 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/config/routes.dart';
 import '../../../../core/constants/app_colors.dart';
 
-// ── Design-specific color tokens ──
-const Color _kPurple = Color(0xFF5B4EE8);
-const Color _kPurpleLight = Color(0xFF7B6FF0);
-const Color _kRingColor = Color(0xFFCAC6F0);
-const Color _kCardShadowDark = Color(0xFFBCB8DC);
-const Color _kCardShadowLight = Color(0xFFFFFFFF);
-
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
 
@@ -28,13 +21,13 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _navigateAfterDelay() async {
     await Future.delayed(const Duration(seconds: 3));
     if (!mounted) return;
-    context.go(AppRoutes.home);
+    // Navigate to onboarding (login will come after personalization)
+    context.go(AppRoutes.onboarding);
   }
 
   @override
   Widget build(BuildContext context) {
     final screenW = MediaQuery.of(context).size.width;
-    final screenH = MediaQuery.of(context).size.height;
 
     return Scaffold(
       backgroundColor: const Color(AppColors.background),
@@ -88,7 +81,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
                   // ── Get Started button ──
                   _GetStartedButton(
-                    onTap: () => context.go(AppRoutes.home),
+                    onTap: () => context.go(AppRoutes.onboarding),
                   ),
 
                   const SizedBox(height: 24),
@@ -130,13 +123,13 @@ class _NeumorphicCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         boxShadow: const [
           BoxShadow(
-            color: _kCardShadowDark,
+            color: Color(0xFFBCB8DC),
             blurRadius: 28,
             spreadRadius: 2,
             offset: Offset(10, 10),
           ),
           BoxShadow(
-            color: _kCardShadowLight,
+            color: Color(0xFFFFFFFF),
             blurRadius: 28,
             spreadRadius: 2,
             offset: Offset(-10, -10),
@@ -152,14 +145,17 @@ class _NeumorphicCard extends StatelessWidget {
             height: 68,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [_kPurpleLight, Color(0xFF4B3FD8)],
+                colors: [
+                  Color(AppColors.authPurpleLight),
+                  Color(AppColors.authPurpleDark),
+                ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(18),
               boxShadow: [
                 BoxShadow(
-                  color: _kPurple.withValues(alpha: 0.45),
+                  color: const Color(AppColors.authPurple).withValues(alpha: 0.45),
                   blurRadius: 18,
                   offset: const Offset(0, 8),
                 ),
@@ -187,7 +183,7 @@ class _NeumorphicCard extends StatelessWidget {
                 TextSpan(text: 'FitFuel '),
                 TextSpan(
                   text: 'AI',
-                  style: TextStyle(color: _kPurple),
+                  style: TextStyle(color: Color(AppColors.authPurple)),
                 ),
               ],
             ),
@@ -213,7 +209,7 @@ class _NeumorphicCard extends StatelessWidget {
             width: 36,
             height: 2.5,
             decoration: BoxDecoration(
-              color: _kPurpleLight.withValues(alpha: 0.45),
+              color: const Color(AppColors.authPurpleLight).withValues(alpha: 0.45),
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -235,14 +231,17 @@ class _GetStartedButton extends StatelessWidget {
       height: 56,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [_kPurpleLight, Color(0xFF4B3FD8)],
+          colors: [
+            Color(AppColors.authPurpleLight),
+            Color(AppColors.authPurpleDark),
+          ],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: _kPurple.withValues(alpha: 0.40),
+            color: const Color(AppColors.authPurple).withValues(alpha: 0.40),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -295,7 +294,7 @@ class _ConcentricRingsPainter extends CustomPainter {
     ];
 
     final paint = Paint()
-      ..color = _kRingColor.withValues(alpha: 0.45)
+      ..color = const Color(0xFFCAC6F0).withValues(alpha: 0.45)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 

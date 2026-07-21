@@ -1,17 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/config/routes.dart';
-
-// ── Design Tokens ──
-const Color kBg            = Color(0xFFF5F5FA);
-const Color kWhite         = Color(0xFFFFFFFF);
-const Color kPurple        = Color(0xFF5B4EE8);
-const Color kPurpleLight   = Color(0xFFEDEBFB);
-const Color kHeadline      = Color(0xFF14142B);
-const Color kBody          = Color(0xFF8A8A9A);
-const Color kBorderInact   = Color(0xFFE4E4EE);
-const Color kDotInact      = Color(0xFFD8D6EE);
-const Color kIconBgInact   = Color(0xFFEEEEF4);
+import '../../../../core/constants/app_colors.dart';
 
 // ── Activity Level model ──
 class _ActivityLevel {
@@ -69,18 +59,23 @@ class _PersonalizeScreenState extends State<PersonalizeScreen> {
 
   int get _suggestedKcal {
     switch (_selectedActivity) {
-      case 'sedentary':   return 1800;
-      case 'lightly':     return 1950;
-      case 'moderately':  return 2150;
-      case 'very':        return 2450;
-      default:            return 2150;
+      case 'sedentary':
+        return 1800;
+      case 'lightly':
+        return 1950;
+      case 'moderately':
+        return 2150;
+      case 'very':
+        return 2450;
+      default:
+        return 2150;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: const Color(AppColors.authBackground),
       body: SafeArea(
         child: Column(
           children: [
@@ -101,7 +96,7 @@ class _PersonalizeScreenState extends State<PersonalizeScreen> {
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.w800,
-                        color: kHeadline,
+                        color: Color(AppColors.authHeadline),
                         letterSpacing: -0.3,
                       ),
                     ),
@@ -110,26 +105,30 @@ class _PersonalizeScreenState extends State<PersonalizeScreen> {
                       "We'll use this to calculate your daily metabolic rate.",
                       style: TextStyle(
                         fontSize: 14,
-                        color: kBody,
+                        color: Color(AppColors.authBody),
                         height: 1.55,
                       ),
                     ),
                     const SizedBox(height: 22),
                     Row(
                       children: [
-                        Expanded(child: _MetricCard(
-                          icon: Icons.scale_outlined,
-                          label: 'WEIGHT',
-                          value: '72',
-                          unit: 'kg',
-                        )),
+                        Expanded(
+                          child: _MetricCard(
+                            icon: Icons.scale_outlined,
+                            label: 'WEIGHT',
+                            value: '72',
+                            unit: 'kg',
+                          ),
+                        ),
                         const SizedBox(width: 14),
-                        Expanded(child: _MetricCard(
-                          icon: Icons.track_changes_rounded,
-                          label: 'TARGET',
-                          value: '68',
-                          unit: 'kg',
-                        )),
+                        Expanded(
+                          child: _MetricCard(
+                            icon: Icons.track_changes_rounded,
+                            label: 'TARGET',
+                            value: '68',
+                            unit: 'kg',
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 14),
@@ -140,14 +139,15 @@ class _PersonalizeScreenState extends State<PersonalizeScreen> {
                     const SizedBox(height: 26),
                     Row(
                       children: const [
-                        Icon(Icons.bolt_rounded, color: kPurple, size: 20),
+                        Icon(Icons.bolt_rounded,
+                            color: Color(AppColors.authPurple), size: 20),
                         SizedBox(width: 6),
                         Text(
                           'Activity Level',
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w700,
-                            color: kHeadline,
+                            color: Color(AppColors.authHeadline),
                             letterSpacing: -0.1,
                           ),
                         ),
@@ -172,7 +172,8 @@ class _PersonalizeScreenState extends State<PersonalizeScreen> {
                 ),
               ),
             ),
-            _ConfirmButton(onTap: () => context.go(AppRoutes.home)),
+            // After personalization → go to login screen
+            _ConfirmButton(onTap: () => context.go(AppRoutes.login)),
           ],
         ),
       ),
@@ -192,7 +193,7 @@ class _AppBarRow extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: kWhite,
+              color: const Color(AppColors.backgroundLight),
               borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(
@@ -205,7 +206,7 @@ class _AppBarRow extends StatelessWidget {
             child: const Icon(
               Icons.arrow_back_ios_new_rounded,
               size: 15,
-              color: kHeadline,
+              color: Color(AppColors.authHeadline),
             ),
           ),
         ),
@@ -215,7 +216,7 @@ class _AppBarRow extends StatelessWidget {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: kHeadline,
+            color: Color(AppColors.authHeadline),
             letterSpacing: -0.1,
           ),
         ),
@@ -243,7 +244,9 @@ class _StepIndicator extends StatelessWidget {
               width: 36,
               height: 5,
               decoration: BoxDecoration(
-                color: active ? kPurple : kDotInact,
+                color: active
+                    ? const Color(AppColors.authPurple)
+                    : const Color(AppColors.authDotInactive),
                 borderRadius: BorderRadius.circular(100),
               ),
             );
@@ -255,7 +258,7 @@ class _StepIndicator extends StatelessWidget {
           style: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w700,
-            color: kBody,
+            color: Color(AppColors.authBody),
             letterSpacing: 1.2,
           ),
         ),
@@ -283,9 +286,12 @@ class _MetricCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 14),
       decoration: BoxDecoration(
-        color: kWhite,
+        color: const Color(AppColors.backgroundLight),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: kBorderInact, width: 1.1),
+        border: Border.all(
+          color: const Color(AppColors.authBorder),
+          width: 1.1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -294,10 +300,10 @@ class _MetricCard extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: kPurpleLight,
+              color: const Color(AppColors.authPurpleBg),
               borderRadius: BorderRadius.circular(11),
             ),
-            child: Icon(icon, size: 22, color: kPurple),
+            child: Icon(icon, size: 22, color: const Color(AppColors.authPurple)),
           ),
           const SizedBox(height: 10),
           Text(
@@ -305,7 +311,7 @@ class _MetricCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 10.5,
               letterSpacing: 1.4,
-              color: kBody,
+              color: Color(AppColors.authBody),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -318,7 +324,7 @@ class _MetricCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w800,
-                    color: kHeadline,
+                    color: Color(AppColors.authHeadline),
                     letterSpacing: -1,
                   ),
                 ),
@@ -327,7 +333,7 @@ class _MetricCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: kHeadline,
+                    color: Color(AppColors.authHeadline),
                   ),
                 ),
               ],
@@ -351,9 +357,12 @@ class _HeightCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 10),
       decoration: BoxDecoration(
-        color: kWhite,
+        color: const Color(AppColors.backgroundLight),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: kBorderInact, width: 1.1),
+        border: Border.all(
+          color: const Color(AppColors.authBorder),
+          width: 1.1,
+        ),
       ),
       child: Column(
         children: [
@@ -362,14 +371,15 @@ class _HeightCard extends StatelessWidget {
             children: [
               Row(
                 children: const [
-                  Icon(Icons.straighten_rounded, size: 18, color: kPurple),
+                  Icon(Icons.straighten_rounded,
+                      size: 18, color: Color(AppColors.authPurple)),
                   SizedBox(width: 7),
                   Text(
                     'Height',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
-                      color: kHeadline,
+                      color: Color(AppColors.authHeadline),
                     ),
                   ),
                 ],
@@ -379,7 +389,7 @@ class _HeightCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: kPurple,
+                  color: Color(AppColors.authPurple),
                 ),
               ),
             ],
@@ -388,9 +398,9 @@ class _HeightCard extends StatelessWidget {
           SliderTheme(
             data: const SliderThemeData(
               trackHeight: 4,
-              thumbColor: kWhite,
-              activeTrackColor: kPurple,
-              inactiveTrackColor: kDotInact,
+              thumbColor: Color(AppColors.backgroundLight),
+              activeTrackColor: Color(AppColors.authPurple),
+              inactiveTrackColor: Color(AppColors.authDotInactive),
               overlayColor: Color(0x265B4EE8),
               thumbShape: RoundSliderThumbShape(enabledThumbRadius: 12),
             ),
@@ -399,9 +409,9 @@ class _HeightCard extends StatelessWidget {
               min: 140,
               max: 220,
               onChanged: onChanged,
-              activeColor: kPurple,
-              inactiveColor: kDotInact,
-              thumbColor: kWhite,
+              activeColor: const Color(AppColors.authPurple),
+              inactiveColor: const Color(AppColors.authDotInactive),
+              thumbColor: const Color(AppColors.backgroundLight),
             ),
           ),
         ],
@@ -431,16 +441,20 @@ class _ActivityCard extends StatelessWidget {
         curve: Curves.easeOut,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? kPurple : kWhite,
+          color: isSelected
+              ? const Color(AppColors.authPurple)
+              : const Color(AppColors.backgroundLight),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? kPurple : kBorderInact,
+            color: isSelected
+                ? const Color(AppColors.authPurple)
+                : const Color(AppColors.authBorder),
             width: isSelected ? 0 : 1.1,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: kPurple.withValues(alpha: 0.22),
+                    color: const Color(AppColors.authPurple).withValues(alpha: 0.22),
                     blurRadius: 18,
                     offset: const Offset(0, 6),
                   ),
@@ -456,13 +470,15 @@ class _ActivityCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isSelected
                     ? Colors.white.withValues(alpha: 0.22)
-                    : kIconBgInact,
+                    : const Color(AppColors.authIconBg),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 level.icon,
                 size: 22,
-                color: isSelected ? kWhite : kBody,
+                color: isSelected
+                    ? const Color(AppColors.backgroundLight)
+                    : const Color(AppColors.authBody),
               ),
             ),
             const SizedBox(width: 13),
@@ -477,7 +493,7 @@ class _ActivityCard extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                       color: isSelected
                           ? Colors.white.withValues(alpha: 0.9)
-                          : kHeadline,
+                          : const Color(AppColors.authHeadline),
                       letterSpacing: -0.1,
                     ),
                   ),
@@ -488,7 +504,7 @@ class _ActivityCard extends StatelessWidget {
                       fontSize: 12,
                       color: isSelected
                           ? Colors.white.withValues(alpha: 0.65)
-                          : kBody,
+                          : const Color(AppColors.authBody),
                       height: 1.4,
                     ),
                   ),
@@ -502,14 +518,19 @@ class _ActivityCard extends StatelessWidget {
               height: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isSelected ? kWhite : Colors.transparent,
+                color: isSelected
+                    ? const Color(AppColors.backgroundLight)
+                    : Colors.transparent,
                 border: Border.all(
-                  color: isSelected ? kWhite : kBorderInact,
+                  color: isSelected
+                      ? const Color(AppColors.backgroundLight)
+                      : const Color(AppColors.authBorder),
                   width: isSelected ? 0 : 1.8,
                 ),
               ),
               child: isSelected
-                  ? const Icon(Icons.circle, size: 14, color: kPurple)
+                  ? const Icon(Icons.circle,
+                      size: 14, color: Color(AppColors.authPurple))
                   : null,
             ),
           ],
@@ -531,11 +552,11 @@ class _IntakeBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
       decoration: BoxDecoration(
-        color: kPurple,
+        color: const Color(AppColors.authPurple),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: kPurple.withValues(alpha: 0.35),
+            color: const Color(AppColors.authPurple).withValues(alpha: 0.35),
             blurRadius: 24,
             offset: const Offset(0, 10),
           ),
@@ -608,17 +629,24 @@ class _ConfirmButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: kBg,
+      color: const Color(AppColors.authBackground),
       padding: const EdgeInsets.fromLTRB(22, 12, 22, 24),
       child: Container(
         width: double.infinity,
         height: 56,
         decoration: BoxDecoration(
-          color: kPurple,
+          gradient: const LinearGradient(
+            colors: [
+              Color(AppColors.authPurpleLight),
+              Color(AppColors.authPurpleDark),
+            ],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: kPurple.withValues(alpha: 0.38),
+              color: const Color(AppColors.authPurple).withValues(alpha: 0.38),
               blurRadius: 22,
               offset: const Offset(0, 9),
             ),

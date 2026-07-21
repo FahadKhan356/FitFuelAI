@@ -18,13 +18,11 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
   TextEditingController messageController = TextEditingController();
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(title: Text('AI Nutrition Coach')),
-      body: Column(
+  Widget build(BuildContext context) => Column(
         children: [
           Expanded(
             child: ListView.builder(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               itemCount: messages.length,
               itemBuilder: (context, index) {
                 final message = messages[index];
@@ -33,12 +31,12 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
                       ? Alignment.centerRight
                       : Alignment.centerLeft,
                   child: Container(
-                    margin: EdgeInsets.only(bottom: 12),
-                    padding: EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: message.isUser
-                          ? Color(0xFF4ADE80)
-                          : Color(0xFF1F2937),
+                          ? const Color(0xFF4ADE80)
+                          : const Color(0xFF1F2937),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -46,7 +44,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
                       style: TextStyle(
                         color: message.isUser
                             ? Colors.black
-                            : Color(0xFFFFFFFF),
+                            : const Color(0xFFFFFFFF),
                       ),
                     ),
                   ),
@@ -55,30 +53,29 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: messageController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: 'Ask anything...',
                       prefixIcon: Icon(Icons.message),
                     ),
                   ),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 FloatingActionButton(
                   mini: true,
                   onPressed: () {},
-                  child: Icon(Icons.send),
+                  child: const Icon(Icons.send),
                 ),
               ],
             ),
           ),
         ],
-      ),
-    );
+      );
 }
 
 class ChatMessage {

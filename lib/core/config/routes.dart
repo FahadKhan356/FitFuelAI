@@ -16,6 +16,7 @@ import '../../features/profile/presentation/pages/profile_screen.dart';
 import '../../features/subscription/presentation/pages/subscription_screen.dart';
 import '../../features/water_tracker/presentation/pages/water_tracker_screen.dart';
 import '../../features/weight_tracker/presentation/pages/weight_tracker_screen.dart';
+import '../../features/home/presentation/pages/home_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -23,6 +24,7 @@ class AppRoutes {
   static const String signup = '/signup';
   static const String onboarding = '/onboarding';
   static const String goalSelection = '/goal-selection';
+  static const String personalization = '/personalization';
   static const String home = '/home';
   static const String foodScanner = '/food-scanner';
   static const String mealTracking = '/meal-tracking';
@@ -33,7 +35,6 @@ class AppRoutes {
   static const String achievements = '/achievements';
   static const String profile = '/profile';
   static const String subscription = '/subscription';
-    static const String  personalization = '/personalization';
 }
 
 final goRouter = GoRouter(
@@ -43,7 +44,15 @@ final goRouter = GoRouter(
       path: AppRoutes.splash,
       builder: (context, state) => const SplashScreen(),
     ),
-     GoRoute(
+    GoRoute(
+      path: AppRoutes.onboarding,
+      builder: (context, state) => const OnboardingScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.goalSelection,
+      builder: (context, state) => const GoalSelectionScreen(),
+    ),
+    GoRoute(
       path: AppRoutes.personalization,
       builder: (context, state) => const PersonalizeScreen(),
     ),
@@ -56,16 +65,8 @@ final goRouter = GoRouter(
       builder: (context, state) => const SignupScreen(),
     ),
     GoRoute(
-      path: AppRoutes.onboarding,
-      builder: (context, state) => const OnboardingScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.goalSelection,
-      builder: (context, state) => const GoalSelectionScreen(),
-    ),
-    GoRoute(
       path: AppRoutes.home,
-      builder: (context, state) => const OnboardingScreen(),
+      builder: (context, state) => const HomeScreen(),
     ),
     GoRoute(
       path: AppRoutes.foodScanner,

@@ -11,14 +11,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   String selectedPeriod = 'Weekly';
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(title: Text('Analytics')),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
+  Widget build(BuildContext context) => SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Period selector
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: ['Weekly', 'Monthly', 'Yearly']
@@ -31,8 +28,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       ))
                   .toList(),
             ),
-            SizedBox(height: 24),
-            // Stats overview
+            const SizedBox(height: 24),
             Row(
               children: [
                 Expanded(
@@ -43,7 +39,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     positive: true,
                   ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: _StatCard(
                     label: 'Avg Water',
@@ -54,53 +50,47 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 ),
               ],
             ),
-            SizedBox(height: 24),
-            // Charts
+            const SizedBox(height: 24),
             Text('Calorie Activity', style: Theme.of(context).textTheme.titleLarge),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Container(
               height: 200,
               decoration: BoxDecoration(
-                color: Color(0xFF1F2937),
+                color: const Color(0xFF1F2937),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Color(0xFF374151)),
+                border: Border.all(color: const Color(0xFF374151)),
               ),
-              child: Center(
-                child: Text('Chart Placeholder'),
-              ),
+              child: const Center(child: Text('Chart Placeholder')),
             ),
-            SizedBox(height: 24),
-            Text('Macro Distribution', style: Theme.of(context).textTheme.titleLarge),
-            SizedBox(height: 12),
+            const SizedBox(height: 24),
+            Text('Macro Distribution',
+                style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 12),
             Container(
               height: 200,
               decoration: BoxDecoration(
-                color: Color(0xFF1F2937),
+                color: const Color(0xFF1F2937),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Color(0xFF374151)),
+                border: Border.all(color: const Color(0xFF374151)),
               ),
-              child: Center(
-                child: Text('Pie Chart Placeholder'),
-              ),
+              child: const Center(child: Text('Pie Chart Placeholder')),
             ),
-            SizedBox(height: 24),
-            Text('Weight Progress', style: Theme.of(context).textTheme.titleLarge),
-            SizedBox(height: 12),
+            const SizedBox(height: 24),
+            Text('Weight Progress',
+                style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 12),
             Container(
               height: 200,
               decoration: BoxDecoration(
-                color: Color(0xFF1F2937),
+                color: const Color(0xFF1F2937),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Color(0xFF374151)),
+                border: Border.all(color: const Color(0xFF374151)),
               ),
-              child: Center(
-                child: Text('Weight Chart Placeholder'),
-              ),
+              child: const Center(child: Text('Weight Chart Placeholder')),
             ),
           ],
         ),
-      ),
-    );
+      );
 }
 
 class _StatCard extends StatelessWidget {
