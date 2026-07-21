@@ -39,14 +39,7 @@ class _FoodScannerScreenState extends State<FoodScannerScreen> {
         setState(() => _isAnalyzing = false);
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => ScanResultScreen(
-              imagePath: _image!.path,
-              foodName: 'Grilled Chicken Salad',
-              calories: 340,
-              protein: 28,
-              carbs: 12,
-              fats: 18,
-            ),
+            builder: (_) => const ScanResultScreen(),
           ),
         );
       }
@@ -144,7 +137,13 @@ class _FoodScannerScreenState extends State<FoodScannerScreen> {
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () => _pickImage(ImageSource.camera),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const ScanResultScreen(),
+                          ),
+                        );
+                      },
                       icon: const Icon(Icons.camera_alt_rounded),
                       label: const Text('Camera'),
                       style: ElevatedButton.styleFrom(
