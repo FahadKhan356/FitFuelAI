@@ -44,7 +44,7 @@ dependencies:
   flutter_local_notifications: ^17.1.0
 
   # Analytics & Charts
-  fl_chart: ^0.65.0
+  fl_chart: ^1.2.0
 
   # Camera & Image
   camera: ^0.10.5+5
@@ -60,10 +60,10 @@ dependencies:
   # Animations
   rive: ^0.13.7
   lottie: ^2.7.0
-  flutter_animate: ^4.2.0
+  flutter_animate: ^4.5.2
 
   # Image Caching
-  cached_network_image: ^3.3.0
+  cached_network_image: ^3.4.1
 
   # Connectivity
   connectivity_plus: ^5.0.2
