@@ -133,12 +133,15 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    Text(
-                      'View All',
-                      style: textTheme.titleSmall?.copyWith(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: _purple,
+                    GestureDetector(
+                      onTap: () => context.push(AppRoutes.achievements),
+                      child: Text(
+                        'View All',
+                        style: textTheme.titleSmall?.copyWith(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: _purple,
+                        ),
                       ),
                     ),
                   ],
@@ -194,28 +197,29 @@ class ProfileScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
-                  children: const [
-                    _SettingTile(
+                  children: [
+                    const _SettingTile(
                       icon: Icons.shield_outlined,
                       title: 'Personal Information',
                     ),
-                    SizedBox(height: 10),
-                    _SettingTile(
+                    const SizedBox(height: 10),
+                    const _SettingTile(
                       icon: Icons.credit_card_outlined,
                       title: 'Premium Subscription',
                       trailingText: 'Active',
                     ),
-                    SizedBox(height: 10),
-                    _SettingTile(
+                    const SizedBox(height: 10),
+                    const _SettingTile(
                       icon: Icons.notifications_none_outlined,
                       title: 'Notifications',
                       trailingText: 'Daily Reminders',
                     ),
-                    SizedBox(height: 10),
+                    const SizedBox(height: 10),
                     _SettingTile(
                       icon: Icons.adjust_outlined,
                       title: 'Health Goals',
                       trailingText: 'Weight Loss',
+                      onTap: () => context.push(AppRoutes.weightTracker),
                     ),
                   ],
                 ),
@@ -648,11 +652,13 @@ class _SettingTile extends StatelessWidget {
     required this.icon,
     required this.title,
     this.trailingText,
+    this.onTap,
   });
 
   final IconData icon;
   final String title;
   final String? trailingText;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -671,6 +677,7 @@ class _SettingTile extends StatelessWidget {
         ],
       ),
       child: ListTile(
+        onTap: onTap,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16),
         leading: Container(
           width: 32,
