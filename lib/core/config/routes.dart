@@ -9,7 +9,6 @@ import '../../features/auth/presentation/pages/signup_screen.dart';
 import '../../features/auth/presentation/pages/splash_screen.dart';
 import '../../features/food_scanner/presentation/pages/food_scanner_screen.dart';
 
-import '../../features/meal_tracking/presentation/pages/meal_tracking_screen.dart';
 import '../../features/meal_history/presentation/pages/meal_history_screen.dart';
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
 import '../../features/onboarding/presentation/pages/goal_selection_screen.dart';

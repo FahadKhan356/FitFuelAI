@@ -1,4 +1,7 @@
+import 'package:fitfuel_ai/core/config/routes.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
 import '../../../analytics/presentation/pages/analytics_screen.dart';
 import '../../../food_scanner/presentation/pages/food_scanner_screen.dart';
 import '../../../ai_coach/presentation/pages/ai_coach_screen.dart';
@@ -140,7 +143,7 @@ class _HomeContent extends StatelessWidget {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {},
+                  onTap: () => context.push(AppRoutes.mealTracking),
                   child: const Text(
                     'See History',
                     style: TextStyle(
