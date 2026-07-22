@@ -625,7 +625,7 @@ class _WaterCard extends StatelessWidget {
           const SizedBox(height: 12),
 
           GestureDetector(
-            onTap: () {},
+            onTap: () => context.push(AppRoutes.waterTracker),
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 8),

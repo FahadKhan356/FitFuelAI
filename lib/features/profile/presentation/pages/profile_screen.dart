@@ -568,12 +568,13 @@ class _GoalsCard extends StatelessWidget {
             value: '1650 / 2200',
           ),
           const SizedBox(height: 12),
-          const _GoalRow(
+          _GoalRow(
             icon: Icons.water_drop_outlined,
             iconColor: Color(0xFF52C7D8),
             label: 'Water Intake',
             progress: 0.70,
             value: '2100 / 3000',
+            onTap: () => context.push(AppRoutes.waterTracker),
           ),
           const SizedBox(height: 12),
           const _GoalRow(
@@ -596,6 +597,7 @@ class _GoalRow extends StatelessWidget {
     required this.label,
     required this.progress,
     required this.value,
+    this.onTap,
   });
 
   final IconData icon;
@@ -603,11 +605,15 @@ class _GoalRow extends StatelessWidget {
   final String label;
   final double progress;
   final String value;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Column(
+        children: [
         Row(
           children: [
             Icon(icon, color: iconColor, size: 18),
@@ -642,7 +648,8 @@ class _GoalRow extends StatelessWidget {
             valueColor: const AlwaysStoppedAnimation<Color>(_purple),
           ),
         ),
-      ],
+        ],
+      ),
     );
   }
 }
