@@ -1,6 +1,6 @@
 import 'package:fitfuel_ai/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
-
+// Subscription screen
 const _bg = Color(0xFFF7F6FB);
 const _surface = Colors.white;
 const _purple = Color(AppColors.authPurple);
