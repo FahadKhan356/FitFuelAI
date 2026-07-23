@@ -1,7 +1,5 @@
 import 'package:fitfuel_ai/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:fitfuel_ai/core/config/routes.dart';
-import 'package:go_router/go_router.dart';
 
 const _bg = Color(0xFFF7F6FB);
 const _surface = Colors.white;
@@ -11,7 +9,6 @@ const _blueTint = Color(0xFFEAF7FF);
 const _textPrimary = Color(0xFF1F1F2E);
 const _textSecondary = Color(0xFF72707F);
 const _border = Color(0xFFE7E3EF);
-const _line = Color(0xFFE5E1EE);
 const _cyan = Color(0xFF2DCFF1);
 
 class WaterTrackerScreen extends StatefulWidget {
@@ -24,6 +21,20 @@ class WaterTrackerScreen extends StatefulWidget {
 class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
   int waterIntake = 1750;
   final int waterGoal = 3000;
+
+  void _showWaterEntryDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => WaterEntryBottomSheet(
+        onWaterAdded: (amount) {
+          setState(() => waterIntake += amount);
+          Navigator.pop(context);
+        },
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -201,7 +212,7 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
                         ),
                       ),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: _showWaterEntryDialog,
                         child: const Text(
                           'Custom  ›',
                           style: TextStyle(
@@ -551,6 +562,276 @@ class _TipCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+//  Water Entry Bottom Sheet
+// ─────────────────────────────────────────────
+class WaterEntryBottomSheet extends StatefulWidget {
+  final Function(int) onWaterAdded;
+
+  const WaterEntryBottomSheet({required this.onWaterAdded});
+
+  @override
+  State<WaterEntryBottomSheet> createState() => _WaterEntryBottomSheetState();
+}
+
+class _WaterEntryBottomSheetState extends State<WaterEntryBottomSheet> {
+  late TextEditingController _mlController;
+  int customAmount = 250;
+
+  @override
+  void initState() {
+    super.initState();
+    _mlController = TextEditingController(text: '250');
+  }
+
+  @override
+  void dispose() {
+    _mlController.dispose();
+    super.dispose();
+  }
+
+  void _handleAdd() {
+    final amount = int.tryParse(_mlController.text);
+    if (amount == null || amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid amount')),
+      );
+      return;
+    }
+    widget.onWaterAdded(amount);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 200),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: _surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Text(
+                  'Add Water',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: _textPrimary,
+                  ),
+                ),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(Icons.close_rounded, color: _textSecondary),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Quick preset buttons
+            Row(
+              children: [
+                _QuickWaterButton(
+                  amount: 250,
+                  isSelected: customAmount == 250,
+                  onTap: () {
+                    setState(() => customAmount = 250);
+                    _mlController.text = '250';
+                  },
+                ),
+                const SizedBox(width: 10),
+                _QuickWaterButton(
+                  amount: 500,
+                  isSelected: customAmount == 500,
+                  onTap: () {
+                    setState(() => customAmount = 500);
+                    _mlController.text = '500';
+                  },
+                ),
+                const SizedBox(width: 10),
+                _QuickWaterButton(
+                  amount: 750,
+                  isSelected: customAmount == 750,
+                  onTap: () {
+                    setState(() => customAmount = 750);
+                    _mlController.text = '750';
+                  },
+                ),
+                const SizedBox(width: 10),
+                _QuickWaterButton(
+                  amount: 1000,
+                  isSelected: customAmount == 1000,
+                  onTap: () {
+                    setState(() => customAmount = 1000);
+                    _mlController.text = '1000';
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Custom input
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Custom Amount (ml)',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: _textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _mlController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: false),
+                  onChanged: (val) {
+                    setState(() {
+                      final amount = int.tryParse(val);
+                      customAmount = amount ?? 250;
+                    });
+                  },
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: _textPrimary,
+                  ),
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: _border),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: _border),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: _purple, width: 2),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    hintText: 'Enter amount',
+                    hintStyle: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFFB0ADB9),
+                    ),
+                    suffixText: 'ml',
+                    suffixStyle: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: _textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // Action buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: _border),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: _textPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _handleAdd,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _cyan,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Add Water',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+//  Quick Water Button
+// ─────────────────────────────────────────────
+class _QuickWaterButton extends StatelessWidget {
+  final int amount;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _QuickWaterButton({
+    required this.amount,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? _cyan : const Color(0xFFF5F5FA),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? _cyan : _border,
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          child: Text(
+            '${amount}ml',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: isSelected ? Colors.white : _textPrimary,
+            ),
+          ),
+        ),
       ),
     );
   }

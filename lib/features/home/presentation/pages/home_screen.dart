@@ -283,7 +283,7 @@ class _HomeContentState extends State<_HomeContent>
   }
 }
 
-double _clamp01(double value) => value.clamp(0.0, 1.0) as double;
+double _clamp01(double value) => value.clamp(0.0, 1.0);
 
 // ─────────────────────────────────────────────
 //  Top Bar
@@ -320,6 +320,37 @@ class _TopBar extends StatelessWidget {
 
         Row(
           children: [
+            // Notifications bell
+            GestureDetector(
+              onTap: () => context.push(AppRoutes.notifications),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: kPurpleLight,
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    const Icon(Icons.notifications_rounded, color: kPurple, size: 20),
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFF6B6B),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [

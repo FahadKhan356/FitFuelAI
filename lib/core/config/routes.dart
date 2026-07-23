@@ -9,6 +9,8 @@ import '../../features/auth/presentation/pages/login_screen.dart';
 import '../../features/auth/presentation/pages/signup_screen.dart';
 import '../../features/auth/presentation/pages/splash_screen.dart';
 import '../../features/food_scanner/presentation/pages/food_scanner_screen.dart';
+import '../../features/barcode/presentation/pages/barcode_scanner_screen.dart';
+import '../../features/notifications/presentation/pages/notifications_screen.dart';
 
 import '../../features/meal_history/presentation/pages/meal_history_screen.dart';
 import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
@@ -36,6 +38,8 @@ class AppRoutes {
   static const String achievements = '/achievements';
   static const String profile = '/profile';
   static const String subscription = '/subscription';
+  static const String notifications = '/notifications';
+  static const String barcode = '/barcode';
 }
 
 final goRouter = GoRouter(
@@ -126,6 +130,14 @@ final goRouter = GoRouter(
     GoRoute(
       path: AppRoutes.subscription,
       builder: (context, state) => const SubscriptionScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.notifications,
+      builder: (context, state) => const NotificationsScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.barcode,
+      builder: (context, state) => const BarcodeScannerScreen(),
     ),
   ],
 );

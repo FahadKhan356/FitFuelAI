@@ -13,7 +13,7 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   int currentStep = 0;
 
-  @override
+  @override 
   Widget build(BuildContext context) {
     // Page 0 → Intro hero | Pages 1-8 → form steps (kept for backwards compat)
     if (currentStep == 0) {

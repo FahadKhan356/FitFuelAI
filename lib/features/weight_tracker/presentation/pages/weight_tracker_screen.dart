@@ -1,18 +1,28 @@
 import 'package:fitfuel_ai/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:intl/intl.dart';
+
 const _bg = Color(0xFFF7F6FB);
 const _surface = Colors.white;
 const _purple = Color(AppColors.authPurple);
 const _purpleSoft = Color(0xFFF0EDFF);
-const _purpleTint = Color(0xFFF6F3FF);
 const _textPrimary = Color(0xFF1E1D2A);
 const _textSecondary = Color(0xFF706D7B);
 const _border = Color(0xFFE8E4EF);
-const _cyan = Color(0xFF2ED9F3);
 const _mint = Color(0xFF20C78B);
 
 double _clamp01(double v) => v.clamp(0.0, 1.0);
+
+// ─────────────────────────────────────────────
+//  Weight Entry Model
+// ─────────────────────────────────────────────
+class WeightEntry {
+  final DateTime date;
+  final double weight;
+
+  WeightEntry({required this.date, required this.weight});
+}
 
 class WeightTrackerScreen extends StatefulWidget {
   const WeightTrackerScreen({super.key});
@@ -26,6 +36,23 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
   late final AnimationController _mainCtrl;
   late final AnimationController _pulseCtrl;
   bool isWeekly = true;
+
+  // ─── Weight Data State ───
+  double currentWeight = 72.4;
+  double startWeight = 77.0;
+  double goalWeight = 68.0;
+  List<WeightEntry> weightEntries = [
+    WeightEntry(date: DateTime.now().subtract(const Duration(days: 6)), weight: 74.25),
+    WeightEntry(date: DateTime.now().subtract(const Duration(days: 5)), weight: 73.95),
+    WeightEntry(date: DateTime.now().subtract(const Duration(days: 4)), weight: 73.85),
+    WeightEntry(date: DateTime.now().subtract(const Duration(days: 3)), weight: 73.6),
+    WeightEntry(date: DateTime.now().subtract(const Duration(days: 2)), weight: 72.95),
+    WeightEntry(date: DateTime.now().subtract(const Duration(days: 1)), weight: 72.55),
+    WeightEntry(date: DateTime.now(), weight: 72.35),
+  ];
+
+  double get weightLost => startWeight - currentWeight;
+  double get goalProgress => ((startWeight - currentWeight) / (startWeight - goalWeight)) * 100;
 
   @override
   void initState() {
@@ -47,11 +74,40 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
     super.dispose();
   }
 
+  // ─── Weight Entry Dialog ───
+  void _showWeightEntryDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => WeightEntryBottomSheet(
+        onWeightAdded: _addWeightEntry,
+        currentWeight: currentWeight,
+      ),
+    );
+  }
+
+  void _addWeightEntry(double weight, DateTime date) {
+    setState(() {
+      currentWeight = weight;
+      // Add to entries list
+      weightEntries.add(WeightEntry(date: date, weight: weight));
+      // Keep only last 7 days
+      if (weightEntries.length > 7) {
+        weightEntries.removeAt(0);
+      }
+    });
+    Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _bg,
-      floatingActionButton: _WeightFab(mainCtrl: _mainCtrl),
+      floatingActionButton: _WeightFab(
+        mainCtrl: _mainCtrl,
+        onAddWeight: _showWeightEntryDialog,
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -82,7 +138,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                 children: [
                   // ── A. Top Weight Display ──
-                  _WeightHeader(mainCtrl: _mainCtrl),
+                  _WeightHeader(mainCtrl: _mainCtrl, currentWeight: currentWeight),
                   const SizedBox(height: 16),
                   // ── B. Weight Trend Chart ──
                   _CardShell(
@@ -126,13 +182,19 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
                           ),
                         ),
                         const SizedBox(height: 10),
-                        _WeightChart(mainCtrl: _mainCtrl),
+                        _WeightChart(mainCtrl: _mainCtrl, weightEntries: weightEntries),
                       ],
                     ),
                   ),
                   const SizedBox(height: 16),
                   // ── C. Goal Progress ──
-                  _GoalProgressCard(mainCtrl: _mainCtrl),
+                  _GoalProgressCard(
+                    mainCtrl: _mainCtrl,
+                    currentWeight: currentWeight,
+                    startWeight: startWeight,
+                    goalWeight: goalWeight,
+                    goalProgress: goalProgress,
+                  ),
                   const SizedBox(height: 16),
                   // ── D. Milestones ──
                   Row(
@@ -212,8 +274,12 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
 // ─────────────────────────────────────────────
 class _WeightHeader extends StatelessWidget {
   final Animation<double> mainCtrl;
+  final double currentWeight;
 
-  const _WeightHeader({required this.mainCtrl});
+  const _WeightHeader({
+    required this.mainCtrl,
+    required this.currentWeight,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -224,7 +290,7 @@ class _WeightHeader extends StatelessWidget {
           parent: mainCtrl,
           curve: const Interval(0.00, 0.20, curve: Curves.easeOutCubic),
         ).value);
-        final currentWeight = 72.4 * t;
+        final displayWeight = currentWeight * t;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -236,7 +302,7 @@ class _WeightHeader extends StatelessWidget {
                   text: TextSpan(
                     children: [
                       TextSpan(
-                        text: currentWeight.toStringAsFixed(1),
+                        text: displayWeight.toStringAsFixed(1),
                         style: const TextStyle(
                           fontSize: 34,
                           fontWeight: FontWeight.w800,
@@ -300,8 +366,12 @@ class _WeightHeader extends StatelessWidget {
 // ─────────────────────────────────────────────
 class _WeightChart extends StatelessWidget {
   final Animation<double> mainCtrl;
+  final List<WeightEntry> weightEntries;
 
-  const _WeightChart({required this.mainCtrl});
+  const _WeightChart({
+    required this.mainCtrl,
+    required this.weightEntries,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -317,7 +387,16 @@ class _WeightChart extends StatelessWidget {
           curve: const Interval(0.40, 0.60),
         ).value);
 
-        final animatedMaxX = 0.0 + (revealT * 6.0);
+        final animatedMaxX = 0.0 + (revealT * (weightEntries.length - 1).toDouble());
+
+        // Convert weight entries to chart spots
+        final spots = List<FlSpot>.generate(
+          weightEntries.length,
+          (i) => FlSpot(i.toDouble(), weightEntries[i].weight),
+        );
+
+        final minWeight = weightEntries.map((e) => e.weight).reduce((a, b) => a < b ? a : b);
+        final maxWeight = weightEntries.map((e) => e.weight).reduce((a, b) => a > b ? a : b);
 
         return SizedBox(
           height: 240,
@@ -325,8 +404,8 @@ class _WeightChart extends StatelessWidget {
             padding: const EdgeInsets.only(right: 8, top: 6),
             child: LineChart(
               LineChartData(
-                minY: 71.4,
-                maxY: 75.2,
+                minY: (minWeight - 1).floorToDouble(),
+                maxY: (maxWeight + 1).ceilToDouble(),
                 gridData: const FlGridData(show: false),
                 titlesData: FlTitlesData(
                   topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -337,11 +416,11 @@ class _WeightChart extends StatelessWidget {
                       reservedSize: 28,
                       getTitlesWidget: (value, meta) {
                         const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                        if (value < 0 || value > 6) return const SizedBox.shrink();
+                        if (value < 0 || value >= weightEntries.length) return const SizedBox.shrink();
                         return Padding(
                           padding: const EdgeInsets.only(top: 8),
                           child: Text(
-                            labels[value.toInt()],
+                            labels[value.toInt() % 7],
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -356,13 +435,10 @@ class _WeightChart extends StatelessWidget {
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 38,
-                      interval: 0.95,
+                      interval: (maxWeight - minWeight) / 4,
                       getTitlesWidget: (value, meta) {
-                        final allowed = {71.4, 72.35, 73.3, 74.25, 75.2};
-                        final rounded = double.parse(value.toStringAsFixed(2));
-                        if (!allowed.contains(rounded)) return const SizedBox.shrink();
                         return Text(
-                          value.toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), ''),
+                          value.toStringAsFixed(1),
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
@@ -377,15 +453,7 @@ class _WeightChart extends StatelessWidget {
                 lineTouchData: const LineTouchData(enabled: false),
                 lineBarsData: [
                   LineChartBarData(
-                    spots: const [
-                      FlSpot(0, 74.25),
-                      FlSpot(1, 73.95),
-                      FlSpot(2, 73.85),
-                      FlSpot(3, 73.6),
-                      FlSpot(4, 72.95),
-                      FlSpot(5, 72.55),
-                      FlSpot(6, 72.35),
-                    ],
+                    spots: spots,
                     isCurved: true,
                     color: _purple,
                     barWidth: 3,
@@ -415,7 +483,7 @@ class _WeightChart extends StatelessWidget {
                   ),
                 ],
                 minX: 0,
-                maxX: animatedMaxX.clamp(0.5, 6.0),
+                maxX: animatedMaxX.clamp(0.5, (weightEntries.length - 1).toDouble()),
               ),
               duration: const Duration(milliseconds: 1),
             ),
@@ -431,8 +499,18 @@ class _WeightChart extends StatelessWidget {
 // ─────────────────────────────────────────────
 class _GoalProgressCard extends StatelessWidget {
   final Animation<double> mainCtrl;
+  final double currentWeight;
+  final double startWeight;
+  final double goalWeight;
+  final double goalProgress;
 
-  const _GoalProgressCard({required this.mainCtrl});
+  const _GoalProgressCard({
+    required this.mainCtrl,
+    required this.currentWeight,
+    required this.startWeight,
+    required this.goalWeight,
+    required this.goalProgress,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -464,7 +542,10 @@ class _GoalProgressCard extends StatelessWidget {
                       ),
                 ),
                 const Spacer(),
-                _ProgressBadge(mainCtrl: mainCtrl, text: '51% Complete'),
+                _ProgressBadge(
+                  mainCtrl: mainCtrl,
+                  text: '${goalProgress.toStringAsFixed(0)}% Complete',
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -476,11 +557,12 @@ class _GoalProgressCard extends StatelessWidget {
                   parent: mainCtrl,
                   curve: const Interval(0.30, 0.56, curve: Curves.easeInOutQuart),
                 ).value);
+                final clampedProgress = (goalProgress / 100).clamp(0.0, 1.0);
                 return ClipRRect(
                   borderRadius: BorderRadius.circular(999),
                   child: LinearProgressIndicator(
                     minHeight: 10,
-                    value: 0.51 * barT,
+                    value: clampedProgress * barT,
                     backgroundColor: const Color(0xFFE7E3EF),
                     valueColor: const AlwaysStoppedAnimation<Color>(_purple),
                   ),
@@ -501,18 +583,18 @@ class _GoalProgressCard extends StatelessWidget {
                   children: [
                     _MiniStat(
                       label: 'START',
-                      value: '${(77 * countT).round()}kg',
+                      value: '${(startWeight * countT).round()}kg',
                       valueSize: 16,
                     ),
                     _MiniStat(
                       label: 'CURRENT',
-                      value: '${(72.4 * countT).toStringAsFixed(1)}kg',
+                      value: '${(currentWeight * countT).toStringAsFixed(1)}kg',
                       valueSize: 18,
                       accent: _purple,
                     ),
                     _MiniStat(
                       label: 'GOAL',
-                      value: '${(68 * countT).round()}kg',
+                      value: '${(goalWeight * countT).round()}kg',
                       valueSize: 16,
                     ),
                   ],
@@ -749,8 +831,12 @@ class _BmiCard extends StatelessWidget {
 // ─────────────────────────────────────────────
 class _WeightFab extends StatelessWidget {
   final Animation<double> mainCtrl;
+  final VoidCallback onAddWeight;
 
-  const _WeightFab({required this.mainCtrl});
+  const _WeightFab({
+    required this.mainCtrl,
+    required this.onAddWeight,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -765,7 +851,7 @@ class _WeightFab extends StatelessWidget {
         return Transform.scale(
           scale: scale,
           child: FloatingActionButton(
-            onPressed: () {},
+            onPressed: onAddWeight,
             backgroundColor: _purple,
             elevation: 6,
             child: const Icon(Icons.add_rounded, color: Colors.white, size: 30),
@@ -779,6 +865,258 @@ class _WeightFab extends StatelessWidget {
 // ─────────────────────────────────────────────
 //  Shared Widgets
 // ─────────────────────────────────────────────
+
+// ─── Weight Entry Bottom Sheet ───
+class WeightEntryBottomSheet extends StatefulWidget {
+  final Function(double, DateTime) onWeightAdded;
+  final double currentWeight;
+
+  const WeightEntryBottomSheet({
+    required this.onWeightAdded,
+    required this.currentWeight,
+  });
+
+  @override
+  State<WeightEntryBottomSheet> createState() => _WeightEntryBottomSheetState();
+}
+
+class _WeightEntryBottomSheetState extends State<WeightEntryBottomSheet> {
+  late TextEditingController _weightController;
+  DateTime selectedDate = DateTime.now();
+  bool isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _weightController = TextEditingController(
+      text: widget.currentWeight.toStringAsFixed(1),
+    );
+  }
+
+  @override
+  void dispose() {
+    _weightController.dispose();
+    super.dispose();
+  }
+
+  void _handleSave() {
+    final weight = double.tryParse(_weightController.text);
+    if (weight == null || weight <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid weight')),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
+    // Simulate save with delay
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        widget.onWeightAdded(weight, selectedDate);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 200),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: _surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ── Header ──
+            Row(
+              children: [
+                const Text(
+                  'Log Weight',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: _textPrimary,
+                  ),
+                ),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(Icons.close_rounded, color: _textSecondary),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // ── Date Selector ──
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Date',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: _textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate,
+                      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setState(() => selectedDate = picked);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: _border),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_today_rounded, size: 18, color: _textSecondary),
+                        const SizedBox(width: 10),
+                        Text(
+                          DateFormat('MMM dd, yyyy').format(selectedDate),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: _textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+
+            // ── Weight Input ──
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Weight (kg)',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: _textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _weightController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: _textPrimary,
+                  ),
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: _border),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: _border),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: _purple, width: 2),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    hintText: 'Enter weight',
+                    hintStyle: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFFB0ADB9),
+                    ),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // ── Action Buttons ──
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: _border),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: _textPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: isLoading ? null : _handleSave,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _purple,
+                      disabledBackgroundColor: _purple.withOpacity(0.5),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Text(
+                            'Save',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+//  Shared Widgets
+// ─────────────────────────────────────────────
+
 class _IconButton extends StatelessWidget {
   const _IconButton({required this.icon, required this.onTap});
   final IconData icon;
