@@ -10,8 +10,55 @@ const _textSecondary = Color(0xFF6F6C7B);
 const _border = Color(0xFFE7E3EF);
 const _borderStrong = Color(0xFF5B4EE8);
 
-class SubscriptionScreen extends StatelessWidget {
+class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
+
+  @override
+  State<SubscriptionScreen> createState() => _SubscriptionScreenState();
+}
+
+class _SubscriptionScreenState extends State<SubscriptionScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _animController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 1800),
+      vsync: this,
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  Widget _staggered({
+    required Widget child,
+    required double start,
+    required double end,
+    double offsetY = 24,
+  }) {
+    final animation = CurvedAnimation(
+      parent: _animController,
+      curve: Interval(start, end, curve: Curves.easeOutCubic),
+    );
+
+    return AnimatedBuilder(
+      animation: animation,
+      child: child,
+      builder: (context, child) {
+        final t = animation.value;
+        return Transform.translate(
+          offset: Offset(0, offsetY * (1 - t)),
+          child: Opacity(opacity: t, child: child),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,167 +74,221 @@ class SubscriptionScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Row(
-                      children: [
-                        _IconButton(
-                          icon: Icons.arrow_back_ios_new_rounded,
-                          onTap: () => Navigator.of(context).maybePop(),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          'Upgrade to Pro',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w700,
-                                color: _textPrimary,
-                              ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 30),
-                    Center(
-                      child: Container(
-                        width: 78,
-                        height: 78,
-                        decoration: const BoxDecoration(
-                          color: _purple,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.workspace_premium_outlined,
-                          size: 40,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Text(
-                      'Master Your Nutrition',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontSize: 31,
-                            fontWeight: FontWeight.w800,
-                            color: _textPrimary,
-                            height: 1.05,
+                    _staggered(
+                      start: 0.0,
+                      end: 0.18,
+                      offsetY: 12,
+                      child: Row(
+                        children: [
+                          _IconButton(
+                            icon: Icons.arrow_back_ios_new_rounded,
+                            onTap: () => Navigator.of(context).maybePop(),
                           ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Unlock the full power of AI-driven\nwellness and reach your goals 2x faster.',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            fontSize: 16,
-                            height: 1.35,
-                            fontWeight: FontWeight.w500,
-                            color: _textSecondary,
-                          ),
-                    ),
-                    const SizedBox(height: 30),
-                    Row(
-                      children: [
-                        Text(
-                          'Premium Benefits',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                                color: _textPrimary,
-                              ),
-                        ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: _purpleSoft,
-                            borderRadius: BorderRadius.circular(999),
-                            border: Border.all(color: const Color(0xFFD7D0F7)),
-                          ),
-                          child: Text(
-                            'ALL FEATURES UNLOCKED',
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: _purple,
-                                  letterSpacing: 0.4,
+                          const SizedBox(width: 10),
+                          Text(
+                            'Upgrade to Pro',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  color: _textPrimary,
                                 ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    const Row(
-                      children: [
-                        Expanded(
-                          child: _BenefitCard(
-                            icon: Icons.bolt_rounded,
-                            title: 'Infinite Scanning',
-                            subtitle: 'No daily limits on food lookups',
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: _BenefitCard(
-                            icon: Icons.auto_awesome_rounded,
-                            title: 'Pro AI Coach',
-                            subtitle: '24/7 dedicated nutrition advice',
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    const Row(
-                      children: [
-                        Expanded(
-                          child: _BenefitCard(
-                            icon: Icons.bar_chart_rounded,
-                            title: 'Advanced Stats',
-                            subtitle: 'Detailed micro & macro tracking',
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: _BenefitCard(
-                            icon: Icons.smartphone_outlined,
-                            title: 'Offline Mode',
-                            subtitle: 'Scan meals without an internet connection',
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 30),
-                    Text(
-                      'Choose Your Plan',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            color: _textPrimary,
+                    _staggered(
+                      start: 0.1,
+                      end: 0.28,
+                      offsetY: 18,
+                      child: Column(
+                        children: [
+                          Center(
+                            child: Container(
+                              width: 78,
+                              height: 78,
+                              decoration: const BoxDecoration(
+                                color: _purple,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.workspace_premium_outlined,
+                                size: 40,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
+                          const SizedBox(height: 18),
+                          Text(
+                            'Master Your Nutrition',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                  fontSize: 31,
+                                  fontWeight: FontWeight.w800,
+                                  color: _textPrimary,
+                                  height: 1.05,
+                                ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Unlock the full power of AI-driven\nwellness and reach your goals 2x faster.',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                  fontSize: 16,
+                                  height: 1.35,
+                                  fontWeight: FontWeight.w500,
+                                  color: _textSecondary,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    _staggered(
+                      start: 0.22,
+                      end: 0.36,
+                      offsetY: 20,
+                      child: Row(
+                        children: [
+                          Text(
+                            'Premium Benefits',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: _textPrimary,
+                                ),
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: _purpleSoft,
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(color: const Color(0xFFD7D0F7)),
+                            ),
+                            child: Text(
+                              'ALL FEATURES UNLOCKED',
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: _purple,
+                                    letterSpacing: 0.4,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    _staggered(
+                      start: 0.30,
+                      end: 0.46,
+                      offsetY: 24,
+                      child: const Row(
+                        children: [
+                          Expanded(
+                            child: _BenefitCard(
+                              icon: Icons.bolt_rounded,
+                              title: 'Infinite Scanning',
+                              subtitle: 'No daily limits on food lookups',
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: _BenefitCard(
+                              icon: Icons.auto_awesome_rounded,
+                              title: 'Pro AI Coach',
+                              subtitle: '24/7 dedicated nutrition advice',
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 12),
-                    const _PlanCard(
-                      title: 'Monthly Access',
-                      price: r'$9.99',
-                      period: '/mo',
-                      selected: false,
+                    _staggered(
+                      start: 0.34,
+                      end: 0.50,
+                      offsetY: 24,
+                      child: const Row(
+                        children: [
+                          Expanded(
+                            child: _BenefitCard(
+                              icon: Icons.bar_chart_rounded,
+                              title: 'Advanced Stats',
+                              subtitle: 'Detailed micro & macro tracking',
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: _BenefitCard(
+                              icon: Icons.smartphone_outlined,
+                              title: 'Offline Mode',
+                              subtitle: 'Scan meals without an internet connection',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    _staggered(
+                      start: 0.42,
+                      end: 0.56,
+                      offsetY: 18,
+                      child: Text(
+                        'Choose Your Plan',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: _textPrimary,
+                            ),
+                      ),
                     ),
                     const SizedBox(height: 12),
-                    const _PlanCard(
-                      title: 'Annual Premium',
-                      price: r'$4.99',
-                      period: '/mo',
-                      selected: true,
-                      tag: 'BEST VALUE',
-                      subline: 'SAVE 50%',
+                    _staggered(
+                      start: 0.46,
+                      end: 0.62,
+                      offsetY: 20,
+                      child: const _PlanCard(
+                        title: 'Monthly Access',
+                        price: r'$9.99',
+                        period: '/mo',
+                        selected: false,
+                      ),
                     ),
                     const SizedBox(height: 12),
-                    const _PlanCard(
-                      title: 'Lifetime Legend',
-                      price: r'$99.99',
-                      period: 'once',
-                      selected: false,
-                      subline: 'ONE TIME',
+                    _staggered(
+                      start: 0.50,
+                      end: 0.66,
+                      offsetY: 20,
+                      child: const _PlanCard(
+                        title: 'Annual Premium',
+                        price: r'$4.99',
+                        period: '/mo',
+                        selected: true,
+                        tag: 'BEST VALUE',
+                        subline: 'SAVE 50%',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _staggered(
+                      start: 0.54,
+                      end: 0.70,
+                      offsetY: 20,
+                      child: const _PlanCard(
+                        title: 'Lifetime Legend',
+                        price: r'$99.99',
+                        period: 'once',
+                        selected: false,
+                        subline: 'ONE TIME',
+                      ),
                     ),
                     const SizedBox(height: 24),
-                    const _SocialProofCard(),
+                    _staggered(
+                      start: 0.62,
+                      end: 0.76,
+                      offsetY: 22,
+                      child: const _SocialProofCard(),
+                    ),
                     const SizedBox(height: 96),
                   ],
                 ),
@@ -195,33 +296,38 @@ class SubscriptionScreen extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(18, 0, 18, 14),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _purple,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    minimumSize: const Size.fromHeight(58),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Text(
-                        'Start 7-Day Free Trial',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
+              child: _staggered(
+                start: 0.72,
+                end: 0.92,
+                offsetY: 20,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _purple,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      minimumSize: const Size.fromHeight(58),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      SizedBox(width: 10),
-                      Icon(Icons.arrow_forward_rounded, size: 22),
-                    ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Text(
+                          'Start 7-Day Free Trial',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        Icon(Icons.arrow_forward_rounded, size: 22),
+                      ],
+                    ),
                   ),
                 ),
               ),

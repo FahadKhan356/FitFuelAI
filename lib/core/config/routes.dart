@@ -17,6 +17,7 @@ import '../../features/onboarding/presentation/pages/goal_selection_screen.dart'
 import '../../features/profile/presentation/pages/profile_screen.dart';
 import '../../features/subscription/presentation/pages/subscription_screen.dart';
 import '../../features/water_tracker/presentation/pages/water_tracker_screen.dart';
+import '../../features/weight_tracker/presentation/pages/bmi_screen.dart';
 import '../../features/weight_tracker/presentation/pages/weight_tracker_screen.dart';
 import '../../features/home/presentation/pages/home_screen.dart';
 
@@ -37,6 +38,7 @@ class AppRoutes {
   static const String achievements = '/achievements';
   static const String profile = '/profile';
   static const String subscription = '/subscription';
+  static const String bmi = '/bmi';
   static const String notifications = '/notifications';
   static const String barcode = '/barcode';
 }
@@ -109,6 +111,10 @@ final goRouter = GoRouter(
     GoRoute(
       path: AppRoutes.weightTracker,
       builder: (context, state) => const WeightTrackerScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.bmi,
+      builder: (context, state) => const BmiScreen(),
     ),
     GoRoute(
       path: AppRoutes.analytics,

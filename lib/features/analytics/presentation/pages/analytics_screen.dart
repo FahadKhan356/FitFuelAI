@@ -333,7 +333,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
-                    getTitlesWidget: (value, meta) => Text('${(value / 1000).toStringAsFixed(1)}k', style: TextStyle(color: Colors.grey[600], fontSize: 10)),
+                    getTitlesWidget: (value, meta) => Text(value % 1000 == 0 ? '${(value / 1000).toStringAsFixed(1)}k' : '', style: TextStyle(color: Colors.grey[600], fontSize: 10)),
                     reservedSize: 35,
                   ),
                 ),
@@ -351,18 +351,28 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                   ],
                   isCurved: true,
                   color: const Color(0xFF6366FF),
-                  barWidth: 3,
+                  barWidth: 4,
                   isStrokeCapRound: true,
-                  dotData: FlDotData(show: false),
+                  dotData: FlDotData(
+                    show: true,
+                    checkToShowDot: (spot, barData) => spot.x % 1 == 0,
+                    getDotPainter: (spot, percent, barData, index) {
+                      return FlDotCirclePainter(
+                        radius: 3.5,
+                        color: const Color(0xFF6366FF),
+                        strokeWidth: 0,
+                      );
+                    },
+                  ),
                   belowBarData: BarAreaData(
                     show: areaT > 0,
-                    color: const Color(0xFF6366FF).withOpacity(areaT * 0.1),
+                    color: const Color(0xFF6366FF).withOpacity(areaT * 0.15),
                   ),
                 ),
               ],
               minX: 0,
               maxX: animatedMaxX.clamp(0.5, 5.0),
-              minY: 1500,
+              minY: 0,
               maxY: 2500,
             ),
             duration: const Duration(milliseconds: 1),
@@ -421,37 +431,47 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
                 parent: mc,
                 curve: const Interval(0.36, 0.72, curve: Curves.easeInOutQuart),
               ).value);
-              return SizedBox(
-                height: 160,
-                child: PieChart(
-                  PieChartData(
-                    sections: [
-                      PieChartSectionData(
-                        color: const Color(0xFF14B8A6),
-                        value: 120 * sweepT,
-                        title: sweepT > 0.8 ? '120g' : '',
-                        titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white),
-                        radius: 50,
-                      ),
-                      PieChartSectionData(
-                        color: const Color(0xFFFFA500),
-                        value: 240 * sweepT,
-                        title: sweepT > 0.8 ? '240g' : '',
-                        titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white),
-                        radius: 50,
-                      ),
-                      PieChartSectionData(
-                        color: const Color(0xFFEF4444),
-                        value: 65 * sweepT,
-                        title: sweepT > 0.8 ? '65g' : '',
-                        titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white),
-                        radius: 50,
-                      ),
-                    ],
-                    sectionsSpace: 2,
-                    centerSpaceRadius: 40,
+              final rotT = _clamp01(CurvedAnimation(
+                parent: mc,
+                curve: const Interval(0.36, 1.0, curve: Curves.easeInOut),
+              ).value);
+              return Transform.rotate(
+                angle: rotT * math.pi / 6,
+                child: SizedBox(
+                  height: 160,
+                  child: PieChart(
+                    PieChartData(
+                      sections: [
+                        PieChartSectionData(
+                          color: const Color(0xFF14B8A6),
+                          value: 120 * sweepT,
+                          title: sweepT > 0.75 ? '120g' : '',
+                          titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white),
+                          radius: 52,
+                          titlePositionPercentageOffset: 0.64,
+                        ),
+                        PieChartSectionData(
+                          color: const Color(0xFFFFA500),
+                          value: 240 * sweepT,
+                          title: sweepT > 0.75 ? '240g' : '',
+                          titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white),
+                          radius: 52,
+                          titlePositionPercentageOffset: 0.64,
+                        ),
+                        PieChartSectionData(
+                          color: const Color(0xFFEF4444),
+                          value: 65 * sweepT,
+                          title: sweepT > 0.75 ? '65g' : '',
+                          titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white),
+                          radius: 52,
+                          titlePositionPercentageOffset: 0.64,
+                        ),
+                      ],
+                      sectionsSpace: 2,
+                      centerSpaceRadius: 42,
+                    ),
+                    duration: const Duration(milliseconds: 1),
                   ),
-                  duration: const Duration(milliseconds: 1),
                 ),
               );
             },
@@ -872,6 +892,8 @@ class _MacroLegendItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final numericValue = double.tryParse(value.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
+    final suffix = value.replaceAll(RegExp(r'[0-9.]'), '');
     final staggerDelay = 0.38 + (index * 0.08);
     return AnimatedBuilder(
       animation: mainController,
@@ -894,7 +916,16 @@ class _MacroLegendItem extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[700])),
-              Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black)),
+              AnimatedBuilder(
+                animation: mainController,
+                builder: (context, child) {
+                  final t = _clamp01(CurvedAnimation(
+                    parent: mainController,
+                    curve: Interval(staggerDelay, staggerDelay + 0.20, curve: Curves.easeOutCubic),
+                  ).value);
+                  return Text('${(numericValue * t).round()}$suffix', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black));
+                },
+              ),
             ],
           ),
         ],

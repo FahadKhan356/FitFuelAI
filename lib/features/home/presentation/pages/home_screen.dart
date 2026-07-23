@@ -195,6 +195,82 @@ class _HomeContentState extends State<_HomeContent>
                 Expanded(child: _AICoachCard(animation: _entryController)),
               ],
             ),
+            const SizedBox(height: 14),
+            AnimatedBuilder(
+              animation: _entryController,
+              builder: (context, child) {
+                final t = CurvedAnimation(
+                  parent: _entryController,
+                  curve: const Interval(0.40, 0.60, curve: Curves.easeOutCubic),
+                ).value;
+                return Opacity(
+                  opacity: t,
+                  child: Transform.translate(
+                    offset: Offset(0, 28 * (1 - t)),
+                    child: child,
+                  ),
+                );
+              },
+              child: GestureDetector(
+                onTap: () => context.push(AppRoutes.bmi),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: kWhite,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: kBorder, width: 1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.03),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: kPurpleLight,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(Icons.monitor_weight_rounded, color: kPurple, size: 24),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'BMI Calculator',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: kHeadline,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Check your body mass index and healthy range in one tap.',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: kBody,
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios, size: 18, color: kPurple),
+                    ],
+                  ),
+                ),
+              ),
+            ),
 
             const SizedBox(height: 22),
 
