@@ -8,8 +8,18 @@ class FoodScanRepositoryImpl implements FoodScanRepository {
   FoodScanRepositoryImpl(this._dataSource);
 
   @override
-  Future<FoodScanResultEntity> saveScanResult(Map<String, dynamic> data) async {
-    final model = await _dataSource.saveScanResult(data);
+  Future<FoodScanResultEntity> saveScanResult({
+    required String userId,
+    required String imageUrl,
+    required Map<String, dynamic> rawResult,
+    required double confidence,
+  }) async {
+    final model = await _dataSource.saveScanResult({
+      'user_id': userId,
+      'scan_image_url': imageUrl,
+      'scan_result': rawResult,
+      'confidence': confidence,
+    });
     return FoodScanResultEntity(
       id: model.id,
       userId: model.userId,
@@ -19,5 +29,19 @@ class FoodScanRepositoryImpl implements FoodScanRepository {
       scanType: model.scanType,
       createdAt: model.createdAt,
     );
+  }
+
+  @override
+  Future<List<FoodScanResultEntity>> getScanHistory(String userId) async {
+    final models = await _dataSource.getScanHistory(userId);
+    return models.map((m) => FoodScanResultEntity(
+      id: m.id,
+      userId: m.userId,
+      scanImageUrl: m.scanImageUrl,
+      scanResult: m.scanResult,
+      confidence: m.confidence,
+      scanType: m.scanType,
+      createdAt: m.createdAt,
+    )).toList();
   }
 }

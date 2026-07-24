@@ -75,12 +75,22 @@ class SearchFoodUseCase {
 // ==================== FOOD SCAN ====================
 class ScanFoodImageUseCase {
   final FoodScanRepository _repo; ScanFoodImageUseCase(this._repo);
-  Future<FoodScanResultEntity> call(Map<String, dynamic> data) => _repo.saveScanResult(data);
+  Future<FoodScanResultEntity> call({
+    required String userId,
+    required String imageUrl,
+    required Map<String, dynamic> rawResult,
+    required double confidence,
+  }) => _repo.saveScanResult(userId: userId, imageUrl: imageUrl, rawResult: rawResult, confidence: confidence);
 }
 
 class SaveScanResultUseCase {
   final FoodScanRepository _repo; SaveScanResultUseCase(this._repo);
-  Future<FoodScanResultEntity> call(Map<String, dynamic> data) => _repo.saveScanResult(data);
+  Future<FoodScanResultEntity> call({
+    required String userId,
+    required String imageUrl,
+    required Map<String, dynamic> rawResult,
+    required double confidence,
+  }) => _repo.saveScanResult(userId: userId, imageUrl: imageUrl, rawResult: rawResult, confidence: confidence);
 }
 
 // ==================== BARCODE ====================

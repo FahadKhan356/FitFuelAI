@@ -146,6 +146,16 @@ class SupabaseRemoteDataSource {
     return ScanResultModel.fromJson(response as Map<String, dynamic>);
   }
 
+  Future<List<ScanResultModel>> getScanHistory(String userId) async {
+    final response = await _client
+        .from('food_scans')
+        .select()
+        .eq('user_id', userId)
+        .order('created_at', ascending: false)
+        .limit(50);
+    return (response as List).map((e) => ScanResultModel.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
   // ==================== WATER ====================
   Future<List<WaterModel>> getWaterEntries(String userId, DateTime date) async {
     final dateStr = date.toIso8601String().split('T').first;
