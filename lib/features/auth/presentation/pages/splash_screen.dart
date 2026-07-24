@@ -4,6 +4,7 @@ import 'package:fitfuel_ai/core/config/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -48,14 +49,21 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted || _navigated) return;
     _navigated = true;
     HapticFeedback.mediumImpact();
-    
+
+    // Check if this is the first time user is opening the app
+    final prefs = await SharedPreferences.getInstance();
+    final isFirstTime = prefs.getBool('onboarding_completed') ?? false;
+
     // Check if user is already logged in
     final currentUser = Supabase.instance.client.auth.currentUser;
     if (currentUser != null) {
       // User is logged in, go to home
       context.go(AppRoutes.home);
+    } else if (!isFirstTime) {
+      // First time user, show onboarding to collect initial data
+      context.go(AppRoutes.onboarding);
     } else {
-      // User is not logged in, go to login
+      // User has completed onboarding before, go to login
       context.go(AppRoutes.login);
     }
   }

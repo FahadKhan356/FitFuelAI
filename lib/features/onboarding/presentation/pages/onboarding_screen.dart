@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/config/routes.dart';
 import '../../../../core/constants/app_colors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({Key? key}) : super(key: key);
@@ -13,13 +14,21 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   int currentStep = 0;
 
+  Future<void> _completeOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('onboarding_completed', true);
+    if (mounted) {
+      context.go(AppRoutes.login);
+    }
+  }
+
   @override 
   Widget build(BuildContext context) {
     // Page 0 → Intro hero | Pages 1-8 → form steps (kept for backwards compat)
     if (currentStep == 0) {
       return _IntroPage(
-        onGetStarted: () => context.go(AppRoutes.login),
-        onSkip: () => context.go(AppRoutes.login),
+        onGetStarted: _completeOnboarding,
+        onSkip: _completeOnboarding,
       );
     }
 
@@ -30,10 +39,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         if (currentStep < 8) {
           setState(() => currentStep++);
         } else {
-          context.go(AppRoutes.login);
+          _completeOnboarding();
         }
       },
-      onComplete: () => context.go(AppRoutes.login),
+      onComplete: _completeOnboarding,
     );
   }
 }
