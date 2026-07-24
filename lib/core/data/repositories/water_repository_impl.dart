@@ -34,4 +34,15 @@ class WaterRepositoryImpl implements WaterRepository {
       createdAt: model.createdAt,
     );
   }
+
+  @override
+  Future<void> deleteWaterEntry(String id) async {
+    await _dataSource.deleteWaterEntry(id);
+  }
+
+  @override
+  Future<int> getDailyWaterTotal(String userId, DateTime date) async {
+    final entries = await _dataSource.getWaterEntries(userId, date);
+    return entries.fold<int>(0, (sum, e) => sum + e.amountMl);
+  }
 }

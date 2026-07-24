@@ -3,6 +3,7 @@ import 'package:fitfuel_ai/features/meal_tracking/presentation/bloc/meal_trackin
 import 'package:fitfuel_ai/features/profile/data/repositories/profile_repository_impl.dart';
 import 'package:fitfuel_ai/features/profile/domain/repositories/profile_repository.dart';
 import 'package:fitfuel_ai/features/profile/presentation/bloc/profile_bloc.dart';
+import 'package:fitfuel_ai/features/water_tracker/presentation/bloc/water_tracker_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -87,6 +88,9 @@ Future<void> initDependencies() async {
   ));
   sl.registerFactory<MealTrackingBloc>(() => MealTrackingBloc(
     mealRepository: sl(),
+  ));
+  sl.registerFactory<WaterTrackerBloc>(() => WaterTrackerBloc(
+    waterRepository: sl(),
   ));
 }
 

@@ -162,6 +162,10 @@ class SupabaseRemoteDataSource {
     return WaterModel.fromJson(response as Map<String, dynamic>);
   }
 
+  Future<void> deleteWaterEntry(String id) async {
+    await _client.from('water_intake').delete().eq('id', id);
+  }
+
   // ==================== WEIGHT ====================
   Future<List<WeightModel>> getWeightEntries(String userId) async {
     final response = await _client
