@@ -71,12 +71,12 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
     _fadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 1200),
     )..forward();
 
     _slideController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 1000),
     )..forward();
 
     _pulseController = AnimationController(
@@ -257,21 +257,31 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
   Widget _buildNotificationCard(int index) {
     final notification = notifications[index];
-    final delay = index * 0.1;
+    final delay = index * 0.08;
 
     return AnimatedBuilder(
-      animation: _slideController,
+      animation: Listenable.merge([_slideController, _fadeController]),
       builder: (context, child) {
-        final slideValue = CurvedAnimation(
+        final slideAnimation = CurvedAnimation(
           parent: _slideController,
-          curve: Interval(delay, delay + 0.3, curve: Curves.easeOutCubic),
+          curve: Interval(delay, delay + 0.4, curve: Curves.easeOutCubic),
         ).value;
 
-        return Transform.translate(
-          offset: Offset(0, 30 * (1 - slideValue)),
-          child: Opacity(
-            opacity: slideValue,
-            child: child,
+        final fadeAnimation = CurvedAnimation(
+          parent: _fadeController,
+          curve: Interval(delay, delay + 0.5, curve: Curves.easeIn),
+        ).value;
+
+        final scaleAnimation = 1.0 - (0.1 * (1 - slideAnimation));
+
+        return Transform.scale(
+          scale: scaleAnimation,
+          child: Transform.translate(
+            offset: Offset(0, 40 * (1 - slideAnimation)),
+            child: Opacity(
+              opacity: fadeAnimation,
+              child: child,
+            ),
           ),
         );
       },
