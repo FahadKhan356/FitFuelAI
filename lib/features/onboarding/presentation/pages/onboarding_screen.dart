@@ -18,8 +18,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     // Page 0 → Intro hero | Pages 1-8 → form steps (kept for backwards compat)
     if (currentStep == 0) {
       return _IntroPage(
-        onGetStarted: () => context.go(AppRoutes.home),
-        onSkip: () => context.go(AppRoutes.home),
+        onGetStarted: () => context.go(AppRoutes.login),
+        onSkip: () => context.go(AppRoutes.login),
       );
     }
 
