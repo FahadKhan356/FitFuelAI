@@ -30,10 +30,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         if (currentStep < 8) {
           setState(() => currentStep++);
         } else {
-          context.go(AppRoutes.home);
+          context.go(AppRoutes.login);
         }
       },
-      onComplete: () => context.go(AppRoutes.home),
+      onComplete: () => context.go(AppRoutes.login),
     );
   }
 }
