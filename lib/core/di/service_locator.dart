@@ -4,6 +4,7 @@ import 'package:fitfuel_ai/features/profile/data/repositories/profile_repository
 import 'package:fitfuel_ai/features/profile/domain/repositories/profile_repository.dart';
 import 'package:fitfuel_ai/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:fitfuel_ai/features/water_tracker/presentation/bloc/water_tracker_bloc.dart';
+import 'package:fitfuel_ai/features/weight_tracker/presentation/bloc/weight_tracker_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -91,6 +92,9 @@ Future<void> initDependencies() async {
   ));
   sl.registerFactory<WaterTrackerBloc>(() => WaterTrackerBloc(
     waterRepository: sl(),
+  ));
+  sl.registerFactory<WeightTrackerBloc>(() => WeightTrackerBloc(
+    weightRepository: sl(),
   ));
 }
 
