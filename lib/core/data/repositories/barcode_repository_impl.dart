@@ -24,7 +24,14 @@ class BarcodeRepositoryImpl implements BarcodeRepository {
   }
 
   @override
-  Future<void> saveBarcodeProduct(Map<String, dynamic> data) async {
-    await _dataSource.saveBarcodeProduct(data);
+  Future<void> saveBarcodeProduct(BarcodeProductEntity product) async {
+    await _dataSource.saveBarcodeProduct({
+      'barcode': product.barcode,
+      'product_name': product.productName,
+      if (product.brand != null) 'brand': product.brand,
+      if (product.calories != null) 'calories': product.calories,
+      if (product.nutritionData != null) 'nutrition_data': product.nutritionData,
+      'source': product.source,
+    });
   }
 }
