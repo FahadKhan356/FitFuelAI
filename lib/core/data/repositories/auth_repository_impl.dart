@@ -18,6 +18,13 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<UserEntity> signUpWithEmail(String email, String password) async {
     final response = await _supabase.auth.signUp(email: email, password: password);
     final user = response.user!;
+    
+    // Create user profile in user_profiles table
+    await _supabase.from('user_profiles').upsert({
+      'user_id': user.id,
+      'email': user.email,
+    });
+    
     return UserEntity(id: user.id, email: user.email);
   }
 
