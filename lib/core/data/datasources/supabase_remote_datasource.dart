@@ -259,4 +259,20 @@ class SupabaseRemoteDataSource {
     if (response == null) return null;
     return SubscriptionModel.fromJson(response as Map<String, dynamic>);
   }
+
+  // ==================== NOTIFICATIONS ====================
+  Future<List<Map<String, dynamic>>> getNotificationSettings(String userId) async {
+    final response = await _client
+        .from('notifications')
+        .select()
+        .eq('user_id', userId);
+    return (response as List).cast<Map<String, dynamic>>();
+  }
+
+  Future<void> toggleNotification(String notificationId, bool isEnabled) async {
+    await _client
+        .from('notifications')
+        .update({'is_enabled': isEnabled})
+        .eq('id', notificationId);
+  }
 }

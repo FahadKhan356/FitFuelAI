@@ -1,6 +1,9 @@
 import 'package:fitfuel_ai/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:fitfuel_ai/features/barcode/presentation/bloc/barcode_bloc.dart';
 import 'package:fitfuel_ai/features/food_scanner/presentation/bloc/food_scan_bloc.dart';
+import 'package:fitfuel_ai/features/notifications/data/repositories/notification_repository_impl.dart';
+import 'package:fitfuel_ai/features/notifications/domain/repositories/notification_repository.dart';
+import 'package:fitfuel_ai/features/notifications/presentation/bloc/notifications_bloc.dart';
 import 'package:fitfuel_ai/features/meal_tracking/presentation/bloc/meal_tracking_bloc.dart';
 import 'package:fitfuel_ai/features/profile/data/repositories/profile_repository_impl.dart';
 import 'package:fitfuel_ai/features/profile/domain/repositories/profile_repository.dart';
@@ -103,6 +106,9 @@ Future<void> initDependencies() async {
   ));
   sl.registerFactory<FoodScanBloc>(() => FoodScanBloc(
     foodScanRepository: sl(),
+  ));
+  sl.registerFactory<NotificationsBloc>(() => NotificationsBloc(
+    notificationRepository: sl(),
   ));
 }
 
