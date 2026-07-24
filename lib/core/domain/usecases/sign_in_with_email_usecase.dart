@@ -1,4 +1,6 @@
-import '../entities/user_entity.dart';
+
+import 'package:fitfuel_ai/core/domain/entities/user_entity.dart';
+
 import '../repositories/auth_repository.dart';
 
 class SignInWithEmailUseCase {

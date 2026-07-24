@@ -1,4 +1,6 @@
-import '../entities/user_entity.dart';
+
+import 'package:fitfuel_ai/core/domain/entities/user_entity.dart';
+
 import '../entities/meal_entity.dart';
 import '../entities/food_item_entity.dart';
 import '../entities/barcode_product_entity.dart';
