@@ -383,7 +383,7 @@ class _BenefitCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 155,
+      height: 190,
       padding: const EdgeInsets.fromLTRB(14, 16, 14, 14),
       decoration: BoxDecoration(
         color: _surface,

@@ -1,11 +1,13 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class AppConstants {
   // App Info
   static const String appName = 'FITFUEL AI';
   static const String appVersion = '1.0.0';
 
-  // API Endpoints
-  static const String supabaseUrl = 'https://your-project.supabase.co';
-  static const String supabaseAnonKey = 'your-anon-key';
+  // Supabase Configuration (from .env file)
+  static String get supabaseUrl => dotenv.env['SUPABASE_URL'] ?? 'YOUR_SUPABASE_URL_HERE';
+  static String get supabaseAnonKey => dotenv.env['SUPABASE_ANON_KEY'] ?? 'YOUR_SUPABASE_ANON_KEY_HERE';
 
   // Timeouts
   static const int apiTimeoutSeconds = 30;
