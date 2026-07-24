@@ -4,6 +4,7 @@ import 'package:fitfuel_ai/core/config/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -43,11 +44,20 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _initInitializationProcess() async {
-    await Future.delayed(const Duration(seconds: 10));
+    await Future.delayed(const Duration(seconds: 3));
     if (!mounted || _navigated) return;
     _navigated = true;
     HapticFeedback.mediumImpact();
-    context.go(AppRoutes.onboarding);
+    
+    // Check if user is already logged in
+    final currentUser = Supabase.instance.client.auth.currentUser;
+    if (currentUser != null) {
+      // User is logged in, go to home
+      context.go(AppRoutes.home);
+    } else {
+      // User is not logged in, go to onboarding
+      context.go(AppRoutes.onboarding);
+    }
   }
 
   @override
