@@ -22,12 +22,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
+  void _goToLogin() {
+    context.go(AppRoutes.login);
+  }
+
   @override 
   Widget build(BuildContext context) {
     // Page 0 → Intro hero | Pages 1-8 → form steps (kept for backwards compat)
     if (currentStep == 0) {
       return _IntroPage(
-        onGetStarted: _completeOnboarding,
+        onGetStarted: _goToLogin,
         onSkip: _completeOnboarding,
       );
     }
