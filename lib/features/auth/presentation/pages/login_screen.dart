@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/config/routes.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../bloc/auth_bloc.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -14,6 +16,45 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _listenToAuthState();
+  }
+
+  void _listenToAuthState() {
+    final authBloc = context.read<AuthBloc>();
+    authBloc.stream.listen((state) {
+      if (state is Authenticated && mounted) {
+        context.go(AppRoutes.home);
+      } else if (state is AuthError && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(state.message),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
+  }
+
+  Future<void> _handleSignIn() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill all fields'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    context.read<AuthBloc>().add(SignInRequested(email, password));
+  }
 
   @override
   void dispose() {
@@ -217,10 +258,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 12),
 
                     // ── Sign In button ──
-                     _AuthButton(
-                       label: 'Sign In',
-                       onTap: () => context.go(AppRoutes.home),
-                     ),
+                    _AuthButton(
+                      label: 'Sign In',
+                      onTap: _handleSignIn,
+                    ),
 
                     const SizedBox(height: 24),
 

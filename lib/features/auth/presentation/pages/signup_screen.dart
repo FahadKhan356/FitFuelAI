@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/config/routes.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../bloc/auth_bloc.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({Key? key}) : super(key: key);
@@ -19,12 +21,84 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _obscureConfirm = true;
 
   @override
+  void initState() {
+    super.initState();
+    _listenToAuthState();
+  }
+
+  void _listenToAuthState() {
+    final authBloc = context.read<AuthBloc>();
+    authBloc.stream.listen((state) {
+      if (state is Authenticated && mounted) {
+        context.go(AppRoutes.home);
+      } else if (state is AuthError && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(state.message),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleSignUp() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    // Validation
+    if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill all fields'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Passwords do not match'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (password.length < 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password must be at least 8 characters'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Show loading
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Creating account...'),
+        duration: Duration(seconds: 1),
+      ),
+    );
+
+    // Dispatch sign up event
+    context.read<AuthBloc>().add(SignUpRequested(email, password));
   }
 
   @override
@@ -142,10 +216,10 @@ class _SignupScreenState extends State<SignupScreen> {
                     const SizedBox(height: 24),
 
                     // ── Create Account button ──
-                     _AuthButton(
-                       label: 'Create Account',
-                       onTap: () => context.go(AppRoutes.home),
-                     ),
+                    _AuthButton(
+                      label: 'Create Account',
+                      onTap: _handleSignUp,
+                    ),
 
                     const SizedBox(height: 20),
                   ],
