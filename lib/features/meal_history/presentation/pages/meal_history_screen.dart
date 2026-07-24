@@ -1,5 +1,6 @@
 import 'package:fitfuel_ai/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 const _bg = Color(0xFFF7F6FB);
 const _surface = Colors.white;
@@ -537,92 +538,66 @@ class _MealThumb extends StatelessWidget {
 
   final _ThumbnailStyle style;
 
+  String get _imageUrl {
+    switch (style) {
+      case _ThumbnailStyle.salmon:
+        return 'https://images.unsplash.com/photo-1514626223051-948b6d909d2c?w=200&h=200&fit=crop';
+      case _ThumbnailStyle.yogurt:
+        return 'https://images.unsplash.com/photo-1488351453617-0c765f57d0c0?w=200&h=200&fit=crop';
+      case _ThumbnailStyle.tofu:
+        return 'https://images.unsplash.com/photo-1546069901-2272e0000035?w=200&h=200&fit=crop';
+      case _ThumbnailStyle.almonds:
+        return 'https://images.unsplash.com/photo-1574325471462-848c6d3b3f9e?w=200&h=200&fit=crop';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final config = switch (style) {
-      _ThumbnailStyle.salmon => (
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFF2D6B5), Color(0xFFD79A6B)],
-          ),
-          icon: Icons.set_meal_rounded,
-          iconColor: Color(0xFF8A4E26),
-        ),
-      _ThumbnailStyle.yogurt => (
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFF1E4CF), Color(0xFFC39A6B)],
-          ),
-          icon: Icons.breakfast_dining_rounded,
-          iconColor: Color(0xFF7B5327),
-        ),
-      _ThumbnailStyle.tofu => (
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFDAB58C), Color(0xFF9A6A43)],
-          ),
-          icon: Icons.dinner_dining_rounded,
-          iconColor: Color(0xFF5C3C23),
-        ),
-      _ThumbnailStyle.almonds => (
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFE9D3B4), Color(0xFFB98D5E)],
-          ),
-          icon: Icons.lunch_dining_rounded,
-          iconColor: Color(0xFF6A4322),
-        ),
-    };
-
     return Container(
       width: 86,
       height: 86,
       decoration: BoxDecoration(
-        gradient: config.gradient,
         borderRadius: BorderRadius.circular(14),
       ),
-      child: Stack(
-        children: [
-          Positioned(
-            left: 10,
-            top: 10,
-            child: Container(
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.35),
-                shape: BoxShape.circle,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: CachedNetworkImage(
+          imageUrl: _imageUrl,
+          placeholder: (context, url) => Container(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFF2D6B5), Color(0xFFD79A6B)],
+              ),
+            ),
+            child: const Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white70,
+                ),
               ),
             ),
           ),
-          Positioned(
-            right: 10,
-            bottom: 10,
-            child: Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.22),
-                shape: BoxShape.circle,
+          errorWidget: (context, url, error) => Container(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFF2D6B5), Color(0xFFD79A6B)],
               ),
             ),
-          ),
-          Center(
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.55),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(config.icon, color: config.iconColor, size: 24),
+            child: const Center(
+              child: Icon(Icons.set_meal_rounded, size: 24, color: Color(0xFF8A4E26)),
             ),
           ),
-        ],
+          fit: BoxFit.cover,
+          width: 86,
+          height: 86,
+        ),
       ),
     );
   }
