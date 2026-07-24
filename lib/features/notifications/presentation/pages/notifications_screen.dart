@@ -166,25 +166,29 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
           const SizedBox(width: 16),
 
-          // Title with badge
+          // Title with badge - wrapped in Expanded for proper sizing
           Expanded(
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  'Notifications',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: Color(AppColors.textPrimary),
-                    letterSpacing: -0.3,
+                Flexible(
+                  child: Text(
+                    'Notifications',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Color(AppColors.textPrimary),
+                      letterSpacing: -0.3,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
 
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
 
                 // Unread badge
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [
@@ -194,28 +198,30 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
                         color: Color(AppColors.authPurple).withValues(alpha: 0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
                       ),
                     ],
                   ),
                   child: Text(
                     '2 new',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
-                      letterSpacing: 0.3,
+                      letterSpacing: 0.2,
                     ),
                   ),
                 ),
               ],
             ),
           ),
+
+          const SizedBox(width: 8),
 
           // Mark all as read button
           GestureDetector(
@@ -224,10 +230,10 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               // TODO: Mark all as read logic
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: Color(AppColors.authPurpleBg),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: Color(AppColors.authPurple).withValues(alpha: 0.2),
                   width: 1.2,
@@ -236,7 +242,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               child: Text(
                 'Mark all read',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: Color(AppColors.authPurple),
                   letterSpacing: 0.2,
@@ -362,7 +368,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                       children: [
                         Row(
                           children: [
-                            Expanded(
+                            Flexible(
                               child: Text(
                                 notification.title,
                                 style: TextStyle(
@@ -373,9 +379,12 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                                   color: Color(AppColors.textPrimary),
                                   letterSpacing: -0.2,
                                 ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
                               ),
                             ),
-                            if (notification.isUnread)
+                            if (notification.isUnread) ...[
+                              const SizedBox(width: 6),
                               Container(
                                 width: 8,
                                 height: 8,
@@ -391,6 +400,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                                   ],
                                 ),
                               ),
+                            ],
                           ],
                         ),
 
