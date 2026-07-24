@@ -2,6 +2,8 @@ import 'package:fitfuel_ai/core/config/routes.dart';
 import 'package:fitfuel_ai/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 import 'dart:math' as math;
 
 const _bg = Color(0xFFF5F5FA);
@@ -326,6 +328,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                   icon: Icons.logout_rounded,
                   title: 'Logout Account',
                   isLogout: true,
+                  onTap: () {
+                    context.read<AuthBloc>().add(SignOutRequested());
+                    context.go(AppRoutes.splash);
+                  },
                 ),
               ),
               const SizedBox(height: 10),
