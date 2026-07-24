@@ -1,4 +1,5 @@
 import 'package:fitfuel_ai/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:fitfuel_ai/features/meal_tracking/presentation/bloc/meal_tracking_bloc.dart';
 import 'package:fitfuel_ai/features/profile/data/repositories/profile_repository_impl.dart';
 import 'package:fitfuel_ai/features/profile/domain/repositories/profile_repository.dart';
 import 'package:fitfuel_ai/features/profile/presentation/bloc/profile_bloc.dart';
@@ -83,6 +84,9 @@ Future<void> initDependencies() async {
   ));
   sl.registerFactory<ProfileBloc>(() => ProfileBloc(
     profileRepository: sl(),
+  ));
+  sl.registerFactory<MealTrackingBloc>(() => MealTrackingBloc(
+    mealRepository: sl(),
   ));
 }
 

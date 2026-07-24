@@ -102,6 +102,19 @@ class SupabaseRemoteDataSource {
     return response as Map<String, dynamic>;
   }
 
+  Future<void> deleteMealItem(String itemId) async {
+    await _client.from('meal_items').delete().eq('id', itemId);
+  }
+
+  Future<Map<String, dynamic>?> getMealById(String mealId) async {
+    final response = await _client
+        .from('meals')
+        .select('*, meal_items(*)')
+        .eq('id', mealId)
+        .maybeSingle();
+    return response as Map<String, dynamic>?;
+  }
+
   // ==================== FOOD ITEMS ====================
   Future<List<FoodItemModel>> searchFoodItems(String query) async {
     final response = await _client
