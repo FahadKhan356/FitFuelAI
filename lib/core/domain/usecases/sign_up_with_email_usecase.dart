@@ -1,11 +1,11 @@
 import '../entities/user_entity.dart';
 import '../repositories/auth_repository.dart';
 
-class SignInWithEmailUseCase {
+class SignUpWithEmailUseCase {
   final AuthRepository _repository;
-  SignInWithEmailUseCase(this._repository);
+  SignUpWithEmailUseCase(this._repository);
 
   Future<UserEntity> call(String email, String password) {
-    return _repository.signInWithEmail(email, password);
+    return _repository.signUpWithEmail(email, password);
   }
 }
