@@ -55,8 +55,8 @@ class _SplashScreenState extends State<SplashScreen>
       // User is logged in, go to home
       context.go(AppRoutes.home);
     } else {
-      // User is not logged in, go to onboarding
-      context.go(AppRoutes.onboarding);
+      // User is not logged in, go to login
+      context.go(AppRoutes.login);
     }
   }
 
