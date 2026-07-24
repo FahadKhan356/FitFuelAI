@@ -71,12 +71,12 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
     _fadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 800),
     )..forward();
 
     _slideController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: 600),
     )..forward();
 
     _pulseController = AnimationController(
@@ -108,24 +108,12 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
             // ── Notification List ──
             Expanded(
-              child: AnimatedBuilder(
-                animation: _fadeController,
-                builder: (context, child) {
-                  return FadeTransition(
-                    opacity: CurvedAnimation(
-                      parent: _fadeController,
-                      curve: Curves.easeInOut,
-                    ),
-                    child: child,
-                  );
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                itemCount: notifications.length,
+                itemBuilder: (context, index) {
+                  return _buildNotificationCard(index);
                 },
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: notifications.length,
-                  itemBuilder: (context, index) {
-                    return _buildNotificationCard(index);
-                  },
-                ),
               ),
             ),
           ],
