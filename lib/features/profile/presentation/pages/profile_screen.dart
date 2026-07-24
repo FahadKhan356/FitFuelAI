@@ -35,6 +35,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   void initState() {
     super.initState();
+    _listenToAuthState();
     _mainCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 4800),
@@ -55,6 +56,15 @@ class _ProfileScreenState extends State<ProfileScreen>
       vsync: this,
       duration: const Duration(milliseconds: 4500),
     )..repeat();
+  }
+
+  void _listenToAuthState() {
+    final authBloc = context.read<AuthBloc>();
+    authBloc.stream.listen((state) {
+      if (state is Unauthenticated && mounted) {
+        context.go(AppRoutes.splash);
+      }
+    });
   }
 
   @override
@@ -330,7 +340,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                   isLogout: true,
                   onTap: () {
                     context.read<AuthBloc>().add(SignOutRequested());
-                    context.go(AppRoutes.splash);
                   },
                 ),
               ),
