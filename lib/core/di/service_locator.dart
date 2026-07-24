@@ -4,6 +4,8 @@ import 'package:fitfuel_ai/features/food_scanner/presentation/bloc/food_scan_blo
 import 'package:fitfuel_ai/features/notifications/data/repositories/notification_repository_impl.dart';
 import 'package:fitfuel_ai/features/notifications/domain/repositories/notification_repository.dart';
 import 'package:fitfuel_ai/features/notifications/presentation/bloc/notifications_bloc.dart';
+import 'package:fitfuel_ai/features/subscription/presentation/bloc/subscription_bloc.dart';
+import 'package:fitfuel_ai/core/data/repositories/subscription_repository_impl.dart';
 import 'package:fitfuel_ai/features/meal_tracking/presentation/bloc/meal_tracking_bloc.dart';
 import 'package:fitfuel_ai/features/profile/data/repositories/profile_repository_impl.dart';
 import 'package:fitfuel_ai/features/profile/domain/repositories/profile_repository.dart';
@@ -62,7 +64,7 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<WeightRepository>(() => WeightRepositoryImpl(sl()));
   sl.registerLazySingleton<AnalyticsRepository>(() => AnalyticsRepositoryImpl(sl()));
   sl.registerLazySingleton<AiCoachRepository>(() => throw UnimplementedError('AiCoachRepositoryImpl not yet created'));
-  sl.registerLazySingleton<SubscriptionRepository>(() => throw UnimplementedError('SubscriptionRepositoryImpl not yet created'));
+  sl.registerLazySingleton<SubscriptionRepository>(() => SubscriptionRepositoryImpl(sl()));
 
   // Use Cases
   sl.registerLazySingleton<SignInWithEmailUseCase>(() => SignInWithEmailUseCase(sl()));
@@ -109,6 +111,9 @@ Future<void> initDependencies() async {
   ));
   sl.registerFactory<NotificationsBloc>(() => NotificationsBloc(
     notificationRepository: sl(),
+  ));
+  sl.registerFactory<SubscriptionBloc>(() => SubscriptionBloc(
+    subscriptionRepository: sl(),
   ));
 }
 

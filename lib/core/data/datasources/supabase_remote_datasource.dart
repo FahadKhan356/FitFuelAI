@@ -260,6 +260,10 @@ class SupabaseRemoteDataSource {
     return SubscriptionModel.fromJson(response as Map<String, dynamic>);
   }
 
+  Future<void> saveSubscription(Map<String, dynamic> data) async {
+    await _client.from('subscriptions').upsert(data);
+  }
+
   // ==================== NOTIFICATIONS ====================
   Future<List<Map<String, dynamic>>> getNotificationSettings(String userId) async {
     final response = await _client
