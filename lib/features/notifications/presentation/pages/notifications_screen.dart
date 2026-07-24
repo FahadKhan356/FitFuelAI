@@ -71,18 +71,26 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
     _fadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..forward();
+      duration: const Duration(milliseconds: 1000),
+    );
 
     _slideController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
-    )..forward();
+      duration: const Duration(milliseconds: 800),
+    );
 
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
     )..repeat(reverse: true);
+
+    // Trigger staggered entrance after a brief delay
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        _fadeController.forward();
+        _slideController.forward();
+      }
+    });
   }
 
   @override
