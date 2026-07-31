@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/config/routes.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../bloc/auth_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -27,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final authBloc = context.read<AuthBloc>();
     authBloc.stream.listen((state) {
       if (state is Authenticated && mounted) {
-        context.go(AppRoutes.home);
+        _navigateAfterAuth();
       } else if (state is AuthError && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -37,6 +38,19 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     });
+  }
+
+  /// After sign-in: if the user hasn't completed onboarding, send them through
+  /// the personalization flow first; otherwise go straight to Home.
+  Future<void> _navigateAfterAuth() async {
+    final prefs = await SharedPreferences.getInstance();
+    final hasCompletedOnboarding =
+        prefs.getBool('onboarding_completed') ?? false;
+    if (!hasCompletedOnboarding) {
+      context.go(AppRoutes.onboarding);
+    } else {
+      context.go(AppRoutes.home);
+    }
   }
 
   Future<void> _handleSignIn() async {

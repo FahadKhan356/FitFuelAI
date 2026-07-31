@@ -57,13 +57,15 @@ class _SplashScreenState extends State<SplashScreen>
     // Check if user is already logged in
     final currentUser = Supabase.instance.client.auth.currentUser;
     if (currentUser != null) {
-      // User is logged in, go to home
-      context.go(AppRoutes.home);
-    } else if (!hasCompletedOnboarding) {
-      // First time user, show onboarding to collect initial data
-      context.go(AppRoutes.onboarding);
+      // User is already logged in:
+      // - Onboarding complete → straight to Home dashboard
+      // - Onboarding pending (e.g. new signup) → OnboardingFlow first
+      context.go(hasCompletedOnboarding ? AppRoutes.home : AppRoutes.onboarding);
+    } else if (hasCompletedOnboarding) {
+      // Returning user who completed onboarding → go to login
+      context.go(AppRoutes.login);
     } else {
-      // User has completed onboarding before, go to login
+      // Brand new user: authenticate first, then onboarding will appear
       context.go(AppRoutes.login);
     }
   }

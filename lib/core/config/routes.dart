@@ -12,7 +12,7 @@ import '../../features/food_scanner/presentation/pages/food_scanner_screen.dart'
 import '../../features/barcode/presentation/pages/barcode_scanner_screen.dart';
 import '../../features/notifications/presentation/pages/notifications_screen.dart';
 import '../../features/meal_tracking/presentation/pages/meal_tracking_screen.dart';
-import '../../features/onboarding/presentation/pages/onboarding_screen.dart';
+import '../../features/onboarding/presentation/pages/onboarding_flow_screen.dart';
 import '../../features/onboarding/presentation/pages/goal_selection_screen.dart';
 import '../../features/profile/presentation/pages/profile_screen.dart';
 import '../../features/subscription/presentation/pages/subscription_screen.dart';
@@ -54,7 +54,7 @@ final goRouter = GoRouter(
       path: AppRoutes.onboarding,
       pageBuilder: (context, state) => CustomTransitionPage(
         key: state.pageKey,
-        child: const OnboardingScreen(),
+        child: const OnboardingFlowScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           final fade = CurvedAnimation(
             parent: animation,

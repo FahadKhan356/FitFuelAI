@@ -6,4 +6,8 @@ abstract class ProfileRepository {
 
   /// Updates both user_profiles and goals tables, returns updated model
   Future<UserProfileModel> updateUserProfile(UserProfileModel user);
+
+  /// Re-runs the FitnessCalculator using the user's current metrics and
+  /// updates the `goals` table so dashboard targets update immediately.
+  Future<UserProfileModel> recalculateGoals(UserProfileModel user);
 }

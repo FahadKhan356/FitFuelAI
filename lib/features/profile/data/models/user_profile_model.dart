@@ -10,6 +10,8 @@ class UserProfileModel {
   final double? goalWeightKg;
   final String? activityLevel;
   final String? goalType;
+  final String? dietPreference;
+  final int? workoutFrequency;
   final String? bio;
   final DateTime? createdAt;
 
@@ -19,6 +21,8 @@ class UserProfileModel {
   final double targetCarbs;
   final double targetFat;
   final int dailyWaterMl;
+  final double? weeklyPaceKg;
+  final DateTime? targetDate;
 
   const UserProfileModel({
     required this.userId,
@@ -31,6 +35,8 @@ class UserProfileModel {
     this.goalWeightKg,
     this.activityLevel,
     this.goalType,
+    this.dietPreference,
+    this.workoutFrequency,
     this.bio,
     this.createdAt,
     this.targetCalories = 2000,
@@ -38,6 +44,8 @@ class UserProfileModel {
     this.targetCarbs = 200,
     this.targetFat = 65,
     this.dailyWaterMl = 2500,
+    this.weeklyPaceKg,
+    this.targetDate,
   });
 
   /// Convert profile fields to map for user_profiles table
@@ -51,6 +59,8 @@ class UserProfileModel {
         if (goalWeightKg != null) 'goal_weight_kg': goalWeightKg,
         if (activityLevel != null) 'activity_level': activityLevel,
         if (goalType != null) 'goal_type': goalType,
+        if (dietPreference != null) 'diet_preference': dietPreference,
+        if (workoutFrequency != null) 'workout_frequency': workoutFrequency,
         if (bio != null) 'bio': bio,
       };
 
@@ -62,6 +72,10 @@ class UserProfileModel {
         'target_fat': targetFat,
         'daily_water_ml': dailyWaterMl,
         if (goalType != null) 'goal_type': goalType,
+        if (goalWeightKg != null) 'target_weight_kg': goalWeightKg,
+        if (weeklyPaceKg != null) 'weekly_pace_kg': weeklyPaceKg,
+        if (targetDate != null)
+          'target_date': targetDate!.toIso8601String().split('T').first,
       };
 
   /// Create a new model with updated fields (immutable)
@@ -76,6 +90,8 @@ class UserProfileModel {
     double? goalWeightKg,
     String? activityLevel,
     String? goalType,
+    String? dietPreference,
+    int? workoutFrequency,
     String? bio,
     DateTime? createdAt,
     int? targetCalories,
@@ -83,6 +99,8 @@ class UserProfileModel {
     double? targetCarbs,
     double? targetFat,
     int? dailyWaterMl,
+    double? weeklyPaceKg,
+    DateTime? targetDate,
   }) {
     return UserProfileModel(
       userId: userId ?? this.userId,
@@ -95,6 +113,8 @@ class UserProfileModel {
       goalWeightKg: goalWeightKg ?? this.goalWeightKg,
       activityLevel: activityLevel ?? this.activityLevel,
       goalType: goalType ?? this.goalType,
+      dietPreference: dietPreference ?? this.dietPreference,
+      workoutFrequency: workoutFrequency ?? this.workoutFrequency,
       bio: bio ?? this.bio,
       createdAt: createdAt ?? this.createdAt,
       targetCalories: targetCalories ?? this.targetCalories,
@@ -102,6 +122,8 @@ class UserProfileModel {
       targetCarbs: targetCarbs ?? this.targetCarbs,
       targetFat: targetFat ?? this.targetFat,
       dailyWaterMl: dailyWaterMl ?? this.dailyWaterMl,
+      weeklyPaceKg: weeklyPaceKg ?? this.weeklyPaceKg,
+      targetDate: targetDate ?? this.targetDate,
     );
   }
 

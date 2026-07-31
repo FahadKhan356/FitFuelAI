@@ -7,6 +7,9 @@ import 'package:fitfuel_ai/features/notifications/presentation/bloc/notification
 import 'package:fitfuel_ai/features/subscription/presentation/bloc/subscription_bloc.dart';
 import 'package:fitfuel_ai/core/data/repositories/subscription_repository_impl.dart';
 import 'package:fitfuel_ai/features/meal_tracking/presentation/bloc/meal_tracking_bloc.dart';
+import 'package:fitfuel_ai/features/onboarding/data/repositories/onboarding_repository_impl.dart';
+import 'package:fitfuel_ai/features/onboarding/domain/repositories/onboarding_repository.dart';
+import 'package:fitfuel_ai/features/onboarding/presentation/bloc/onboarding_bloc.dart';
 import 'package:fitfuel_ai/features/profile/data/repositories/profile_repository_impl.dart';
 import 'package:fitfuel_ai/features/profile/domain/repositories/profile_repository.dart';
 import 'package:fitfuel_ai/features/profile/presentation/bloc/profile_bloc.dart';
@@ -56,6 +59,7 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(sl()));
   sl.registerLazySingleton<UserRepository>(() => UserRepositoryImpl(sl()));
   sl.registerLazySingleton<ProfileRepository>(() => ProfileRepositoryImpl(sl()));
+  sl.registerLazySingleton<OnboardingRepository>(() => OnboardingRepositoryImpl(sl()));
   sl.registerLazySingleton<MealRepository>(() => MealRepositoryImpl(sl()));
   sl.registerLazySingleton<FoodSearchRepository>(() => FoodSearchRepositoryImpl(sl()));
   sl.registerLazySingleton<FoodScanRepository>(() => FoodScanRepositoryImpl(sl()));
@@ -93,6 +97,10 @@ Future<void> initDependencies() async {
   ));
   sl.registerFactory<ProfileBloc>(() => ProfileBloc(
     profileRepository: sl(),
+  ));
+  sl.registerFactory<OnboardingBloc>(() => OnboardingBloc(
+    onboardingRepository: sl(),
+    dataSource: sl(),
   ));
   sl.registerFactory<MealTrackingBloc>(() => MealTrackingBloc(
     mealRepository: sl(),

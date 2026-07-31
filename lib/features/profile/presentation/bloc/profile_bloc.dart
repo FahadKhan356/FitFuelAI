@@ -31,6 +31,15 @@ class UpdateProfileField extends ProfileEvent {
   List<Object?> get props => [fields];
 }
 
+/// Re-runs the FitnessCalculator using the user's current metrics and updates
+/// the `goals` table so dashboard targets update immediately.
+class RecalculateGoals extends ProfileEvent {
+  final UserProfileModel user;
+  const RecalculateGoals(this.user);
+  @override
+  List<Object?> get props => [user];
+}
+
 // ── States ──
 abstract class ProfileState extends Equatable {
   const ProfileState();
@@ -66,6 +75,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     on<LoadProfile>(_onLoadProfile);
     on<UpdateProfile>(_onUpdateProfile);
     on<UpdateProfileField>(_onUpdateProfileField);
+    on<RecalculateGoals>(_onRecalculateGoals);
   }
 
   Future<void> _onLoadProfile(LoadProfile event, Emitter<ProfileState> emit) async {
@@ -100,13 +110,32 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         goalWeightKg: (event.fields['goal_weight_kg'] as num?)?.toDouble(),
         activityLevel: event.fields['activity_level'] as String?,
         goalType: event.fields['goal_type'] as String?,
+        dietPreference: event.fields['diet_preference'] as String?,
+        workoutFrequency: event.fields['workout_frequency'] as int?,
         bio: event.fields['bio'] as String?,
         avatarUrl: event.fields['avatar_url'] as String?,
       );
 
       try {
+        // Persist the updated profile, then recalculate goals so dashboard targets update.
         final saved = await _profileRepository.updateUserProfile(updated);
-        emit(ProfileLoaded(saved));
+        final recalculated = await _profileRepository.recalculateGoals(saved);
+        emit(ProfileLoaded(recalculated));
+      } catch (e) {
+        emit(ProfileLoaded(currentState.user)); // revert to previous state
+      }
+    }
+  }
+
+  Future<void> _onRecalculateGoals(
+    RecalculateGoals event,
+    Emitter<ProfileState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is ProfileLoaded) {
+      try {
+        final updated = await _profileRepository.recalculateGoals(event.user);
+        emit(ProfileLoaded(updated));
       } catch (e) {
         emit(ProfileLoaded(currentState.user)); // revert to previous state
       }
