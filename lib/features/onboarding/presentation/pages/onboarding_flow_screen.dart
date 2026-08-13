@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/config/routes.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/di/service_locator.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../bloc/onboarding_bloc.dart';
 import '../bloc/onboarding_event.dart';
 import '../bloc/onboarding_state.dart';
@@ -51,7 +52,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _onboardingBloc,
-      child: BlocListener<OnboardingBloc, OnboardingState>(
+          child: BlocListener<OnboardingBloc, OnboardingState>(
         listener: (context, state) {
           if (state is OnboardingStepState) {
             _goToPage(state.stepIndex);
@@ -59,8 +60,14 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
             setState(() => _isSubmitting = true);
           } else if (state is OnboardingSuccess) {
             setState(() => _isSubmitting = false);
-            // Navigate cleanly to the Home Dashboard.
-            context.go(AppRoutes.home);
+            // If user is authenticated, go to home; otherwise go to login so
+            // they can create an account and we can sync local onboarding data.
+            final currentUser = Supabase.instance.client.auth.currentUser;
+            if (currentUser != null) {
+              context.go(AppRoutes.home);
+            } else {
+              context.go(AppRoutes.login);
+            }
           } else if (state is OnboardingFailure) {
             setState(() => _isSubmitting = false);
             ScaffoldMessenger.of(context).showSnackBar(

@@ -65,8 +65,8 @@ class _SplashScreenState extends State<SplashScreen>
       // Returning user who completed onboarding → go to login
       context.go(AppRoutes.login);
     } else {
-      // Brand new user: authenticate first, then onboarding will appear
-      context.go(AppRoutes.login);
+      // Brand new user: show onboarding first (can save locally), then prompt login
+      context.go(AppRoutes.onboarding);
     }
   }
 

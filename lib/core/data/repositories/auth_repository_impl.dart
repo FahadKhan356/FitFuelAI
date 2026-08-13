@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -11,6 +14,48 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<UserEntity> signInWithEmail(String email, String password) async {
     final response = await _supabase.auth.signInWithPassword(email: email, password: password);
     final user = response.user!;
+    // After successful sign in, attempt to sync any locally-saved onboarding data.
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final profileJson = prefs.getString('onboarding_profile');
+      final goalsJson = prefs.getString('onboarding_goals');
+      if (profileJson != null) {
+        final Map<String, dynamic> profile = jsonDecode(profileJson) as Map<String, dynamic>;
+        await _supabase.from('user_profiles').upsert({
+          'user_id': user.id,
+          ...profile,
+        });
+      }
+      if (goalsJson != null) {
+        final Map<String, dynamic> goals = jsonDecode(goalsJson) as Map<String, dynamic>;
+        await _supabase.from('goals').upsert({
+          'user_id': user.id,
+          ...goals,
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+      }
+      // If we synced anything, clear local onboarding cache
+      if (profileJson != null || goalsJson != null) {
+        await prefs.remove('onboarding_profile');
+        await prefs.remove('onboarding_goals');
+        await prefs.setBool('onboarding_completed', true);
+      }
+    } catch (_) {
+      // ignore sync errors here; app can retry later
+    }
+    // Also fetch user's goals and cache locally for quick UI reads
+    try {
+      final goalsResponse = await _supabase
+          .from('goals')
+          .select()
+          .eq('user_id', user.id)
+          .maybeSingle();
+      if (goalsResponse != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('current_goals', jsonEncode(goalsResponse));
+      }
+    } catch (_) {}
+
     return UserEntity(id: user.id, email: user.email);
   }
 
@@ -24,7 +69,47 @@ class AuthRepositoryImpl implements AuthRepository {
       'user_id': user.id,
       'email': user.email,
     });
-    
+    // After signup, if there is local onboarding data, sync it to Supabase
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final profileJson = prefs.getString('onboarding_profile');
+      final goalsJson = prefs.getString('onboarding_goals');
+      if (profileJson != null) {
+        final Map<String, dynamic> profile = jsonDecode(profileJson) as Map<String, dynamic>;
+        await _supabase.from('user_profiles').upsert({
+          'user_id': user.id,
+          ...profile,
+        });
+      }
+      if (goalsJson != null) {
+        final Map<String, dynamic> goals = jsonDecode(goalsJson) as Map<String, dynamic>;
+        await _supabase.from('goals').upsert({
+          'user_id': user.id,
+          ...goals,
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+      }
+      if (profileJson != null || goalsJson != null) {
+        await prefs.remove('onboarding_profile');
+        await prefs.remove('onboarding_goals');
+        await prefs.setBool('onboarding_completed', true);
+      }
+    } catch (_) {
+      // ignore sync errors; they can be retried later
+    }
+    // After sync, fetch the upserted goals and cache them locally
+    try {
+      final goalsResponse = await _supabase
+          .from('goals')
+          .select()
+          .eq('user_id', user.id)
+          .maybeSingle();
+      if (goalsResponse != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('current_goals', jsonEncode(goalsResponse));
+      }
+    } catch (_) {}
+
     return UserEntity(id: user.id, email: user.email);
   }
 

@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:fitfuel_ai/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const _bg = Color(0xFFF7F6FB);
 const _surface = Colors.white;
@@ -20,7 +23,27 @@ class WaterTrackerScreen extends StatefulWidget {
 
 class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
   int waterIntake = 1750;
-  final int waterGoal = 3000;
+  int waterGoal = 3000;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCachedGoals();
+  }
+
+  Future<void> _loadCachedGoals() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final goalsJson = prefs.getString('current_goals');
+      if (goalsJson != null) {
+        final Map<String, dynamic> goals = jsonDecode(goalsJson) as Map<String, dynamic>;
+        final int dailyWater = (goals['daily_water_ml'] as num?)?.toInt() ?? 3000;
+        setState(() => waterGoal = dailyWater);
+      }
+    } catch (_) {
+      // ignore
+    }
+  }
 
   void _showWaterEntryDialog() {
     showModalBottomSheet(
