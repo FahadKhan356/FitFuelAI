@@ -25,7 +25,7 @@ class AuthRepositoryImpl implements AuthRepository {
         await _supabase.from('user_profiles').upsert({
           'user_id': user.id,
           ...profile,
-        });
+        }, onConflict: 'user_id');
       }
       if (goalsJson != null) {
         final Map<String, dynamic> goals =
@@ -34,7 +34,7 @@ class AuthRepositoryImpl implements AuthRepository {
           'user_id': user.id,
           ...goals,
           'updated_at': DateTime.now().toIso8601String(),
-        });
+        }, onConflict: 'user_id');
       }
       // If we synced anything, clear local onboarding cache
       if (profileJson != null || goalsJson != null) {
@@ -81,7 +81,7 @@ class AuthRepositoryImpl implements AuthRepository {
         await _supabase.from('user_profiles').upsert({
           'user_id': user.id,
           ...profile,
-        });
+        }, onConflict: 'user_id');
       }
       if (goalsJson != null) {
         final Map<String, dynamic> goals =
@@ -90,7 +90,7 @@ class AuthRepositoryImpl implements AuthRepository {
           'user_id': user.id,
           ...goals,
           'updated_at': DateTime.now().toIso8601String(),
-        });
+        }, onConflict: 'user_id');
       }
       if (profileJson != null || goalsJson != null) {
         await prefs.remove('onboarding_profile');
@@ -129,7 +129,7 @@ class AuthRepositoryImpl implements AuthRepository {
         await _supabase.from('user_profiles').upsert({
           'user_id': userId,
           ...profile,
-        });
+        }, onConflict: 'user_id');
       }
 
       if (goalsJson != null) {
@@ -139,7 +139,7 @@ class AuthRepositoryImpl implements AuthRepository {
           'user_id': userId,
           ...goals,
           'updated_at': DateTime.now().toIso8601String(),
-        });
+        }, onConflict: 'user_id');
       }
 
       if (profileJson != null || goalsJson != null) {

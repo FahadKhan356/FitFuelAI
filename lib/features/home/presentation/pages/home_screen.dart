@@ -1,7 +1,14 @@
 import 'package:fitfuel_ai/core/config/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:math' as math;
+
+import 'package:fitfuel_ai/core/di/service_locator.dart';
+import 'package:fitfuel_ai/core/domain/entities/goal_entity.dart';
+import 'package:fitfuel_ai/core/domain/entities/meal_entity.dart';
+import 'package:fitfuel_ai/core/domain/entities/user_profile_entity.dart';
+import 'package:fitfuel_ai/core/domain/usecases/all_usecases.dart';
 
 import '../../../analytics/presentation/pages/analytics_screen.dart';
 import '../../../food_scanner/presentation/pages/food_scanner_screen.dart';
@@ -88,6 +95,19 @@ class _HomeContentState extends State<_HomeContent>
   late final AnimationController _entryController;
   late final AnimationController _floatingController;
 
+  // ── Real, DB-backed dashboard data (replaces hardcoded dummy values) ──
+  String _greetingName = 'there';
+  int _dailyGoalKcal = 2000;
+  int _consumedKcal = 0;
+  int _burnedKcal = 0;
+  double _proteinTarget = 0, _proteinConsumed = 0;
+  double _carbsTarget = 0, _carbsConsumed = 0;
+  double _fatTarget = 0, _fatConsumed = 0;
+  int _waterTotalMl = 0;
+  int _waterTargetMl = 2000;
+  List<MealEntity> _meals = const [];
+  bool _loading = true;
+
   @override
   void initState() {
     super.initState();
@@ -99,6 +119,131 @@ class _HomeContentState extends State<_HomeContent>
       vsync: this,
       duration: const Duration(milliseconds: 3000),
     )..repeat(reverse: true);
+
+    _loadData();
+  }
+
+  /// Fetches the signed-in user's profile + today's dashboard from Supabase.
+  ///
+  /// Uses pre-calculated goals from onboarding (stored in DB).
+  /// Only uses FitnessCalculator as fallback if goals are missing (edge case).
+  Future<void> _loadData() async {
+    try {
+      final user = Supabase.instance.client.auth.currentUser;
+      if (user == null) {
+        if (mounted) setState(() => _loading = false);
+        return;
+      }
+
+      // 1. Profile (for greeting name and fallback calculation).
+      UserProfileEntity? profile;
+      try {
+        profile = await sl<LoadUserProfileUseCase>().call(user.id);
+      } catch (_) {}
+
+      // 2. Current dashboard (goals + today's meals/water).
+      Map<String, dynamic> dash = const {};
+      try {
+        dash = await sl<FetchHomeDashboardUseCase>().call(user.id, DateTime.now());
+      } catch (_) {}
+
+      final goals = dash['goals'] as GoalEntity?;
+      final meals = dash['meals'] as List? ?? const <MealEntity>[];
+
+      // 3. Use pre-calculated goals from DB. Only fallback to calculation if goals are null.
+      final dailyKcal = goals?.targetCalories ?? 2000;
+      final proteinTarget = goals?.targetProtein ?? 150.0;
+      final carbsTarget = goals?.targetCarbs ?? 200.0;
+      final fatTarget = goals?.targetFat ?? 65.0;
+      final waterTarget = goals?.dailyWaterMl ?? 2500;
+
+      // 4. Calculate macro totals consumed from today's meal items.
+      var protein = 0.0, carbs = 0.0, fat = 0.0;
+      for (final meal in meals.whereType<MealEntity>()) {
+        for (final item in meal.items) {
+          protein += item.protein;
+          carbs += item.carbs;
+          fat += item.fat;
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _greetingName = (profile?.name?.isNotEmpty ?? false)
+              ? profile!.name!.split(' ').first
+              : 'there';
+          _dailyGoalKcal = dailyKcal;
+          _consumedKcal = (dash['total_calories'] as num?)?.toInt() ?? 0;
+          _proteinTarget = proteinTarget;
+          _carbsTarget = carbsTarget;
+          _fatTarget = fatTarget;
+          _proteinConsumed = protein;
+          _carbsConsumed = carbs;
+          _fatConsumed = fat;
+          _waterTotalMl = (dash['total_water_ml'] as num?)?.toInt() ?? 0;
+          _waterTargetMl = waterTarget;
+          _meals = meals.whereType<MealEntity>().toList()
+            ..sort((a, b) => (b.createdAt ?? b.date)
+                .compareTo(a.createdAt ?? a.date));
+        });
+      }
+    } catch (_) {
+      // Keep graceful defaults if the network/profile isn't ready yet.
+    }
+    if (mounted) setState(() => _loading = false);
+  }
+
+  /// Time-based greeting prefix, e.g. "Good morning".
+  String _greetingPrefix() {
+    final h = DateTime.now().hour;
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  /// Placeholder tint for a meal card, keyed by meal type.
+  Color _mealColor(String mealType) {
+    switch (mealType.toLowerCase()) {
+      case 'breakfast':
+        return const Color(0xFFF5DEB3);
+      case 'lunch':
+        return const Color(0xFFB8D8E8);
+      case 'dinner':
+        return const Color(0xFFEDE6F5);
+      default:
+        return const Color(0xFFF0E6D3);
+    }
+  }
+
+  /// Emoji used on the meal card (falls back to a generic icon).
+  String _mealIcon(String mealType) {
+    switch (mealType.toLowerCase()) {
+      case 'breakfast':
+        return '🥑';
+      case 'lunch':
+        return '🥗';
+      case 'dinner':
+        return '🍽️';
+      default:
+        return '🥗';
+    }
+  }
+
+  /// Best-effort meal name: first food item, else the meal type.
+  String _mealName(MealEntity meal) {
+    if (meal.items.isNotEmpty && meal.items.first.foodName.isNotEmpty) {
+      return meal.items.first.foodName;
+    }
+    return meal.mealType.isEmpty ? 'Meal' : meal.mealType;
+  }
+
+  /// Formats a meal's timestamp as "h:mm AM/PM".
+  String _formatMealTime(MealEntity meal) {
+    final time = meal.createdAt ?? meal.date;
+    final hour12 = time.hour % 12 == 0 ? 12 : time.hour % 12;
+    final minute = time.minute.toString().padLeft(2, '0');
+    final period = time.hour < 12 ? 'AM' : 'PM';
+    return '$hour12:$minute $period';
   }
 
   @override
@@ -138,17 +283,17 @@ class _HomeContentState extends State<_HomeContent>
                 );
               },
               child: Row(
-                children: const [
+                children: [
                   Text(
-                    'Morning, Alex ',
+                    '${_greetingPrefix()}, $_greetingName ',
                     style: TextStyle(
-                      fontSize: 24,
+                      fontSize: 26,
                       fontWeight: FontWeight.w800,
                       color: kHeadline,
                       letterSpacing: -0.4,
                     ),
                   ),
-                  Text('👋', style: TextStyle(fontSize: 22)),
+                  const Text('👋', style: TextStyle(fontSize: 22)),
                 ],
               ),
             ),
@@ -167,9 +312,11 @@ class _HomeContentState extends State<_HomeContent>
                   child: Opacity(opacity: t, child: child),
                 );
               },
-              child: const Text(
-                "You're doing great! Keep it up.",
-                style: TextStyle(
+              child: Text(
+                _loading
+                    ? 'Fetching your daily targets…'
+                    : 'Let’s hit today’s goals together.',
+                style: const TextStyle(
                   fontSize: 13.5,
                   color: kBody,
                   fontWeight: FontWeight.w400,
@@ -179,18 +326,37 @@ class _HomeContentState extends State<_HomeContent>
 
             const SizedBox(height: 18),
 
-            _CalorieCard(animation: _entryController),
+            _CalorieCard(
+              animation: _entryController,
+              dailyGoal: _dailyGoalKcal,
+              consumed: _consumedKcal,
+              burned: _burnedKcal,
+            ),
 
             const SizedBox(height: 16),
 
-            _MacroRow(animation: _entryController),
+            _MacroRow(
+              animation: _entryController,
+              proteinCurrent: _proteinConsumed,
+              proteinTotal: _proteinTarget,
+              carbsCurrent: _carbsConsumed,
+              carbsTotal: _carbsTarget,
+              fatCurrent: _fatConsumed,
+              fatTotal: _fatTarget,
+            ),
 
             const SizedBox(height: 14),
 
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: _WaterCard(animation: _entryController)),
+                Expanded(
+                  child: _WaterCard(
+                    animation: _entryController,
+                    totalMl: _waterTotalMl,
+                    targetMl: _waterTargetMl,
+                  ),
+                ),
                 const SizedBox(width: 12),
                 Expanded(child: _AICoachCard(animation: _entryController)),
               ],
@@ -318,38 +484,53 @@ class _HomeContentState extends State<_HomeContent>
 
             const SizedBox(height: 14),
 
-            _MealItem(
-              animation: _entryController,
-              index: 0,
-              imagePlaceholderColor: const Color(0xFFF5DEB3),
-              mealType: 'Breakfast',
-              time: '08:30 AM',
-              name: 'Avocado Toast with Egg',
-              kcal: '340 kcal',
-              icon: '🥑',
-            ),
-            const SizedBox(height: 2),
-            _MealItem(
-              animation: _entryController,
-              index: 1,
-              imagePlaceholderColor: const Color(0xFFB8D8E8),
-              mealType: 'Lunch',
-              time: '01:15 PM',
-              name: 'Grilled Salmon Salad',
-              kcal: '480 kcal',
-              icon: '🐟',
-            ),
-            const SizedBox(height: 2),
-            _MealItem(
-              animation: _entryController,
-              index: 2,
-              imagePlaceholderColor: const Color(0xFFF0E6D3),
-              mealType: 'Snack',
-              time: '04:00 PM',
-              name: 'Greek Yogurt Bowl',
-              kcal: '210 kcal',
-              icon: '🥣',
-            ),
+            if (_meals.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(22),
+                decoration: BoxDecoration(
+                  color: kCardBg,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: kBorder, width: 1),
+                ),
+                child: Column(
+                  children: const [
+                    Icon(Icons.restaurant_rounded, size: 30, color: kPurple),
+                    SizedBox(height: 10),
+                    Text(
+                      'No meals recorded today yet.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: kHeadline,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Tap See History to log a meal.',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: kBody,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              for (var i = 0; i < _meals.length; i++) ...[
+                if (i > 0) const SizedBox(height: 2),
+                _MealItem(
+                  animation: _entryController,
+                  index: i,
+                  imagePlaceholderColor: _mealColor(_meals[i].mealType),
+                  mealType: _meals[i].mealType,
+                  time: _formatMealTime(_meals[i]),
+                  name: _mealName(_meals[i]),
+                  kcal: '${_meals[i].totalCalories} kcal',
+                  icon: _mealIcon(_meals[i].mealType),
+                ),
+              ],
 
             const SizedBox(height: 100),
           ],
@@ -473,13 +654,26 @@ class _TopBar extends StatelessWidget {
 //  Calorie Card
 // ─────────────────────────────────────────────
 class _CalorieCard extends StatelessWidget {
-  const _CalorieCard({required this.animation});
+  const _CalorieCard({
+    required this.animation,
+    required this.dailyGoal,
+    required this.consumed,
+    required this.burned,
+  });
 
   final Animation<double> animation;
+  final int dailyGoal;
+  final int consumed;
+  final int burned;
 
   @override
   Widget build(BuildContext context) {
-    const double progress = 0.29;
+    final remaining = (dailyGoal - consumed).clamp(0, dailyGoal);
+    final progress =
+        dailyGoal <= 0 ? 0.0 : (consumed / dailyGoal).clamp(0.0, 1.0);
+    final percentLeft = dailyGoal <= 0
+        ? 0
+        : ((remaining / dailyGoal) * 100).clamp(0, 100);
 
     return AnimatedBuilder(
       animation: animation,
@@ -496,19 +690,19 @@ class _CalorieCard extends StatelessWidget {
             curve: const Interval(0.12, 0.55),
           ).value,
         ));
-        final mainCalories = (roll * 1420).toInt();
-        final consumed = (Curves.easeOutCubic.transform(
+        final mainCalories = (roll * remaining).toInt();
+        final consumedShow = (Curves.easeOutCubic.transform(
           CurvedAnimation(
             parent: animation,
             curve: const Interval(0.18, 0.56),
           ).value,
-        ) * 580).toInt();
-        final burned = (Curves.easeOutCubic.transform(
+        ) * consumed).toInt();
+        final burnedShow = (Curves.easeOutCubic.transform(
           CurvedAnimation(
             parent: animation,
             curve: const Interval(0.22, 0.60),
           ).value,
-        ) * 245).toInt();
+        ) * burned).toInt();
 
         return Transform.scale(
           scale: 0.95 + (spring * 0.07),
@@ -583,26 +777,26 @@ class _CalorieCard extends StatelessWidget {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      _CalorieStat(label: 'Consumed', value: '$consumed kcal'),
+                      _CalorieStat(label: 'Consumed', value: '$consumedShow kcal'),
                       const SizedBox(width: 32),
-                      _CalorieStat(label: 'Burned', value: '$burned kcal'),
+                      _CalorieStat(label: 'Burned', value: '$burnedShow kcal'),
                     ],
                   ),
                   const SizedBox(height: 14),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
+                    children: [
                       Text(
-                        'Daily Goal: 2,000 kcal',
-                        style: TextStyle(
+                        'Daily Goal: $dailyGoal kcal',
+                        style: const TextStyle(
                           fontSize: 11.5,
                           color: Color(0xFF6B5FD0),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                       Text(
-                        '71% left',
-                        style: TextStyle(
+                        '$percentLeft% left',
+                        style: const TextStyle(
                           fontSize: 11.5,
                           color: Color(0xFF6B5FD0),
                           fontWeight: FontWeight.w600,
@@ -669,9 +863,23 @@ class _CalorieStat extends StatelessWidget {
 //  Macro Row
 // ─────────────────────────────────────────────
 class _MacroRow extends StatelessWidget {
-  const _MacroRow({required this.animation});
+  const _MacroRow({
+    required this.animation,
+    required this.proteinCurrent,
+    required this.proteinTotal,
+    required this.carbsCurrent,
+    required this.carbsTotal,
+    required this.fatCurrent,
+    required this.fatTotal,
+  });
 
   final Animation<double> animation;
+  final double proteinCurrent;
+  final double proteinTotal;
+  final double carbsCurrent;
+  final double carbsTotal;
+  final double fatCurrent;
+  final double fatTotal;
 
   @override
   Widget build(BuildContext context) {
@@ -684,8 +892,8 @@ class _MacroRow extends StatelessWidget {
             icon: Icons.bolt_rounded,
             iconColor: kPurple,
             label: 'PROTEIN',
-            current: '65g',
-            total: '/ 140g',
+            current: '${proteinCurrent.round()}g',
+            total: '/ ${proteinTotal.round()}g',
           ),
         ),
         const SizedBox(width: 10),
@@ -696,8 +904,8 @@ class _MacroRow extends StatelessWidget {
             icon: Icons.restaurant_rounded,
             iconColor: const Color(0xFF8A7FF0),
             label: 'CARBS',
-            current: '120g',
-            total: '/ 250g',
+            current: '${carbsCurrent.round()}g',
+            total: '/ ${carbsTotal.round()}g',
           ),
         ),
         const SizedBox(width: 10),
@@ -708,8 +916,8 @@ class _MacroRow extends StatelessWidget {
             icon: Icons.local_fire_department_rounded,
             iconColor: kRed,
             label: 'FATS',
-            current: '42g',
-            total: '/ 70g',
+            current: '${fatCurrent.round()}g',
+            total: '/ ${fatTotal.round()}g',
           ),
         ),
       ],
@@ -833,9 +1041,15 @@ int _extractValue(String value) {
 //  Water Card
 // ─────────────────────────────────────────────
 class _WaterCard extends StatelessWidget {
-  const _WaterCard({required this.animation});
+  const _WaterCard({
+    required this.animation,
+    required this.totalMl,
+    required this.targetMl,
+  });
 
   final Animation<double> animation;
+  final int totalMl;
+  final int targetMl;
 
   @override
   Widget build(BuildContext context) {
@@ -865,7 +1079,10 @@ class _WaterCard extends StatelessWidget {
               parent: animation,
               curve: const Interval(0.46, 0.67, curve: Curves.easeOutBack),
             ).value);
-            final liters = t * 1.8;
+            final liters = t * (totalMl / 1000.0);
+            final litersTotal = targetMl / 1000.0;
+            final percentDone =
+                targetMl <= 0 ? 0 : ((totalMl / targetMl) * 100).clamp(0, 100);
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -916,9 +1133,9 @@ class _WaterCard extends StatelessWidget {
                           color: kPurple.withOpacity(0.10),
                           borderRadius: BorderRadius.circular(100),
                         ),
-                        child: const Text(
-                          '75% DONE',
-                          style: TextStyle(
+                        child: Text(
+                          '$percentDone% DONE',
+                          style: const TextStyle(
                             fontSize: 8.5,
                             fontWeight: FontWeight.w700,
                             color: kPurple,
@@ -952,9 +1169,9 @@ class _WaterCard extends StatelessWidget {
                           letterSpacing: -0.8,
                         ),
                       ),
-                      const TextSpan(
-                        text: ' / 2.5L',
-                        style: TextStyle(
+                      TextSpan(
+                        text: ' / ${litersTotal.toStringAsFixed(1)}L',
+                        style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                           color: kBody,

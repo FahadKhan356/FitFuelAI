@@ -43,7 +43,7 @@ class SupabaseRemoteDataSource {
         .from('user_profiles')
         .select()
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
     return response as Map<String, dynamic>?;
   }
 
@@ -51,7 +51,7 @@ class SupabaseRemoteDataSource {
     await _client.from('user_profiles').upsert({
       'user_id': userId,
       ...data,
-    });
+    }, onConflict: 'user_id');
   }
 
   // ==================== GOALS ====================
@@ -60,7 +60,7 @@ class SupabaseRemoteDataSource {
         .from('goals')
         .select()
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
     return response as Map<String, dynamic>?;
   }
 
@@ -69,7 +69,7 @@ class SupabaseRemoteDataSource {
       'user_id': userId,
       ...data,
       'updated_at': DateTime.now().toIso8601String(),
-    });
+    }, onConflict: 'user_id');
   }
 
   // ==================== MEALS ====================
