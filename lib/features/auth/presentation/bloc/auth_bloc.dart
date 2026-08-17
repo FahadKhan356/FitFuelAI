@@ -78,6 +78,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthLoading());
     try {
       final user = await _signIn(event.email, event.password);
+      // Ensure any locally-saved onboarding is synced to server and cached
+      try {
+        await _authRepository.syncLocalOnboarding(user.id);
+      } catch (_) {}
+
       emit(Authenticated(user));
     } catch (e) {
       emit(AuthError(e.toString()));
@@ -88,6 +93,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthLoading());
     try {
       final user = await _signUp(event.email, event.password);
+      try {
+        await _authRepository.syncLocalOnboarding(user.id);
+      } catch (_) {}
+
       emit(Authenticated(user));
     } catch (e) {
       emit(AuthError(e.toString()));

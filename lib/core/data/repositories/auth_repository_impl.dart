@@ -20,14 +20,16 @@ class AuthRepositoryImpl implements AuthRepository {
       final profileJson = prefs.getString('onboarding_profile');
       final goalsJson = prefs.getString('onboarding_goals');
       if (profileJson != null) {
-        final Map<String, dynamic> profile = jsonDecode(profileJson) as Map<String, dynamic>;
+        final Map<String, dynamic> profile =
+            _withoutStaleUserId(jsonDecode(profileJson) as Map<String, dynamic>);
         await _supabase.from('user_profiles').upsert({
           'user_id': user.id,
           ...profile,
         });
       }
       if (goalsJson != null) {
-        final Map<String, dynamic> goals = jsonDecode(goalsJson) as Map<String, dynamic>;
+        final Map<String, dynamic> goals =
+            _withoutStaleUserId(jsonDecode(goalsJson) as Map<String, dynamic>);
         await _supabase.from('goals').upsert({
           'user_id': user.id,
           ...goals,
@@ -43,7 +45,7 @@ class AuthRepositoryImpl implements AuthRepository {
     } catch (_) {
       // ignore sync errors here; app can retry later
     }
-    // Also fetch user's goals and cache locally for quick UI reads
+    // Attempt to sync local onboarding data (if present)
     try {
       final goalsResponse = await _supabase
           .from('goals')
@@ -60,14 +62,13 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<UserEntity> signUpWithEmail(String email, String password) async {
+  Future<UserEntity> signUpWithEmail                                   (String email, String password) async {
     final response = await _supabase.auth.signUp(email: email, password: password);
     final user = response.user!;
     
     // Create user profile in user_profiles table
     await _supabase.from('user_profiles').upsert({
       'user_id': user.id,
-      'email': user.email,
     });
     // After signup, if there is local onboarding data, sync it to Supabase
     try {
@@ -75,14 +76,16 @@ class AuthRepositoryImpl implements AuthRepository {
       final profileJson = prefs.getString('onboarding_profile');
       final goalsJson = prefs.getString('onboarding_goals');
       if (profileJson != null) {
-        final Map<String, dynamic> profile = jsonDecode(profileJson) as Map<String, dynamic>;
+        final Map<String, dynamic> profile =
+            _withoutStaleUserId(jsonDecode(profileJson) as Map<String, dynamic>);
         await _supabase.from('user_profiles').upsert({
           'user_id': user.id,
           ...profile,
         });
       }
       if (goalsJson != null) {
-        final Map<String, dynamic> goals = jsonDecode(goalsJson) as Map<String, dynamic>;
+        final Map<String, dynamic> goals =
+            _withoutStaleUserId(jsonDecode(goalsJson) as Map<String, dynamic>);
         await _supabase.from('goals').upsert({
           'user_id': user.id,
           ...goals,
@@ -97,7 +100,7 @@ class AuthRepositoryImpl implements AuthRepository {
     } catch (_) {
       // ignore sync errors; they can be retried later
     }
-    // After sync, fetch the upserted goals and cache them locally
+    // After signup, attempt to sync any locally-saved onboarding data
     try {
       final goalsResponse = await _supabase
           .from('goals')
@@ -114,8 +117,62 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> syncLocalOnboarding(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final profileJson = prefs.getString('onboarding_profile');
+    final goalsJson = prefs.getString('onboarding_goals');
+
+    try {
+      if (profileJson != null) {
+        final Map<String, dynamic> profile =
+            _withoutStaleUserId(jsonDecode(profileJson) as Map<String, dynamic>);
+        await _supabase.from('user_profiles').upsert({
+          'user_id': userId,
+          ...profile,
+        });
+      }
+
+      if (goalsJson != null) {
+        final Map<String, dynamic> goals =
+            _withoutStaleUserId(jsonDecode(goalsJson) as Map<String, dynamic>);
+        await _supabase.from('goals').upsert({
+          'user_id': userId,
+          ...goals,
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+      }
+
+      if (profileJson != null || goalsJson != null) {
+        await prefs.remove('onboarding_profile');
+        await prefs.remove('onboarding_goals');
+        await prefs.setBool('onboarding_completed', true);
+      }
+
+      // Cache the upserted goals for quick access
+      final goalsResponse = await _supabase
+          .from('goals')
+          .select()
+          .eq('user_id', userId)
+          .maybeSingle();
+      if (goalsResponse != null) {
+        await prefs.setString('current_goals', jsonEncode(goalsResponse));
+      }
+    } catch (e) {
+      // Re-throw so callers can handle/log if needed
+      rethrow;
+    }
+  }
+  @override
   Future<void> signOut() async {
     await _supabase.auth.signOut();
+  }
+
+  /// Locally-saved onboarding maps can contain a stale `user_id` (the
+  /// "local" placeholder used before sign-in). Strip it so the upsert always
+  /// associates the row with the real authenticated user id.
+  Map<String, dynamic> _withoutStaleUserId(Map<String, dynamic> data) {
+    data.remove('user_id');
+    return data;
   }
 
   @override
