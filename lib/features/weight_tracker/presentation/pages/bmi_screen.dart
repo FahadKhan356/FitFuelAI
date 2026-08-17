@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fitfuel_ai/core/constants/app_colors.dart';
+import 'package:fitfuel_ai/core/utils/bmi_calculator.dart';
 
 const _bg = Color(0xFFF7F6FB);
 const _surface = Colors.white;
@@ -21,7 +22,10 @@ class _BmiScreenState extends State<BmiScreen> with SingleTickerProviderStateMix
   late TextEditingController _weightController;
   late TextEditingController _heightController;
   double _bmi = 23.4;
-  String _category = 'Normal';
+  String _categoryLabel = 'Normal weight';
+  String _healthyRangeText = 'Healthy range';
+  String _bmiPrime = '—';
+  String _summary = '';
   Color _categoryColor = const Color(0xFF27B4D9);
 
   @override
@@ -45,35 +49,60 @@ class _BmiScreenState extends State<BmiScreen> with SingleTickerProviderStateMix
     super.dispose();
   }
 
+  Color _colorFor(BmiCategory category) {
+    switch (category) {
+      case BmiCategory.severeUnderweight:
+      case BmiCategory.moderateUnderweight:
+      case BmiCategory.mildUnderweight:
+        return const Color(0xFF3B82F6);
+      case BmiCategory.normal:
+        return const Color(0xFF22C55E);
+      case BmiCategory.overweight:
+        return const Color(0xFFF59E0B);
+      case BmiCategory.obeseClassI:
+      case BmiCategory.obeseClassII:
+      case BmiCategory.obeseClassIII:
+        return const Color(0xFFEF4444);
+    }
+  }
+
   void _calculateBmi() {
     final weight = double.tryParse(_weightController.text) ?? 0.0;
-    final height = double.tryParse(_heightController.text) ?? 0.0;
-    if (weight <= 0 || height <= 0) {
+    final heightM = double.tryParse(_heightController.text) ?? 0.0;
+    if (weight <= 0 || heightM <= 0) {
       return;
     }
 
-    final bmi = weight / (height * height);
-    String category;
-    Color color;
+    // Real-world WHO classification via BmiCalculator (height in cm).
+    final result = BmiCalculator.calculate(
+      weightKg: weight,
+      heightCm: heightM * 100.0,
+    );
 
-    if (bmi < 18.5) {
-      category = 'Underweight';
-      color = const Color(0xFF3B82F6);
-    } else if (bmi < 25) {
-      category = 'Normal';
-      color = const Color(0xFF22C55E);
-    } else if (bmi < 30) {
-      category = 'Overweight';
-      color = const Color(0xFFF59E0B);
+    final String delta;
+    if (result.deltaToHealthyKg == 0) {
+      delta = 'You are already in a healthy weight band.';
+    } else if (result.deltaToHealthyKg < 0) {
+      delta =
+          'Gain ${result.deltaToHealthyKg.abs().toStringAsFixed(1)} kg to reach '
+          'your healthy (${result.healthyWeightMinKg.toStringAsFixed(0)}–'
+          '${result.healthyWeightMaxKg.toStringAsFixed(0)}) kg band.';
     } else {
-      category = 'Obese';
-      color = const Color(0xFFEF4444);
+      delta =
+          'Lose ${result.deltaToHealthyKg.toStringAsFixed(1)} kg to reach your '
+          'healthy (${result.healthyWeightMinKg.toStringAsFixed(0)}–'
+          '${result.healthyWeightMaxKg.toStringAsFixed(0)}) kg band.';
     }
 
     setState(() {
-      _bmi = bmi;
-      _category = category;
-      _categoryColor = color;
+      _bmi = result.bmi;
+      _categoryLabel = result.category.diagnostic;
+      _categoryColor = _colorFor(result.category);
+      _healthyRangeText =
+          '${result.healthyWeightMinKg.toStringAsFixed(0)} – '
+          '${result.healthyWeightMaxKg.toStringAsFixed(0)} kg';
+      _bmiPrime = result.bmiPrime.toStringAsFixed(2);
+      _summary = '${result.category.advice}\n\n$delta';
     });
   }
 
@@ -201,7 +230,7 @@ class _BmiScreenState extends State<BmiScreen> with SingleTickerProviderStateMix
                                               borderRadius: BorderRadius.circular(12),
                                             ),
                                             child: Text(
-                                              _category.toUpperCase(),
+                                              _categoryLabel.toUpperCase(),
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w700,
@@ -211,7 +240,7 @@ class _BmiScreenState extends State<BmiScreen> with SingleTickerProviderStateMix
                                           ),
                                           const SizedBox(width: 10),
                                           Text(
-                                            'Ideal 18.5 - 24.9',
+                                            'Healthy $_healthyRangeText',
                                             style: TextStyle(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w500,
@@ -316,20 +345,64 @@ class _BmiScreenState extends State<BmiScreen> with SingleTickerProviderStateMix
                             ),
                             const SizedBox(height: 12),
                             const Text(
-                              'BMI helps you understand where you stand with body composition and how your weight supports healthy goals.',
+                              'BMI uses the WHO adult classification. BMI Prime is '
+                              'your score as a fraction of the healthy upper limit (25).',
                               style: TextStyle(
                                 fontSize: 13,
                                 height: 1.5,
                                 color: _textSecondary,
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 14),
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                _StatusBadge(label: 'Underweight', color: const Color(0xFF3B82F6)),
-                                _StatusBadge(label: 'Normal', color: const Color(0xFF22C55E)),
-                                _StatusBadge(label: 'Overweight', color: const Color(0xFFF59E0B)),
+                                Icon(
+                                  Icons.fiber_manual_record_rounded,
+                                  size: 16,
+                                  color: _categoryColor,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'BMI Prime $_bmiPrime  ·  Healthy '
+                                    '$_healthyRangeText',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: _textPrimary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (_summary.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: _categoryColor.withOpacity(0.08),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  _summary,
+                                  style: const TextStyle(
+                                    fontSize: 12.5,
+                                    height: 1.45,
+                                    color: _textPrimary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 16),
+                            const Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _StatusBadge(label: 'Underweight', color: Color(0xFF3B82F6)),
+                                _StatusBadge(label: 'Normal', color: Color(0xFF22C55E)),
+                                _StatusBadge(label: 'Overweight', color: Color(0xFFF59E0B)),
+                                _StatusBadge(label: 'Obese', color: Color(0xFFEF4444)),
                               ],
                             ),
                           ],
