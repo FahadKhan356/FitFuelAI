@@ -54,6 +54,15 @@ class SupabaseRemoteDataSource {
     }, onConflict: 'user_id');
   }
 
+  /// Calls the server-side `calculate_user_goals` RPC which reads from
+  /// `user_profiles` and writes computed nutrition targets to `goals`.
+  Future<void> calculateUserGoals(String userId) async {
+    await _client.rpc(
+      'calculate_user_goals',
+      params: {'p_user_id': userId},
+    );
+  }
+
   // ==================== GOALS ====================
   Future<Map<String, dynamic>?> getUserGoals(String userId) async {
     final response = await _client

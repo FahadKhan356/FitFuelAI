@@ -9,7 +9,7 @@ import 'package:fitfuel_ai/core/domain/entities/goal_entity.dart';
 import 'package:fitfuel_ai/core/domain/entities/meal_entity.dart';
 import 'package:fitfuel_ai/core/domain/entities/user_profile_entity.dart';
 import 'package:fitfuel_ai/core/domain/usecases/all_usecases.dart';
-
+import 'package:fitfuel_ai/core/utils/fitness_calculator.dart';
 import '../../../analytics/presentation/pages/analytics_screen.dart';
 import '../../../food_scanner/presentation/pages/food_scanner_screen.dart';
 import '../../../ai_coach/presentation/pages/ai_coach_screen.dart';
@@ -123,6 +123,71 @@ class _HomeContentState extends State<_HomeContent>
     _loadData();
   }
 
+  // Fallback calculation methods for when goals are not available.
+  int _calculateFallbackCalories(UserProfileEntity? profile) {
+    if (profile == null ||
+        profile.weightKg == null ||
+        profile.heightCm == null ||
+        profile.age == null ||
+        profile.gender == null ||
+        profile.activityLevel == null) {
+      return 2000;
+    }
+
+    final bmr = FitnessCalculator.calculateBMR(
+      weightKg: profile.weightKg!,
+      heightCm: profile.heightCm!,
+      age: profile.age!,
+      gender: profile.gender!,
+    );
+
+    final tdee = FitnessCalculator.calculateTDEE(
+      bmr: bmr,
+      activityLevel: profile.activityLevel!,
+    );
+
+    return FitnessCalculator.calculateTargetCalories(
+      tdee: tdee,
+      goalType: profile.goalType ?? 'maintain',
+      weeklyPaceKg: 0.5,
+    );
+  }
+
+  double _calculateFallbackProtein(UserProfileEntity? profile) {
+    if (profile == null || profile.weightKg == null) {
+      return 150.0;
+    }
+    return FitnessCalculator.calculateProtein(weightKg: profile.weightKg!);
+  }
+
+  double _calculateFallbackCarbs(
+      UserProfileEntity? profile, int calories, double protein) {
+    if (profile == null) {
+      return 200.0;
+    }
+    return FitnessCalculator.calculateCarbs(
+      targetCalories: calories,
+      targetProtein: protein,
+      targetFat: _calculateFallbackFat(calories),
+    );
+  }
+
+  double _calculateFallbackFat(int calories) {
+    return FitnessCalculator.calculateFat(targetCalories: calories);
+  }
+
+  int _calculateFallbackWater(UserProfileEntity? profile) {
+    if (profile == null ||
+        profile.weightKg == null ||
+        profile.activityLevel == null) {
+      return 2500;
+    }
+    return FitnessCalculator.calculateDailyWater(
+      weightKg: profile.weightKg!,
+      activityLevel: profile.activityLevel!,
+    );
+  }
+
   /// Fetches the signed-in user's profile + today's dashboard from Supabase.
   ///
   /// Uses pre-calculated goals from onboarding (stored in DB).
@@ -150,12 +215,12 @@ class _HomeContentState extends State<_HomeContent>
       final goals = dash['goals'] as GoalEntity?;
       final meals = dash['meals'] as List? ?? const <MealEntity>[];
 
-      // 3. Use pre-calculated goals from DB. Only fallback to calculation if goals are null.
-      final dailyKcal = goals?.targetCalories ?? 2000;
-      final proteinTarget = goals?.targetProtein ?? 150.0;
-      final carbsTarget = goals?.targetCarbs ?? 200.0;
-      final fatTarget = goals?.targetFat ?? 65.0;
-      final waterTarget = goals?.dailyWaterMl ?? 2500;
+      // 3. Use pre-calculated goals from DB. Fallback to dynamic calculation if goals are null.
+      final dailyKcal = goals?.targetCalories ?? _calculateFallbackCalories(profile);
+      final proteinTarget = goals?.targetProtein ?? _calculateFallbackProtein(profile);
+      final carbsTarget = goals?.targetCarbs ?? _calculateFallbackCarbs(profile, dailyKcal, proteinTarget);
+      final fatTarget = goals?.targetFat ?? _calculateFallbackFat(dailyKcal);
+      final waterTarget = goals?.dailyWaterMl ?? _calculateFallbackWater(profile);
 
       // 4. Calculate macro totals consumed from today's meal items.
       var protein = 0.0, carbs = 0.0, fat = 0.0;
@@ -1684,6 +1749,64 @@ class _BottomNav extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  // Fallback calculation methods for when goals are not available
+  int _calculateFallbackCalories(UserProfileEntity? profile) {
+    if (profile == null || profile.weightKg == null || profile.heightCm == null || 
+        profile.age == null || profile.gender == null || profile.activityLevel == null) {
+      return 2000; // Default fallback
+    }
+    
+    final bmr = FitnessCalculator.calculateBMR(
+      weightKg: profile.weightKg!,
+      heightCm: profile.heightCm!,
+      age: profile.age!,
+      gender: profile.gender!,
+    );
+    
+    final tdee = FitnessCalculator.calculateTDEE(
+      bmr: bmr,
+      activityLevel: profile.activityLevel!,
+    );
+    
+    return FitnessCalculator.calculateTargetCalories(
+      tdee: tdee,
+      goalType: profile.goalType ?? 'maintain',
+      weeklyPaceKg: 0.5,
+    );
+  }
+
+  double _calculateFallbackProtein(UserProfileEntity? profile) {
+    if (profile == null || profile.weightKg == null) {
+      return 150.0; // Default fallback
+    }
+    return FitnessCalculator.calculateProtein(weightKg: profile.weightKg!);
+  }
+
+  double _calculateFallbackCarbs(UserProfileEntity? profile, int calories, double protein) {
+    if (profile == null) {
+      return 200.0; // Default fallback
+    }
+    return FitnessCalculator.calculateCarbs(
+      targetCalories: calories,
+      targetProtein: protein,
+      targetFat: _calculateFallbackFat(calories),
+    );
+  }
+
+  double _calculateFallbackFat(int calories) {
+    return FitnessCalculator.calculateFat(targetCalories: calories);
+  }
+
+  int _calculateFallbackWater(UserProfileEntity? profile) {
+    if (profile == null || profile.weightKg == null || profile.activityLevel == null) {
+      return 2500; // Default fallback
+    }
+    return FitnessCalculator.calculateDailyWater(
+      weightKg: profile.weightKg!,
+      activityLevel: profile.activityLevel!,
     );
   }
 }

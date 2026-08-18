@@ -15,11 +15,11 @@ class GoalEntity {
   const GoalEntity({
     required this.id,
     required this.userId,
-    this.targetCalories = 2000,
-    this.targetProtein = 150,
-    this.targetCarbs = 200,
-    this.targetFat = 65,
-    this.dailyWaterMl = 2500,
+    this.targetCalories = 0, // Will be set dynamically from calculations
+    this.targetProtein = 0,
+    this.targetCarbs = 0,
+    this.targetFat = 0,
+    this.dailyWaterMl = 0,
     this.goalType,
     this.targetWeightKg,
     this.weeklyPaceKg,
@@ -27,26 +27,24 @@ class GoalEntity {
     this.updatedAt,
   });
 
-  factory GoalEntity.fromJson(Map<String, dynamic> json) {
-    return GoalEntity(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
-      targetCalories: (json['target_calories'] as num?)?.toInt() ?? 2000,
-      targetProtein: (json['target_protein'] as num?)?.toDouble() ?? 150,
-      targetCarbs: (json['target_carbs'] as num?)?.toDouble() ?? 200,
-      targetFat: (json['target_fat'] as num?)?.toDouble() ?? 65,
-      dailyWaterMl: (json['daily_water_ml'] as num?)?.toInt() ?? 2500,
-      goalType: json['goal_type'] as String?,
-      targetWeightKg: (json['target_weight_kg'] as num?)?.toDouble(),
-      weeklyPaceKg: (json['weekly_pace_kg'] as num?)?.toDouble(),
-      targetDate: json['target_date'] != null
-          ? DateTime.tryParse(json['target_date'] as String)
-          : null,
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'] as String)
-          : null,
-    );
-  }
+  factory GoalEntity.fromJson(Map<String, dynamic> json) => GoalEntity(
+    id: json['id'] as String,
+    userId: json['user_id'] as String,
+    targetCalories: (json['target_calories'] as num?)?.toInt() ?? 0,
+    targetProtein: (json['target_protein'] as num?)?.toDouble() ?? 0,
+    targetCarbs: (json['target_carbs'] as num?)?.toDouble() ?? 0,
+    targetFat: (json['target_fat'] as num?)?.toDouble() ?? 0,
+    dailyWaterMl: (json['daily_water_ml'] as num?)?.toInt() ?? 0,
+    goalType: json['goal_type'] as String?,
+    targetWeightKg: (json['target_weight_kg'] as num?)?.toDouble(),
+    weeklyPaceKg: (json['weekly_pace_kg'] as num?)?.toDouble(),
+    targetDate: json['target_date'] != null
+        ? DateTime.tryParse(json['target_date'] as String)
+        : null,
+    updatedAt: json['updated_at'] != null
+        ? DateTime.parse(json['updated_at'] as String)
+        : null,
+  );
 
   Map<String, dynamic> toJson() {
     return {

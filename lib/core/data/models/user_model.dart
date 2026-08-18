@@ -97,11 +97,14 @@ class UserModel {
       if (gender != null) 'gender': gender,
       if (heightCm != null) 'height_cm': heightCm,
       if (weightKg != null) 'weight_kg': weightKg,
+      if (targetWeightKg != null) 'goal_weight_kg': targetWeightKg,
       if (activityLevel != null) 'activity_level': activityLevel,
+      if (goalType != null) 'goal_type': goalType,
       if (dietPreference != null) 'diet_preference': dietPreference,
       if (workoutFrequency != null) 'workout_frequency': workoutFrequency,
     };
   }
+
 
   /// Map for the `goals` Supabase table (Upsert).
   Map<String, dynamic> toGoalsJson() {

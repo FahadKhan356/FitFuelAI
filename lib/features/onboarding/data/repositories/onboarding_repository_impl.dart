@@ -1,6 +1,5 @@
 import '../../../../core/data/datasources/supabase_remote_datasource.dart';
 import '../../../../core/data/models/user_model.dart';
-import '../../../../core/utils/fitness_calculator.dart';
 import '../../domain/repositories/onboarding_repository.dart';
 
 class OnboardingRepositoryImpl implements OnboardingRepository {
@@ -26,18 +25,7 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
     required double weeklyPaceKg,
     DateTime? targetDate,
   }) async {
-    // 1. Run FitnessCalculator to compute all nutrition targets.
-    final targets = FitnessCalculator.calculateAllTargets(
-      weightKg: weightKg,
-      heightCm: heightCm,
-      age: age,
-      gender: gender,
-      activityLevel: activityLevel,
-      goalType: goalType,
-      weeklyPaceKg: weeklyPaceKg,
-    );
-
-    // 2. Build the unified user model.
+    // 1. Build the profile model (no computed nutrition — server does that).
     final user = UserModel(
       id: userId,
       email: email,
@@ -54,20 +42,28 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
       targetWeightKg: targetWeightKg,
       weeklyPaceKg: weeklyPaceKg,
       targetDate: targetDate,
-      targetCalories: targets['target_calories'] as int,
-      targetProtein: targets['target_protein'] as double,
-      targetCarbs: targets['target_carbs'] as double,
-      targetFat: targets['target_fat'] as double,
-      dailyWaterMl: targets['daily_water_ml'] as int,
     );
 
-    // 3. Upsert into user_profiles and goals tables in parallel.
-    await Future.wait([
-      _dataSource.updateUserProfile(userId, user.toProfileJson()),
-      _dataSource.updateGoals(userId, user.toGoalsJson()),
-    ]);
+    // 2. Upsert user_profiles — this is the data the RPC reads.
+    //    toProfileJson() now includes: name, age, gender, height_cm,
+    //    weight_kg, goal_weight_kg, activity_level, goal_type, etc.
+    await _dataSource.updateUserProfile(userId, user.toProfileJson());
 
-    // 4. Return updated unified model.
-    return user;
+    // 3. Trigger server-side calculation.
+    //    The RPC reads user_profiles and writes target_calories,
+    //    target_protein, target_carbs, target_fat, daily_water_ml to goals.
+    await _dataSource.calculateUserGoals(userId);
+
+    // 4. Fetch the freshly computed goals back from Supabase.
+    final goalsData = await _dataSource.getUserGoals(userId);
+
+    // 5. Return updated unified model with server-computed nutrition targets.
+    return user.copyWith(
+      targetCalories: (goalsData?['target_calories'] as num?)?.toInt(),
+      targetProtein: (goalsData?['target_protein'] as num?)?.toDouble(),
+      targetCarbs: (goalsData?['target_carbs'] as num?)?.toDouble(),
+      targetFat: (goalsData?['target_fat'] as num?)?.toDouble(),
+      dailyWaterMl: (goalsData?['daily_water_ml'] as num?)?.toInt(),
+    );
   }
 }

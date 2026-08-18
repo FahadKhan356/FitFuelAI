@@ -18,13 +18,21 @@ class MetricsStep extends StatefulWidget {
 }
 
 class _MetricsStepState extends State<MetricsStep> {
+  final _nameController = TextEditingController();
   int _age = 25;
   String _gender = 'female';
   double _heightCm = 170;
   double _weightKg = 70;
 
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
   void _continue() {
     widget.onContinue({
+      'name': _nameController.text.trim().isEmpty ? null : _nameController.text.trim(),
       'age': _age,
       'gender': _gender,
       'height_cm': _heightCm,
@@ -44,6 +52,10 @@ class _MetricsStepState extends State<MetricsStep> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const _FieldLabel('Your Name'),
+          _NameField(controller: _nameController),
+          const SizedBox(height: 20),
+
           const _FieldLabel('Age'),
           _StepperField(
             value: _age,
@@ -311,6 +323,47 @@ class _SliderField extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _NameField extends StatelessWidget {
+  final TextEditingController controller;
+  const _NameField({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.8)),
+      ),
+      child: TextField(
+        controller: controller,
+        textCapitalization: TextCapitalization.words,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF14142B),
+        ),
+        decoration: InputDecoration(
+          hintText: 'e.g. Alex',
+          hintStyle: const TextStyle(
+            color: Color(0xFF8A8A9A),
+            fontWeight: FontWeight.w400,
+          ),
+          prefixIcon: const Icon(
+            Icons.person_outline_rounded,
+            color: Color(AppColors.authPurple),
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+        ),
       ),
     );
   }

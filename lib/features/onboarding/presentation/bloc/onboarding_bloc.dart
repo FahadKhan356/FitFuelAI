@@ -96,7 +96,7 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
       final heightCm = _asDouble(formData['height_cm']) ?? 170.0;
       final weightKg = _asDouble(formData['weight_kg']) ?? 70.0;
       final activityLevel = formData['activity_level'] as String? ?? 'sedentary';
-      final goalType = formData['goal_type'] as String? ?? 'maintain';
+      final goalType = formData['goal_type'] as String? ?? 'maintenance';
       final weeklyPaceKg = _asDouble(formData['weekly_pace_kg']) ?? 0.5;
 
       final targets = FitnessCalculator.calculateAllTargets(
@@ -155,13 +155,14 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
         activityLevel: formData['activity_level'] as String? ?? 'sedentary',
         dietPreference: formData['diet_preference'] as String? ?? 'balanced',
         workoutFrequency: _asInt(formData['workout_frequency']) ?? 3,
-        goalType: formData['goal_type'] as String? ?? 'maintain',
+        goalType: formData['goal_type'] as String? ?? 'maintenance',
         targetWeightKg: _asDouble(formData['target_weight_kg']) ??
             _asDouble(formData['weight_kg']) ??
             0,
         weeklyPaceKg: _asDouble(formData['weekly_pace_kg']) ?? 0.5,
         targetDate: formData['target_date'] as DateTime?,
       );
+
       emit(OnboardingSuccess(userModel: userModel));
     } catch (e) {
       emit(OnboardingFailure(errorMessage: e.toString()));
