@@ -51,15 +51,42 @@ class FetchHomeDashboardUseCase {
   FetchHomeDashboardUseCase(this._mealRepo, this._waterRepo, this._userRepo);
 
   Future<Map<String, dynamic>> call(String userId, DateTime date) async {
-    final meals = await _mealRepo.getMealsByDate(userId, date);
-    final water = await _waterRepo.getWaterEntries(userId, date);
-    final goals = await _userRepo.getUserGoals(userId);
+    List<MealEntity> meals = const [];
+    List<WaterEntryEntity> water = const [];
+    GoalEntity? goals;
+    UserProfileEntity? profile;
+
+    await Future.wait([
+      _mealRepo.getMealsByDate(userId, date).then((res) {
+        meals = res;
+      }).catchError((e) {
+        return <MealEntity>[];
+      }),
+      _waterRepo.getWaterEntries(userId, date).then((res) {
+        water = res;
+      }).catchError((e) {
+        return <WaterEntryEntity>[];
+      }),
+      _userRepo.getUserGoals(userId).then((res) {
+        goals = res;
+      }).catchError((e) {
+        return null;
+      }),
+      _userRepo.getUserProfile(userId).then((res) {
+        profile = res;
+      }).catchError((e) {
+        return null;
+      }),
+    ]);
+
     final totalCalories = meals.fold<int>(0, (sum, m) => sum + m.totalCalories);
     final totalWater = water.fold<int>(0, (sum, w) => sum + w.amountMl);
+
     return {
       'meals': meals,
       'water': water,
       'goals': goals,
+      'profile': profile,
       'total_calories': totalCalories,
       'total_water_ml': totalWater,
     };

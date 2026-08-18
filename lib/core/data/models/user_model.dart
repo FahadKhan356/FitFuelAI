@@ -50,6 +50,20 @@ class UserModel {
     this.dailyWaterMl,
   });
 
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  static int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? double.tryParse(value)?.toInt();
+    return null;
+  }
+
   factory UserModel.fromJson(Map<String, dynamic> json) {
     // Support both flat unified maps and nested {profile, goals} maps.
     final profile = json['profile'] is Map<String, dynamic>
@@ -60,30 +74,30 @@ class UserModel {
         : json;
 
     return UserModel(
-      id: json['id'] as String? ?? profile['user_id'] as String? ?? json['user_id'] as String? ?? '',
+      id: json['id']?.toString() ?? profile['user_id']?.toString() ?? json['user_id']?.toString() ?? '',
       email: json['email'] as String?,
       name: profile['name'] as String? ?? json['name'] as String?,
       avatarUrl: profile['avatar_url'] as String? ?? json['avatar_url'] as String?,
-      age: profile['age'] as int? ?? json['age'] as int?,
+      age: _parseInt(profile['age']) ?? _parseInt(json['age']),
       gender: profile['gender'] as String? ?? json['gender'] as String?,
-      heightCm: (profile['height_cm'] as num?)?.toDouble() ?? (json['height_cm'] as num?)?.toDouble(),
-      weightKg: (profile['weight_kg'] as num?)?.toDouble() ?? (json['weight_kg'] as num?)?.toDouble(),
+      heightCm: _parseDouble(profile['height_cm']) ?? _parseDouble(json['height_cm']),
+      weightKg: _parseDouble(profile['weight_kg']) ?? _parseDouble(json['weight_kg']),
       activityLevel: profile['activity_level'] as String? ?? json['activity_level'] as String?,
       dietPreference: profile['diet_preference'] as String? ?? json['diet_preference'] as String?,
-      workoutFrequency: profile['workout_frequency'] as int? ?? json['workout_frequency'] as int?,
+      workoutFrequency: _parseInt(profile['workout_frequency']) ?? _parseInt(json['workout_frequency']),
       goalType: goals['goal_type'] as String? ?? json['goal_type'] as String?,
-      targetWeightKg: (goals['target_weight_kg'] as num?)?.toDouble() ?? (json['target_weight_kg'] as num?)?.toDouble(),
-      weeklyPaceKg: (goals['weekly_pace_kg'] as num?)?.toDouble() ?? (json['weekly_pace_kg'] as num?)?.toDouble(),
+      targetWeightKg: _parseDouble(goals['target_weight_kg']) ?? _parseDouble(json['target_weight_kg']),
+      weeklyPaceKg: _parseDouble(goals['weekly_pace_kg']) ?? _parseDouble(json['weekly_pace_kg']),
       targetDate: goals['target_date'] != null
           ? DateTime.tryParse(goals['target_date'] as String)
           : json['target_date'] != null
               ? DateTime.tryParse(json['target_date'] as String)
               : null,
-      targetCalories: (goals['target_calories'] as num?)?.toInt() ?? (json['target_calories'] as num?)?.toInt(),
-      targetProtein: (goals['target_protein'] as num?)?.toDouble() ?? (json['target_protein'] as num?)?.toDouble(),
-      targetCarbs: (goals['target_carbs'] as num?)?.toDouble() ?? (json['target_carbs'] as num?)?.toDouble(),
-      targetFat: (goals['target_fat'] as num?)?.toDouble() ?? (json['target_fat'] as num?)?.toDouble(),
-      dailyWaterMl: (goals['daily_water_ml'] as num?)?.toInt() ?? (json['daily_water_ml'] as num?)?.toInt(),
+      targetCalories: _parseInt(goals['target_calories']) ?? _parseInt(json['target_calories']),
+      targetProtein: _parseDouble(goals['target_protein']) ?? _parseDouble(json['target_protein']),
+      targetCarbs: _parseDouble(goals['target_carbs']) ?? _parseDouble(json['target_carbs']),
+      targetFat: _parseDouble(goals['target_fat']) ?? _parseDouble(json['target_fat']),
+      dailyWaterMl: _parseInt(goals['daily_water_ml']) ?? _parseInt(json['daily_water_ml']),
     );
   }
 

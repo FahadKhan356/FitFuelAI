@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:fitfuel_ai/core/services/home_data_cache.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -57,6 +58,11 @@ class _SplashScreenState extends State<SplashScreen>
     // Check if user is already logged in
     final currentUser = Supabase.instance.client.auth.currentUser;
     if (currentUser != null) {
+      if (hasCompletedOnboarding) {
+        try {
+          await HomeDataCache.loadPersistent(currentUser.id);
+        } catch (_) {}
+      }
       // User is already logged in:
       // - Onboarding complete → straight to Home dashboard
       // - Onboarding pending (e.g. new signup) → OnboardingFlow first

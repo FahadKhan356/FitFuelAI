@@ -27,22 +27,36 @@ class GoalEntity {
     this.updatedAt,
   });
 
+  static double _parseDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? double.tryParse(value)?.toInt() ?? 0;
+    return 0;
+  }
+
   factory GoalEntity.fromJson(Map<String, dynamic> json) => GoalEntity(
-    id: json['id'] as String,
-    userId: json['user_id'] as String,
-    targetCalories: (json['target_calories'] as num?)?.toInt() ?? 0,
-    targetProtein: (json['target_protein'] as num?)?.toDouble() ?? 0,
-    targetCarbs: (json['target_carbs'] as num?)?.toDouble() ?? 0,
-    targetFat: (json['target_fat'] as num?)?.toDouble() ?? 0,
-    dailyWaterMl: (json['daily_water_ml'] as num?)?.toInt() ?? 0,
+    id: json['id']?.toString() ?? '',
+    userId: json['user_id']?.toString() ?? '',
+    targetCalories: _parseInt(json['target_calories']),
+    targetProtein: _parseDouble(json['target_protein']),
+    targetCarbs: _parseDouble(json['target_carbs']),
+    targetFat: _parseDouble(json['target_fat']),
+    dailyWaterMl: _parseInt(json['daily_water_ml']),
     goalType: json['goal_type'] as String?,
-    targetWeightKg: (json['target_weight_kg'] as num?)?.toDouble(),
-    weeklyPaceKg: (json['weekly_pace_kg'] as num?)?.toDouble(),
+    targetWeightKg: json['target_weight_kg'] != null ? _parseDouble(json['target_weight_kg']) : null,
+    weeklyPaceKg: json['weekly_pace_kg'] != null ? _parseDouble(json['weekly_pace_kg']) : null,
     targetDate: json['target_date'] != null
-        ? DateTime.tryParse(json['target_date'] as String)
+        ? DateTime.tryParse(json['target_date'].toString())
         : null,
     updatedAt: json['updated_at'] != null
-        ? DateTime.parse(json['updated_at'] as String)
+        ? DateTime.tryParse(json['updated_at'].toString())
         : null,
   );
 

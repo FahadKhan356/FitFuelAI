@@ -43,8 +43,11 @@ class SupabaseRemoteDataSource {
         .from('user_profiles')
         .select()
         .eq('user_id', userId)
-        .maybeSingle();
-    return response as Map<String, dynamic>?;
+        .limit(1);
+    if (response is List && response.isNotEmpty) {
+      return response.first as Map<String, dynamic>;
+    }
+    return null;
   }
 
   Future<void> updateUserProfile(String userId, Map<String, dynamic> data) async {
@@ -69,8 +72,12 @@ class SupabaseRemoteDataSource {
         .from('goals')
         .select()
         .eq('user_id', userId)
-        .maybeSingle();
-    return response as Map<String, dynamic>?;
+        .order('updated_at', ascending: false)
+        .limit(1);
+    if (response is List && response.isNotEmpty) {
+      return response.first as Map<String, dynamic>;
+    }
+    return null;
   }
 
   Future<void> updateGoals(String userId, Map<String, dynamic> data) async {

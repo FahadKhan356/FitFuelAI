@@ -9,6 +9,7 @@ import 'package:fitfuel_ai/core/domain/entities/goal_entity.dart';
 import 'package:fitfuel_ai/core/domain/entities/meal_entity.dart';
 import 'package:fitfuel_ai/core/domain/entities/user_profile_entity.dart';
 import 'package:fitfuel_ai/core/domain/usecases/all_usecases.dart';
+import 'package:fitfuel_ai/core/services/home_data_cache.dart';
 import 'package:fitfuel_ai/core/utils/fitness_calculator.dart';
 import '../../../analytics/presentation/pages/analytics_screen.dart';
 import '../../../food_scanner/presentation/pages/food_scanner_screen.dart';
@@ -95,7 +96,7 @@ class _HomeContentState extends State<_HomeContent>
   late final AnimationController _entryController;
   late final AnimationController _floatingController;
 
-  // ── Real, DB-backed dashboard data (replaces hardcoded dummy values) ──
+  // ── Real, DB-backed dashboard data ──
   String _greetingName = 'there';
   int _dailyGoalKcal = 2000;
   int _consumedKcal = 0;
@@ -120,10 +121,48 @@ class _HomeContentState extends State<_HomeContent>
       duration: const Duration(milliseconds: 3000),
     )..repeat(reverse: true);
 
+    _initFromCache();
     _loadData();
   }
 
-  // Fallback calculation methods for when goals are not available.
+  /// Immediately applies cached data synchronously on frame 0 to eliminate flicker
+  void _initFromCache() {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      final cached = HomeDataCache.getCached(user.id);
+      if (cached != null) {
+        _applyCachedData(cached);
+      } else {
+        HomeDataCache.loadPersistent(user.id).then((saved) {
+          if (saved != null && mounted && _loading) {
+            setState(() {
+              _applyCachedData(saved);
+            });
+          }
+        });
+      }
+    }
+  }
+
+  void _applyCachedData(HomeCachedData cached) {
+    if (cached.name != null && cached.name!.isNotEmpty) {
+      _greetingName = cached.name!.split(' ').first;
+    }
+    _dailyGoalKcal = cached.targetCalories;
+    _consumedKcal = cached.consumedCalories;
+    _burnedKcal = cached.burnedCalories;
+    _proteinTarget = cached.targetProtein;
+    _proteinConsumed = cached.consumedProtein;
+    _carbsTarget = cached.targetCarbs;
+    _carbsConsumed = cached.consumedCarbs;
+    _fatTarget = cached.targetFat;
+    _fatConsumed = cached.consumedFat;
+    _waterTotalMl = cached.consumedWaterMl;
+    _waterTargetMl = cached.targetWaterMl;
+    _loading = false;
+  }
+
+  // Fallback calculation methods for when goals are not available in DB
   int _calculateFallbackCalories(UserProfileEntity? profile) {
     if (profile == null ||
         profile.weightKg == null ||
@@ -148,7 +187,7 @@ class _HomeContentState extends State<_HomeContent>
 
     return FitnessCalculator.calculateTargetCalories(
       tdee: tdee,
-      goalType: profile.goalType ?? 'maintain',
+      goalType: profile.goalType ?? 'maintenance',
       weeklyPaceKg: 0.5,
     );
   }
@@ -188,10 +227,7 @@ class _HomeContentState extends State<_HomeContent>
     );
   }
 
-  /// Fetches the signed-in user's profile + today's dashboard from Supabase.
-  ///
-  /// Uses pre-calculated goals from onboarding (stored in DB).
-  /// Only uses FitnessCalculator as fallback if goals are missing (edge case).
+  /// Fetches DB dashboard (goals + profile + meals + water) in a single parallel query.
   Future<void> _loadData() async {
     try {
       final user = Supabase.instance.client.auth.currentUser;
@@ -200,29 +236,24 @@ class _HomeContentState extends State<_HomeContent>
         return;
       }
 
-      // 1. Profile (for greeting name and fallback calculation).
-      UserProfileEntity? profile;
-      try {
-        profile = await sl<LoadUserProfileUseCase>().call(user.id);
-      } catch (_) {}
-
-      // 2. Current dashboard (goals + today's meals/water).
-      Map<String, dynamic> dash = const {};
-      try {
-        dash = await sl<FetchHomeDashboardUseCase>().call(user.id, DateTime.now());
-      } catch (_) {}
+      // Parallel fetch via single use case
+      final dash = await sl<FetchHomeDashboardUseCase>().call(user.id, DateTime.now());
 
       final goals = dash['goals'] as GoalEntity?;
+      final profile = dash['profile'] as UserProfileEntity?;
       final meals = dash['meals'] as List? ?? const <MealEntity>[];
 
-      // 3. Use pre-calculated goals from DB. Fallback to dynamic calculation if goals are null.
-      final dailyKcal = goals?.targetCalories ?? _calculateFallbackCalories(profile);
-      final proteinTarget = goals?.targetProtein ?? _calculateFallbackProtein(profile);
-      final carbsTarget = goals?.targetCarbs ?? _calculateFallbackCarbs(profile, dailyKcal, proteinTarget);
-      final fatTarget = goals?.targetFat ?? _calculateFallbackFat(dailyKcal);
-      final waterTarget = goals?.dailyWaterMl ?? _calculateFallbackWater(profile);
+      final hasValidGoals = goals != null && goals.targetCalories > 0;
 
-      // 4. Calculate macro totals consumed from today's meal items.
+      final dailyKcal = hasValidGoals ? goals.targetCalories : _calculateFallbackCalories(profile);
+      final proteinTarget = (hasValidGoals && goals.targetProtein > 0) ? goals.targetProtein : _calculateFallbackProtein(profile);
+      final carbsTarget = (hasValidGoals && goals.targetCarbs > 0) ? goals.targetCarbs : _calculateFallbackCarbs(profile, dailyKcal, proteinTarget);
+      final fatTarget = (hasValidGoals && goals.targetFat > 0) ? goals.targetFat : _calculateFallbackFat(dailyKcal);
+      final waterTarget = (hasValidGoals && goals.dailyWaterMl > 0) ? goals.dailyWaterMl : _calculateFallbackWater(profile);
+
+      debugPrint('HomeScreen DB targets: dailyKcal=$dailyKcal (from DB: ${goals?.targetCalories}), protein=$proteinTarget, carbs=$carbsTarget, fat=$fatTarget, water=$waterTarget');
+
+      // Macro totals from today's logged meals
       var protein = 0.0, carbs = 0.0, fat = 0.0;
       for (final meal in meals.whereType<MealEntity>()) {
         for (final item in meal.items) {
@@ -232,30 +263,56 @@ class _HomeContentState extends State<_HomeContent>
         }
       }
 
+      final consumedCalories = (dash['total_calories'] as num?)?.toInt() ?? 0;
+      final consumedWater = (dash['total_water_ml'] as num?)?.toInt() ?? 0;
+      final resolvedName = (profile?.name?.isNotEmpty ?? false)
+          ? profile!.name!
+          : (user.userMetadata?['name'] as String? ?? '');
+
+      // Persist to cache so next launch or tab switch is 0ms instant
+      await HomeDataCache.save(
+        user.id,
+        HomeCachedData(
+          name: resolvedName,
+          targetCalories: dailyKcal,
+          consumedCalories: consumedCalories,
+          burnedCalories: _burnedKcal,
+          targetProtein: proteinTarget,
+          consumedProtein: protein,
+          targetCarbs: carbsTarget,
+          consumedCarbs: carbs,
+          targetFat: fatTarget,
+          consumedFat: fat,
+          targetWaterMl: waterTarget,
+          consumedWaterMl: consumedWater,
+        ),
+      );
+
       if (mounted) {
         setState(() {
-          _greetingName = (profile?.name?.isNotEmpty ?? false)
-              ? profile!.name!.split(' ').first
+          _greetingName = resolvedName.isNotEmpty
+              ? resolvedName.split(' ').first
               : 'there';
           _dailyGoalKcal = dailyKcal;
-          _consumedKcal = (dash['total_calories'] as num?)?.toInt() ?? 0;
+          _consumedKcal = consumedCalories;
           _proteinTarget = proteinTarget;
           _carbsTarget = carbsTarget;
           _fatTarget = fatTarget;
           _proteinConsumed = protein;
           _carbsConsumed = carbs;
           _fatConsumed = fat;
-          _waterTotalMl = (dash['total_water_ml'] as num?)?.toInt() ?? 0;
+          _waterTotalMl = consumedWater;
           _waterTargetMl = waterTarget;
           _meals = meals.whereType<MealEntity>().toList()
             ..sort((a, b) => (b.createdAt ?? b.date)
                 .compareTo(a.createdAt ?? a.date));
+          _loading = false;
         });
       }
-    } catch (_) {
-      // Keep graceful defaults if the network/profile isn't ready yet.
+    } catch (e, stack) {
+      debugPrint('HomeScreen _loadData error: $e\n$stack');
     }
-    if (mounted) setState(() => _loading = false);
+    if (mounted && _loading) setState(() => _loading = false);
   }
 
   /// Time-based greeting prefix, e.g. "Good morning".
@@ -749,25 +806,6 @@ class _CalorieCard extends StatelessWidget {
             curve: const Interval(0.08, 0.42),
           ).value,
         ));
-        final roll = _clamp01(Curves.easeOutBack.transform(
-          CurvedAnimation(
-            parent: animation,
-            curve: const Interval(0.12, 0.55),
-          ).value,
-        ));
-        final mainCalories = (roll * remaining).toInt();
-        final consumedShow = (Curves.easeOutCubic.transform(
-          CurvedAnimation(
-            parent: animation,
-            curve: const Interval(0.18, 0.56),
-          ).value,
-        ) * consumed).toInt();
-        final burnedShow = (Curves.easeOutCubic.transform(
-          CurvedAnimation(
-            parent: animation,
-            curve: const Interval(0.22, 0.60),
-          ).value,
-        ) * burned).toInt();
 
         return Transform.scale(
           scale: 0.95 + (spring * 0.07),
@@ -819,7 +857,7 @@ class _CalorieCard extends StatelessWidget {
                     text: TextSpan(
                       children: [
                         TextSpan(
-                          text: mainCalories.toString(),
+                          text: remaining.toString(),
                           style: const TextStyle(
                             fontSize: 42,
                             fontWeight: FontWeight.w900,
@@ -842,9 +880,9 @@ class _CalorieCard extends StatelessWidget {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      _CalorieStat(label: 'Consumed', value: '$consumedShow kcal'),
+                      _CalorieStat(label: 'Consumed', value: '$consumed kcal'),
                       const SizedBox(width: 32),
-                      _CalorieStat(label: 'Burned', value: '$burnedShow kcal'),
+                      _CalorieStat(label: 'Burned', value: '$burned kcal'),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -1037,69 +1075,53 @@ class _MacroCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: kBorder, width: 1),
         ),
-        child: AnimatedBuilder(
-          animation: animation,
-          builder: (context, child) {
-            final intervalStart = 0.22 + (index * 0.06);
-            final t = CurvedAnimation(
-              parent: animation,
-              curve: Interval(intervalStart, intervalStart + 0.34, curve: Curves.easeOut),
-            ).value;
-            final count = (t * _extractValue(current)).toInt();
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Row(
-                  children: [
-                    Icon(icon, size: 14, color: iconColor),
-                    const SizedBox(width: 4),
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                        color: kBody,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 7),
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                        text: '${count}g',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: kHeadline,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      TextSpan(
-                        text: ' $total',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: kBody,
-                        ),
-                      ),
-                    ],
+                Icon(icon, size: 14, color: iconColor),
+                const SizedBox(width: 4),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    color: kBody,
+                    letterSpacing: 0.8,
                   ),
                 ),
               ],
-            );
-          },
+            ),
+            const SizedBox(height: 7),
+            RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: current,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: kHeadline,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  TextSpan(
+                    text: ' $total',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: kBody,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
-}
-
-int _extractValue(String value) {
-  final parsed = int.tryParse(value.replaceAll(RegExp(r'[^0-9]'), ''));
-  return parsed ?? 0;
 }
 
 // ─────────────────────────────────────────────
@@ -1137,144 +1159,113 @@ class _WaterCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: kBorder, width: 1),
         ),
-        child: AnimatedBuilder(
-          animation: animation,
-          builder: (context, child) {
-            final t = _clamp01(CurvedAnimation(
-              parent: animation,
-              curve: const Interval(0.46, 0.67, curve: Curves.easeOutBack),
-            ).value);
-            final liters = t * (totalMl / 1000.0);
-            final litersTotal = targetMl / 1000.0;
-            final percentDone =
-                targetMl <= 0 ? 0 : ((totalMl / targetMl) * 100).clamp(0, 100);
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Container(
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            color: kPurpleLight,
-                            borderRadius: BorderRadius.circular(9),
-                          ),
-                        ),
-                        Positioned.fill(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(9),
-                            child: Align(
-                              alignment: Alignment.bottomCenter,
-                              child: Container(
-                                height: 34 * t,
-                                decoration: const BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [Color(0x804F46E5), Color(0x336366F1)],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const Icon(
-                          Icons.water_drop_outlined,
-                          size: 18,
-                          color: kPurple,
-                        ),
-                      ],
-                    ),
-                    Transform.scale(
-                      scale: 0.92 + (t * 0.08),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: kPurple.withOpacity(0.10),
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                        child: Text(
-                          '$percentDone% DONE',
-                          style: const TextStyle(
-                            fontSize: 8.5,
-                            fontWeight: FontWeight.w700,
-                            color: kPurple,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: kPurpleLight,
+                        borderRadius: BorderRadius.circular(9),
                       ),
+                    ),
+                    const Icon(
+                      Icons.water_drop_outlined,
+                      size: 18,
+                      color: kPurple,
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                const Text(
-                  'WATER',
-                  style: TextStyle(
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w700,
-                    color: kBody,
-                    letterSpacing: 1.2,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: kPurple.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(100),
                   ),
-                ),
-                const SizedBox(height: 4),
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                        text: '${liters.toStringAsFixed(1)}L',
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
-                          color: kHeadline,
-                          letterSpacing: -0.8,
-                        ),
-                      ),
-                      TextSpan(
-                        text: ' / ${litersTotal.toStringAsFixed(1)}L',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: kBody,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                GestureDetector(
-                  onTap: () => context.push(AppRoutes.waterTracker),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: kPurpleLight,
-                      borderRadius: BorderRadius.circular(9),
-                    ),
-                    child: const Center(
-                      child: Text(
-                        '+250ml',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: kPurple,
-                        ),
-                      ),
+                  child: Text(
+                    targetMl <= 0
+                        ? '0% DONE'
+                        : '${((totalMl / targetMl) * 100).clamp(0, 100).toInt()}% DONE',
+                    style: const TextStyle(
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w700,
+                      color: kPurple,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),
               ],
-            );
-          },
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'WATER',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: kBody,
+                letterSpacing: 1.0,
+              ),
+            ),
+            const SizedBox(height: 3),
+            RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: (totalMl / 1000.0).toStringAsFixed(1),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: kHeadline,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  TextSpan(
+                    text: ' / ${(targetMl / 1000.0).toStringAsFixed(1)}L',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: kBody,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () => context.push(AppRoutes.waterTracker),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: kPurpleLight,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: const Center(
+                  child: Text(
+                    '+250ml',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: kPurple,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
+
 
 // ─────────────────────────────────────────────
 //  AI Coach Card

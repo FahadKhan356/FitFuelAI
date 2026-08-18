@@ -1,5 +1,6 @@
 import '../../../../core/data/datasources/supabase_remote_datasource.dart';
 import '../../../../core/data/models/user_model.dart';
+import '../../../../core/services/home_data_cache.dart';
 import '../../domain/repositories/onboarding_repository.dart';
 
 class OnboardingRepositoryImpl implements OnboardingRepository {
@@ -57,13 +58,42 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
     // 4. Fetch the freshly computed goals back from Supabase.
     final goalsData = await _dataSource.getUserGoals(userId);
 
-    // 5. Return updated unified model with server-computed nutrition targets.
-    return user.copyWith(
-      targetCalories: (goalsData?['target_calories'] as num?)?.toInt(),
-      targetProtein: (goalsData?['target_protein'] as num?)?.toDouble(),
-      targetCarbs: (goalsData?['target_carbs'] as num?)?.toDouble(),
-      targetFat: (goalsData?['target_fat'] as num?)?.toDouble(),
-      dailyWaterMl: (goalsData?['daily_water_ml'] as num?)?.toInt(),
+    double parseD(dynamic v) {
+      if (v == null) return 0.0;
+      if (v is num) return v.toDouble();
+      if (v is String) return double.tryParse(v) ?? 0.0;
+      return 0.0;
+    }
+
+    int parseI(dynamic v) {
+      if (v == null) return 0;
+      if (v is num) return v.toInt();
+      if (v is String) return int.tryParse(v) ?? double.tryParse(v)?.toInt() ?? 0;
+      return 0;
+    }
+
+    final computedModel = user.copyWith(
+      targetCalories: parseI(goalsData?['target_calories']),
+      targetProtein: parseD(goalsData?['target_protein']),
+      targetCarbs: parseD(goalsData?['target_carbs']),
+      targetFat: parseD(goalsData?['target_fat']),
+      dailyWaterMl: parseI(goalsData?['daily_water_ml']),
     );
+
+    // 5. Pre-populate HomeDataCache immediately so HomeScreen renders with 0ms delay and no flicker
+    await HomeDataCache.save(
+      userId,
+      HomeCachedData(
+        name: name,
+        targetCalories: computedModel.targetCalories ?? 2000,
+        targetProtein: computedModel.targetProtein ?? 0,
+        targetCarbs: computedModel.targetCarbs ?? 0,
+        targetFat: computedModel.targetFat ?? 0,
+        targetWaterMl: computedModel.dailyWaterMl ?? 2000,
+      ),
+    );
+
+    // 6. Return updated unified model with server-computed nutrition targets.
+    return computedModel;
   }
 }

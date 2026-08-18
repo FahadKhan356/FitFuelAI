@@ -31,23 +31,37 @@ class UserProfileEntity {
     this.createdAt,
   });
 
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  static int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? double.tryParse(value)?.toInt();
+    return null;
+  }
+
   factory UserProfileEntity.fromJson(Map<String, dynamic> json) {
     return UserProfileEntity(
-      userId: json['user_id'] as String,
+      userId: json['user_id']?.toString() ?? '',
       name: json['name'] as String?,
       avatarUrl: json['avatar_url'] as String?,
-      age: json['age'] as int?,
+      age: _parseInt(json['age']),
       gender: json['gender'] as String?,
-      heightCm: (json['height_cm'] as num?)?.toDouble(),
-      weightKg: (json['weight_kg'] as num?)?.toDouble(),
-      goalWeightKg: (json['goal_weight_kg'] as num?)?.toDouble(),
+      heightCm: _parseDouble(json['height_cm']),
+      weightKg: _parseDouble(json['weight_kg']),
+      goalWeightKg: _parseDouble(json['goal_weight_kg']),
       activityLevel: json['activity_level'] as String?,
       goalType: json['goal_type'] as String?,
       dietPreference: json['diet_preference'] as String?,
-      workoutFrequency: json['workout_frequency'] as int?,
+      workoutFrequency: _parseInt(json['workout_frequency']),
       bio: json['bio'] as String?,
       createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'] as String)
+          ? DateTime.tryParse(json['created_at'].toString())
           : null,
     );
   }
