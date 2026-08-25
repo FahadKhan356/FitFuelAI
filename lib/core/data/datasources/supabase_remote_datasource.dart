@@ -45,7 +45,7 @@ class SupabaseRemoteDataSource {
         .eq('user_id', userId)
         .limit(1);
     if (response is List && response.isNotEmpty) {
-      return response.first as Map<String, dynamic>;
+      return Map<String, dynamic>.from(response.first as Map);
     }
     return null;
   }
@@ -75,7 +75,7 @@ class SupabaseRemoteDataSource {
         .order('updated_at', ascending: false)
         .limit(1);
     if (response is List && response.isNotEmpty) {
-      return response.first as Map<String, dynamic>;
+      return Map<String, dynamic>.from(response.first as Map);
     }
     return null;
   }

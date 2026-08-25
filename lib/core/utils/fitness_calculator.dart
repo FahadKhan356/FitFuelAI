@@ -15,7 +15,7 @@ class FitnessCalculator {
 
   // ─── Constants ───
   static const int minCaloriesForLoss = 1200;
-  static const double caloriesPerKg = 1100; // ~7700 kcal per kg fat, adjusted
+  static const double caloriesPerKg = 7700; // ~7700 kcal per kg fat, adjusted
   static const double proteinGramsPerKg = 2.0;
   static const double proteinCaloriesPerGram = 4;
   static const double carbCaloriesPerGram = 4;

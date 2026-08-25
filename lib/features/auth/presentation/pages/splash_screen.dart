@@ -58,7 +58,23 @@ class _SplashScreenState extends State<SplashScreen>
     // Check if user is already logged in
     final currentUser = Supabase.instance.client.auth.currentUser;
     if (currentUser != null) {
-      if (hasCompletedOnboarding) {
+      bool shouldGoHome = hasCompletedOnboarding;
+      if (!shouldGoHome) {
+        // If not completed locally, check DB to see if they already have a profile
+        try {
+          final response = await Supabase.instance.client
+              .from('user_profiles')
+              .select('user_id')
+              .eq('user_id', currentUser.id)
+              .limit(1);
+          if (response is List && response.isNotEmpty) {
+            await prefs.setBool('onboarding_completed', true);
+            shouldGoHome = true;
+          }
+        } catch (_) {}
+      }
+
+      if (shouldGoHome) {
         try {
           await HomeDataCache.loadPersistent(currentUser.id);
         } catch (_) {}
@@ -66,7 +82,7 @@ class _SplashScreenState extends State<SplashScreen>
       // User is already logged in:
       // - Onboarding complete → straight to Home dashboard
       // - Onboarding pending (e.g. new signup) → OnboardingFlow first
-      context.go(hasCompletedOnboarding ? AppRoutes.home : AppRoutes.onboarding);
+      context.go(shouldGoHome ? AppRoutes.home : AppRoutes.onboarding);
     } else if (hasCompletedOnboarding) {
       // Returning user who completed onboarding → go to login
       context.go(AppRoutes.login);

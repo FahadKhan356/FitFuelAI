@@ -163,6 +163,9 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
         targetDate: formData['target_date'] as DateTime?,
       );
 
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('onboarding_completed', true);
+
       emit(OnboardingSuccess(userModel: userModel));
     } catch (e) {
       emit(OnboardingFailure(errorMessage: e.toString()));
