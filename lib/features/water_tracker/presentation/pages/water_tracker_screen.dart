@@ -83,11 +83,19 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _bloc,
-      child: Scaffold(
-        backgroundColor: _bg,
-        body: SafeArea(
-          child: Column(
-            children: [
+      child: BlocListener<WaterTrackerBloc, WaterTrackerState>(
+        listener: (context, state) {
+          if (state is WaterTrackerError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error: ${state.message}')),
+            );
+          }
+        },
+        child: Scaffold(
+          backgroundColor: _bg,
+          body: SafeArea(
+            child: Column(
+              children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
                 child: Row(
@@ -363,7 +371,7 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
           ],
         ),
       ),
-    ));
+    )));
 
   }
 }
