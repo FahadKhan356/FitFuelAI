@@ -1,4 +1,9 @@
 import 'dart:convert';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/di/service_locator.dart';
+import '../bloc/water_tracker_bloc.dart';
+import 'package:intl/intl.dart';
 
 import 'package:fitfuel_ai/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
@@ -22,13 +27,18 @@ class WaterTrackerScreen extends StatefulWidget {
 }
 
 class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
-  int waterIntake = 1750;
+  late final WaterTrackerBloc _bloc;
   int waterGoal = 3000;
 
   @override
   void initState() {
     super.initState();
+    _bloc = sl<WaterTrackerBloc>();
     _loadCachedGoals();
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId != null) {
+      _bloc.add(LoadWaterData(userId, DateTime.now()));
+    }
   }
 
   Future<void> _loadCachedGoals() async {
@@ -52,77 +62,106 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => WaterEntryBottomSheet(
         onWaterAdded: (amount) {
-          setState(() => waterIntake += amount);
+          final userId = Supabase.instance.client.auth.currentUser?.id;
+          if (userId != null) {
+            _bloc.add(AddWaterLog(userId, amount, DateTime.now()));
+          }
           Navigator.pop(context);
         },
       ),
     );
   }
 
+  void _addWater(int amount) {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId != null) {
+      _bloc.add(AddWaterLog(userId, amount, DateTime.now()));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _bg,
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
-              child: Row(
-                children: [
-                  _IconButton(
-                    icon: Icons.arrow_back_ios_new_rounded,
-                    onTap: () => Navigator.of(context).maybePop(),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Water Intake',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontSize: 21,
-                          fontWeight: FontWeight.w700,
-                          color: _textPrimary,
-                        ),
-                  ),
-                  const Spacer(),
-                  _IconButton(
-                    icon: Icons.info_outline_rounded,
-                    onTap: () {},
-                  ),
-                ],
+    return BlocProvider.value(
+      value: _bloc,
+      child: Scaffold(
+        backgroundColor: _bg,
+        body: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+                child: Row(
+                  children: [
+                    _IconButton(
+                      icon: Icons.arrow_back_ios_new_rounded,
+                      onTap: () => Navigator.of(context).maybePop(),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Water Intake',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontSize: 21,
+                            fontWeight: FontWeight.w700,
+                            color: _textPrimary,
+                          ),
+                    ),
+                    const Spacer(),
+                    _IconButton(
+                      icon: Icons.info_outline_rounded,
+                      onTap: () {},
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const Divider(height: 1, thickness: 1, color: Color(0xFFECE9F4)),
-            Expanded(
-              child: ListView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 22),
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      RichText(
-                        text: TextSpan(
+              const Divider(height: 1, thickness: 1, color: Color(0xFFECE9F4)),
+              Expanded(
+                child: BlocBuilder<WaterTrackerBloc, WaterTrackerState>(
+                  builder: (context, state) {
+                    int waterIntake = 0;
+                    List<_HistoryRow> historyItems = [];
+
+                    if (state is WaterDataLoaded) {
+                      waterIntake = state.totalMl;
+                      historyItems = state.entries.map((e) {
+                        final time = e.createdAt ?? e.date;
+                        return _HistoryRow(
+                          time: DateFormat.jm().format(time),
+                          label: e.amountMl >= 1000 ? 'Large Bottle' : e.amountMl >= 500 ? 'Bottle' : 'Glass',
+                          amount: '+${e.amountMl}ml',
+                        );
+                      }).toList();
+                    }
+
+                    return ListView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 22),
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            TextSpan(
-                              text: '$waterIntake',
-                              style: const TextStyle(
-                                fontSize: 34,
-                                fontWeight: FontWeight.w800,
-                                color: _textPrimary,
-                                height: 1,
+                            RichText(
+                              text: TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: '$waterIntake',
+                                    style: const TextStyle(
+                                      fontSize: 34,
+                                      fontWeight: FontWeight.w800,
+                                      color: _textPrimary,
+                                      height: 1,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: ' / ${waterGoal}ml',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: _textSecondary,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const TextSpan(
-                              text: ' / 3000ml',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: _textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                       const Spacer(),
                       Container(
                         width: 42,
@@ -257,77 +296,75 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
                           bg: _blueTint,
                           amount: '250ml',
                           label: 'GLASS',
-                          onTap: () => setState(() => waterIntake += 250),
+                          onTap: () => _addWater(250),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _QuickLogCard(
+                                icon: Icons.water_sharp,
+                                iconColor: _cyan,
+                                bg: _blueTint,
+                                amount: '500ml',
+                                label: 'BOTTLE',
+                                onTap: () => _addWater(500),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _QuickLogCard(
+                                icon: Icons.water_drop_outlined,
+                                iconColor: _cyan,
+                                bg: _blueTint,
+                                amount: '750ml',
+                                label: 'LARGE',
+                                onTap: () => _addWater(750),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _QuickLogCard(
-                          icon: Icons.water_sharp,
-                          iconColor: _cyan,
-                          bg: _blueTint,
-                          amount: '500ml',
-                          label: 'BOTTLE',
-                          onTap: () => setState(() => waterIntake += 500),
+                        const SizedBox(height: 18),
+                        Row(
+                          children: [
+                            const Text(
+                              "TODAY'S HISTORY",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: _textSecondary,
+                                letterSpacing: 0.7,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _QuickLogCard(
-                          icon: Icons.water_drop_outlined,
-                          iconColor: _cyan,
-                          bg: _blueTint,
-                          amount: '750ml',
-                          label: 'LARGE',
-                          onTap: () => setState(() => waterIntake += 750),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  Row(
-                    children: [
-                      const Text(
-                        "TODAY'S HISTORY",
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: _textSecondary,
-                          letterSpacing: 0.7,
-                        ),
-                      ),
-                      const Spacer(),
-                      GestureDetector(
-                        onTap: () {},
-                        child: const Text(
-                          'Full History',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: _purple,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  _HistoryCard(
-                    items: const [
-                      _HistoryRow(time: '08:30 AM', label: 'Glass', amount: '+250ml'),
-                      _HistoryRow(time: '10:15 AM', label: 'Bottle', amount: '+500ml'),
-                      _HistoryRow(time: '01:00 PM', label: 'Large Bottle', amount: '+1000ml'),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  const _TipCard(),
-                  const SizedBox(height: 24),
-                ],
+                        const SizedBox(height: 10),
+                        if (state is WaterTrackerLoading)
+                          const Center(child: CircularProgressIndicator())
+                        else if (historyItems.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 20),
+                            child: Center(
+                              child: Text(
+                                'No water recorded today.',
+                                style: TextStyle(color: _textSecondary),
+                              ),
+                            ),
+                          )
+                        else
+                          _HistoryCard(items: historyItems),
+                        const SizedBox(height: 12),
+                        const _TipCard(),
+                        const SizedBox(height: 24),
+                      ],
+                    );
+                  },
+                ),
               ),
-            ),
           ],
         ),
       ),
-    );
+    ));
+
   }
 }
 

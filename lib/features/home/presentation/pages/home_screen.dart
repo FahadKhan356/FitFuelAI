@@ -19,20 +19,20 @@ import '../../../profile/presentation/pages/profile_screen.dart';
 // ─────────────────────────────────────────────
 //  Design Tokens
 // ─────────────────────────────────────────────
-const Color kBg           = Color(0xFFF5F5FA);
-const Color kWhite        = Color(0xFFFFFFFF);
-const Color kPurple       = Color(0xFF5B4EE8);
-const Color kPurpleLight  = Color(0xFFEDEBFB);
-const Color kPurpleCard   = Color(0xFFD8D4F8);
-const Color kPurpleMid    = Color(0xFFB8B0F0);
-const Color kHeadline     = Color(0xFF14142B);
-const Color kBody         = Color(0xFF8A8A9A);
-const Color kBorder       = Color(0xFFE8E6F5);
-const Color kCardBg       = Color(0xFFFFFFFF);
-const Color kOrange       = Color(0xFFF5A623);
-const Color kGreen        = Color(0xFF34C759);
-const Color kRed          = Color(0xFFFF6B6B);
-const Color kProgressBg   = Color(0xFFE4E0F8);
+const Color kBg = Color(0xFFF5F5FA);
+const Color kWhite = Color(0xFFFFFFFF);
+const Color kPurple = Color(0xFF5B4EE8);
+const Color kPurpleLight = Color(0xFFEDEBFB);
+const Color kPurpleCard = Color(0xFFD8D4F8);
+const Color kPurpleMid = Color(0xFFB8B0F0);
+const Color kHeadline = Color(0xFF14142B);
+const Color kBody = Color(0xFF8A8A9A);
+const Color kBorder = Color(0xFFE8E6F5);
+const Color kCardBg = Color(0xFFFFFFFF);
+const Color kOrange = Color(0xFFF5A623);
+const Color kGreen = Color(0xFF34C759);
+const Color kRed = Color(0xFFFF6B6B);
+const Color kProgressBg = Color(0xFFE4E0F8);
 
 // ─────────────────────────────────────────────
 //  Home Screen
@@ -237,7 +237,8 @@ class _HomeContentState extends State<_HomeContent>
       }
 
       // Parallel fetch via single use case
-      final dash = await sl<FetchHomeDashboardUseCase>().call(user.id, DateTime.now());
+      final dash =
+          await sl<FetchHomeDashboardUseCase>().call(user.id, DateTime.now());
 
       final goals = dash['goals'] as GoalEntity?;
       final profile = dash['profile'] as UserProfileEntity?;
@@ -245,13 +246,24 @@ class _HomeContentState extends State<_HomeContent>
 
       final hasValidGoals = goals != null && goals.targetCalories > 0;
 
-      final dailyKcal = hasValidGoals ? goals.targetCalories : _calculateFallbackCalories(profile);
-      final proteinTarget = (hasValidGoals && goals.targetProtein > 0) ? goals.targetProtein : _calculateFallbackProtein(profile);
-      final carbsTarget = (hasValidGoals && goals.targetCarbs > 0) ? goals.targetCarbs : _calculateFallbackCarbs(profile, dailyKcal, proteinTarget);
-      final fatTarget = (hasValidGoals && goals.targetFat > 0) ? goals.targetFat : _calculateFallbackFat(dailyKcal);
-      final waterTarget = (hasValidGoals && goals.dailyWaterMl > 0) ? goals.dailyWaterMl : _calculateFallbackWater(profile);
+      final dailyKcal = hasValidGoals
+          ? goals.targetCalories
+          : _calculateFallbackCalories(profile);
+      final proteinTarget = (hasValidGoals && goals.targetProtein > 0)
+          ? goals.targetProtein
+          : _calculateFallbackProtein(profile);
+      final carbsTarget = (hasValidGoals && goals.targetCarbs > 0)
+          ? goals.targetCarbs
+          : _calculateFallbackCarbs(profile, dailyKcal, proteinTarget);
+      final fatTarget = (hasValidGoals && goals.targetFat > 0)
+          ? goals.targetFat
+          : _calculateFallbackFat(dailyKcal);
+      final waterTarget = (hasValidGoals && goals.dailyWaterMl > 0)
+          ? goals.dailyWaterMl
+          : _calculateFallbackWater(profile);
 
-      debugPrint('HomeScreen DB targets: dailyKcal=$dailyKcal (from DB: ${goals?.targetCalories}), protein=$proteinTarget, carbs=$carbsTarget, fat=$fatTarget, water=$waterTarget');
+      debugPrint(
+          'HomeScreen DB targets: dailyKcal=$dailyKcal (from DB: ${goals?.targetCalories}), protein=$proteinTarget, carbs=$carbsTarget, fat=$fatTarget, water=$waterTarget');
 
       // Macro totals from today's logged meals
       var protein = 0.0, carbs = 0.0, fat = 0.0;
@@ -290,9 +302,8 @@ class _HomeContentState extends State<_HomeContent>
 
       if (mounted) {
         setState(() {
-          _greetingName = resolvedName.isNotEmpty
-              ? resolvedName.split(' ').first
-              : 'there';
+          _greetingName =
+              resolvedName.isNotEmpty ? resolvedName.split(' ').first : 'there';
           _dailyGoalKcal = dailyKcal;
           _consumedKcal = consumedCalories;
           _proteinTarget = proteinTarget;
@@ -304,8 +315,8 @@ class _HomeContentState extends State<_HomeContent>
           _waterTotalMl = consumedWater;
           _waterTargetMl = waterTarget;
           _meals = meals.whereType<MealEntity>().toList()
-            ..sort((a, b) => (b.createdAt ?? b.date)
-                .compareTo(a.createdAt ?? a.date));
+            ..sort((a, b) =>
+                (b.createdAt ?? b.date).compareTo(a.createdAt ?? a.date));
           _loading = false;
         });
       }
@@ -385,11 +396,8 @@ class _HomeContentState extends State<_HomeContent>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 14),
-
             _TopBar(floating: _floatingController),
-
             const SizedBox(height: 20),
-
             AnimatedBuilder(
               animation: _entryController,
               builder: (context, child) {
@@ -445,18 +453,14 @@ class _HomeContentState extends State<_HomeContent>
                 ),
               ),
             ),
-
             const SizedBox(height: 18),
-
             _CalorieCard(
               animation: _entryController,
               dailyGoal: _dailyGoalKcal,
               consumed: _consumedKcal,
               burned: _burnedKcal,
             ),
-
             const SizedBox(height: 16),
-
             _MacroRow(
               animation: _entryController,
               proteinCurrent: _proteinConsumed,
@@ -466,9 +470,7 @@ class _HomeContentState extends State<_HomeContent>
               fatCurrent: _fatConsumed,
               fatTotal: _fatTarget,
             ),
-
             const SizedBox(height: 14),
-
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -477,6 +479,7 @@ class _HomeContentState extends State<_HomeContent>
                     animation: _entryController,
                     totalMl: _waterTotalMl,
                     targetMl: _waterTargetMl,
+                    onReload: _loadData,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -525,7 +528,8 @@ class _HomeContentState extends State<_HomeContent>
                           color: kPurpleLight,
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: const Icon(Icons.monitor_weight_rounded, color: kPurple, size: 24),
+                        child: const Icon(Icons.monitor_weight_rounded,
+                            color: kPurple, size: 24),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -553,15 +557,14 @@ class _HomeContentState extends State<_HomeContent>
                           ],
                         ),
                       ),
-                      const Icon(Icons.arrow_forward_ios, size: 18, color: kPurple),
+                      const Icon(Icons.arrow_forward_ios,
+                          size: 18, color: kPurple),
                     ],
                   ),
                 ),
               ),
             ),
-
             const SizedBox(height: 22),
-
             AnimatedBuilder(
               animation: _entryController,
               builder: (context, child) {
@@ -603,9 +606,7 @@ class _HomeContentState extends State<_HomeContent>
                 ],
               ),
             ),
-
             const SizedBox(height: 14),
-
             if (_meals.isEmpty)
               Container(
                 width: double.infinity,
@@ -653,7 +654,6 @@ class _HomeContentState extends State<_HomeContent>
                   icon: _mealIcon(_meals[i].mealType),
                 ),
               ],
-
             const SizedBox(height: 100),
           ],
         ),
@@ -696,7 +696,6 @@ class _TopBar extends StatelessWidget {
             child: const Icon(Icons.bolt_rounded, color: kWhite, size: 22),
           ),
         ),
-
         Row(
           children: [
             // Notifications bell
@@ -712,7 +711,8 @@ class _TopBar extends StatelessWidget {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    const Icon(Icons.notifications_rounded, color: kPurple, size: 20),
+                    const Icon(Icons.notifications_rounded,
+                        color: kPurple, size: 20),
                     Positioned(
                       top: 6,
                       right: 6,
@@ -793,9 +793,8 @@ class _CalorieCard extends StatelessWidget {
     final remaining = (dailyGoal - consumed).clamp(0, dailyGoal);
     final progress =
         dailyGoal <= 0 ? 0.0 : (consumed / dailyGoal).clamp(0.0, 1.0);
-    final percentLeft = dailyGoal <= 0
-        ? 0
-        : ((remaining / dailyGoal) * 100).clamp(0, 100);
+    final percentLeft =
+        dailyGoal <= 0 ? 0 : ((remaining / dailyGoal) * 100).clamp(0, 100);
 
     return AnimatedBuilder(
       animation: animation,
@@ -1055,7 +1054,8 @@ class _MacroCard extends StatelessWidget {
         final intervalStart = 0.22 + (index * 0.06);
         final t = CurvedAnimation(
           parent: animation,
-          curve: Interval(intervalStart, intervalStart + 0.34, curve: Curves.elasticOut),
+          curve: Interval(intervalStart, intervalStart + 0.34,
+              curve: Curves.elasticOut),
         ).value;
         return Opacity(
           opacity: t.clamp(0.0, 1.0),
@@ -1132,140 +1132,150 @@ class _WaterCard extends StatelessWidget {
     required this.animation,
     required this.totalMl,
     required this.targetMl,
+    required this.onReload,
   });
 
   final Animation<double> animation;
   final int totalMl;
   final int targetMl;
+  final VoidCallback onReload;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: animation,
-      builder: (context, child) {
-        final t = _clamp01(CurvedAnimation(
-          parent: animation,
-          curve: const Interval(0.46, 0.67, curve: Curves.easeOutBack),
-        ).value);
-        return Transform.translate(
-          offset: Offset(0, 22 * (1 - t)),
-          child: Opacity(opacity: t, child: child),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: kCardBg,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: kBorder, width: 1),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        animation: animation,
+        builder: (context, child) {
+          final t = _clamp01(CurvedAnimation(
+            parent: animation,
+            curve: const Interval(0.46, 0.67, curve: Curves.easeOutBack),
+          ).value);
+          return Transform.translate(
+            offset: Offset(0, 22 * (1 - t)),
+            child: Opacity(opacity: t, child: child),
+          );
+        },
+        child: GestureDetector(
+          onTap: () async {
+            await context.push(AppRoutes.waterTracker);
+            onReload();
+          },
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: kCardBg,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: kBorder, width: 1),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Stack(
-                  alignment: Alignment.center,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: kPurpleLight,
-                        borderRadius: BorderRadius.circular(9),
-                      ),
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: kPurpleLight,
+                            borderRadius: BorderRadius.circular(9),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.water_drop_outlined,
+                          size: 18,
+                          color: kPurple,
+                        ),
+                      ],
                     ),
-                    const Icon(
-                      Icons.water_drop_outlined,
-                      size: 18,
-                      color: kPurple,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: kPurple.withOpacity(0.10),
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      child: Text(
+                        targetMl <= 0
+                            ? '0% DONE'
+                            : '${((totalMl / targetMl) * 100).clamp(0, 100).toInt()}% DONE',
+                        style: const TextStyle(
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.w700,
+                          color: kPurple,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: kPurple.withOpacity(0.10),
-                    borderRadius: BorderRadius.circular(100),
+                const SizedBox(height: 10),
+                const Text(
+                  'WATER',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: kBody,
+                    letterSpacing: 1.0,
                   ),
-                  child: Text(
-                    targetMl <= 0
-                        ? '0% DONE'
-                        : '${((totalMl / targetMl) * 100).clamp(0, 100).toInt()}% DONE',
-                    style: const TextStyle(
-                      fontSize: 8.5,
-                      fontWeight: FontWeight.w700,
-                      color: kPurple,
-                      letterSpacing: 0.5,
+                ),
+                const SizedBox(height: 3),
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: (totalMl / 1000.0).toStringAsFixed(1),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: kHeadline,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      TextSpan(
+                        text: ' / ${(targetMl / 1000.0).toStringAsFixed(1)}L',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: kBody,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: () async {
+                    await context.push(AppRoutes.waterTracker);
+                    onReload();
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: kPurpleLight,
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        '+250ml',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: kPurple,
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
-            const Text(
-              'WATER',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: kBody,
-                letterSpacing: 1.0,
-              ),
-            ),
-            const SizedBox(height: 3),
-            RichText(
-              text: TextSpan(
-                children: [
-                  TextSpan(
-                    text: (totalMl / 1000.0).toStringAsFixed(1),
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: kHeadline,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  TextSpan(
-                    text: ' / ${(targetMl / 1000.0).toStringAsFixed(1)}L',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: kBody,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: () => context.push(AppRoutes.waterTracker),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  color: kPurpleLight,
-                  borderRadius: BorderRadius.circular(9),
-                ),
-                child: const Center(
-                  child: Text(
-                    '+250ml',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: kPurple,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+          ),
+        ));
   }
 }
-
 
 // ─────────────────────────────────────────────
 //  AI Coach Card
@@ -1303,7 +1313,8 @@ class _AICoachCard extends StatelessWidget {
               parent: animation,
               curve: const Interval(0.54, 0.74, curve: Curves.easeOutCubic),
             ).value);
-            final pulse = 1.0 + (math.sin(animation.value * math.pi * 2) * 0.08);
+            final pulse =
+                1.0 + (math.sin(animation.value * math.pi * 2) * 0.08);
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1489,7 +1500,8 @@ class _MealItem extends StatelessWidget {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
                           color: _mealTypeColor.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(100),
@@ -1505,7 +1517,8 @@ class _MealItem extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      const Icon(Icons.access_time_rounded, size: 11, color: kBody),
+                      const Icon(Icons.access_time_rounded,
+                          size: 11, color: kBody),
                       const SizedBox(width: 3),
                       Text(
                         time,
@@ -1716,9 +1729,8 @@ class _BottomNav extends StatelessWidget {
                         items[i].label,
                         style: TextStyle(
                           fontSize: 10,
-                          fontWeight: active
-                              ? FontWeight.w700
-                              : FontWeight.w400,
+                          fontWeight:
+                              active ? FontWeight.w700 : FontWeight.w400,
                           color: active ? kPurple : kBody,
                         ),
                       ),
@@ -1745,23 +1757,27 @@ class _BottomNav extends StatelessWidget {
 
   // Fallback calculation methods for when goals are not available
   int _calculateFallbackCalories(UserProfileEntity? profile) {
-    if (profile == null || profile.weightKg == null || profile.heightCm == null || 
-        profile.age == null || profile.gender == null || profile.activityLevel == null) {
+    if (profile == null ||
+        profile.weightKg == null ||
+        profile.heightCm == null ||
+        profile.age == null ||
+        profile.gender == null ||
+        profile.activityLevel == null) {
       return 2000; // Default fallback
     }
-    
+
     final bmr = FitnessCalculator.calculateBMR(
       weightKg: profile.weightKg!,
       heightCm: profile.heightCm!,
       age: profile.age!,
       gender: profile.gender!,
     );
-    
+
     final tdee = FitnessCalculator.calculateTDEE(
       bmr: bmr,
       activityLevel: profile.activityLevel!,
     );
-    
+
     return FitnessCalculator.calculateTargetCalories(
       tdee: tdee,
       goalType: profile.goalType ?? 'maintain',
@@ -1776,7 +1792,8 @@ class _BottomNav extends StatelessWidget {
     return FitnessCalculator.calculateProtein(weightKg: profile.weightKg!);
   }
 
-  double _calculateFallbackCarbs(UserProfileEntity? profile, int calories, double protein) {
+  double _calculateFallbackCarbs(
+      UserProfileEntity? profile, int calories, double protein) {
     if (profile == null) {
       return 200.0; // Default fallback
     }
@@ -1792,7 +1809,9 @@ class _BottomNav extends StatelessWidget {
   }
 
   int _calculateFallbackWater(UserProfileEntity? profile) {
-    if (profile == null || profile.weightKg == null || profile.activityLevel == null) {
+    if (profile == null ||
+        profile.weightKg == null ||
+        profile.activityLevel == null) {
       return 2500; // Default fallback
     }
     return FitnessCalculator.calculateDailyWater(
