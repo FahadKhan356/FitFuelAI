@@ -14,20 +14,45 @@ import '../../../../core/data/models/nutrition_food.dart';
 class NutritionApiDataSource {
   static const int _timeout = 15;
 
-  /// Searches a food query, preferring USDA when an API key is configured and
-  /// falling back to OpenFoodFacts otherwise.
-  Future<List<NutritionFood>> searchFoods(String query) async {
-    if (query.trim().isEmpty) return const [];
+  /// In-memory cache of recent searches (query -> results) to avoid redundant
+  /// network calls and give instant results when a query is repeated.
+  final Map<String, List<NutritionFood>> _cache = {};
+  static const int _cacheMax = 30;
 
+  /// Searches a food query, preferring USDA when an API key is configured and
+  /// falling back to OpenFoodFacts otherwise. Results are cached by query.
+  Future<List<NutritionFood>> searchFoods(String query) async {
+    final key = query.trim().toLowerCase();
+    if (key.isEmpty) return const [];
+
+    // Cache hit → return immediately.
+    final cached = _cache[key];
+    if (cached != null) return cached;
+
+    List<NutritionFood> results;
     if (AppConstants.usdaApiKey.isNotEmpty) {
       try {
-        final results = await _searchUsda(query);
-        if (results.isNotEmpty) return results;
+        final usda = await _searchUsda(query);
+        results = usda;
       } catch (_) {
         // Fall through to OpenFoodFacts on USDA failure.
+        results = const [];
+      }
+      if (results.isEmpty) {
+        results = await _searchOpenFoodFacts(query);
+      }
+    } else {
+      results = await _searchOpenFoodFacts(query);
+    }
+
+    // Store in cache (cap size to avoid unbounded growth).
+    if (results.isNotEmpty) {
+      _cache[key] = results;
+      if (_cache.length > _cacheMax) {
+        _cache.remove(_cache.keys.first);
       }
     }
-    return _searchOpenFoodFacts(query);
+    return results;
   }
 
   /// Looks up a single packaged product by barcode via OpenFoodFacts.

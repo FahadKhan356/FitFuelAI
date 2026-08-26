@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/di/service_locator.dart';
+import '../../../../core/domain/repositories/meal_repository.dart';
 import 'meal_entry_screen.dart';
 
 const _bg = Color(0xFFF7F6FB);
@@ -15,12 +18,18 @@ const _border = Color(0xFFE7E3EF);
 class MealLog {
   final String foodName;
   final int calories;
+  final double protein;
+  final double carbs;
+  final double fat;
   final String mealType;
   final DateTime date;
 
   MealLog({
     required this.foodName,
     required this.calories,
+    this.protein = 0,
+    this.carbs = 0,
+    this.fat = 0,
     required this.mealType,
     required this.date,
   });
@@ -66,18 +75,42 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => MealEntryBottomSheet(
-        onMealAdded: (foodName, calories, mealType) {
+        onMealAdded: (foodName, calories, protein, carbs, fat, mealType) async {
+          final user = Supabase.instance.client.auth.currentUser;
           setState(() {
             totalCalories += calories;
             todaysMeals.add(
               MealLog(
                 foodName: foodName,
                 calories: calories,
+                protein: protein,
+                carbs: carbs,
+                fat: fat,
                 mealType: mealType,
                 date: DateTime.now(),
               ),
             );
           });
+
+          // Persist to the user's meal for today so it shows on home/calendar too.
+          if (user != null) {
+            try {
+              await sl<MealRepository>().addFoodToMeal(
+                userId: user.id,
+                mealType: mealType.toLowerCase(),
+                foodName: foodName,
+                calories: calories,
+                protein: protein,
+                carbs: carbs,
+                fat: fat,
+                servingSize: 100,
+                servingUnit: 'g',
+                date: DateTime.now(),
+              );
+            } catch (e) {
+              debugPrint('Failed to persist meal: $e');
+            }
+          }
         },
       ),
     );
@@ -298,7 +331,7 @@ class _MealCard extends StatelessWidget {
                     color: _textPrimary,
                   ),
                 ),
-                const SizedBox(height: 3),
+                                const SizedBox(height: 3),
                 Text(
                   meal.mealType.toUpperCase(),
                   style: const TextStyle(
@@ -306,6 +339,15 @@ class _MealCard extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                     color: _textSecondary,
                     letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'P ${meal.protein.toStringAsFixed(0)}g · C ${meal.carbs.toStringAsFixed(0)}g · F ${meal.fat.toStringAsFixed(0)}g',
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: _textSecondary,
                   ),
                 ),
               ],

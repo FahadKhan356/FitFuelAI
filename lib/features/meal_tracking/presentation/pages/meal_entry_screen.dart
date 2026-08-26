@@ -72,171 +72,9 @@ FoodItem _fromNutritionFood(NutritionFood n) {
   );
 }
 
-final sampleFoods = [
-  FoodItem(
-    id: '1',
-    name: 'Chicken Breast',
-    caloriesPer100g: 165,
-    proteinPer100g: 31,
-    carbsPer100g: 0,
-    fatPer100g: 3,
-    fiberPer100g: 0,
-    potassiumMgPer100g: 256,
-    calciumMgPer100g: 12,
-    ironMgPer100g: 0,
-    vitaminCMgPer100g: 0,
-    sodiumMgPer100g: 74,
-    category: 'lunch',
-    servingLabel: '100 g',
-  ),
-  FoodItem(
-    id: '2',
-    name: 'Brown Rice',
-    caloriesPer100g: 111,
-    proteinPer100g: 2,
-    carbsPer100g: 23,
-    fatPer100g: 1,
-    fiberPer100g: 2,
-    potassiumMgPer100g: 43,
-    calciumMgPer100g: 3,
-    ironMgPer100g: 0,
-    vitaminCMgPer100g: 0,
-    sodiumMgPer100g: 5,
-    category: 'lunch',
-    servingLabel: '100 g',
-  ),
-  FoodItem(
-    id: '3',
-    name: 'Egg (1 large)',
-    caloriesPer100g: 155,
-    proteinPer100g: 13,
-    carbsPer100g: 1,
-    fatPer100g: 11,
-    fiberPer100g: 0,
-    potassiumMgPer100g: 126,
-    calciumMgPer100g: 50,
-    ironMgPer100g: 1,
-    vitaminCMgPer100g: 0,
-    sodiumMgPer100g: 124,
-    category: 'breakfast',
-    servingLabel: '1 large',
-  ),
-  FoodItem(
-    id: '4',
-    name: 'Oatmeal',
-    caloriesPer100g: 389,
-    proteinPer100g: 17,
-    carbsPer100g: 66,
-    fatPer100g: 7,
-    fiberPer100g: 10,
-    potassiumMgPer100g: 429,
-    calciumMgPer100g: 54,
-    ironMgPer100g: 4,
-    vitaminCMgPer100g: 0,
-    sodiumMgPer100g: 2,
-    category: 'breakfast',
-    servingLabel: '100 g',
-  ),
-  FoodItem(
-    id: '5',
-    name: 'Banana',
-    caloriesPer100g: 89,
-    proteinPer100g: 1,
-    carbsPer100g: 23,
-    fatPer100g: 0,
-    fiberPer100g: 2,
-    potassiumMgPer100g: 358,
-    calciumMgPer100g: 5,
-    ironMgPer100g: 0,
-    vitaminCMgPer100g: 9,
-    sodiumMgPer100g: 1,
-    category: 'snack',
-    servingLabel: '1 medium',
-  ),
-  FoodItem(
-    id: '6',
-    name: 'Almonds',
-    caloriesPer100g: 579,
-    proteinPer100g: 21,
-    carbsPer100g: 22,
-    fatPer100g: 50,
-    fiberPer100g: 12,
-    potassiumMgPer100g: 705,
-    calciumMgPer100g: 264,
-    ironMgPer100g: 3,
-    vitaminCMgPer100g: 0,
-    sodiumMgPer100g: 1,
-    category: 'snack',
-    servingLabel: '100 g',
-  ),
-  FoodItem(
-    id: '7',
-    name: 'Salmon',
-    caloriesPer100g: 208,
-    proteinPer100g: 20,
-    carbsPer100g: 0,
-    fatPer100g: 13,
-    fiberPer100g: 0,
-    potassiumMgPer100g: 363,
-    calciumMgPer100g: 9,
-    ironMgPer100g: 0,
-    vitaminCMgPer100g: 0,
-    sodiumMgPer100g: 59,
-    category: 'dinner',
-    servingLabel: '100 g',
-  ),
-  FoodItem(
-    id: '8',
-    name: 'Broccoli',
-    caloriesPer100g: 34,
-    proteinPer100g: 3,
-    carbsPer100g: 7,
-    fatPer100g: 0,
-    fiberPer100g: 2,
-    potassiumMgPer100g: 316,
-    calciumMgPer100g: 47,
-    ironMgPer100g: 1,
-    vitaminCMgPer100g: 89,
-    sodiumMgPer100g: 33,
-    category: 'lunch',
-    servingLabel: '100 g',
-  ),
-  FoodItem(
-    id: '9',
-    name: 'Greek Yogurt',
-    caloriesPer100g: 59,
-    proteinPer100g: 10,
-    carbsPer100g: 3,
-    fatPer100g: 0,
-    fiberPer100g: 0,
-    potassiumMgPer100g: 141,
-    calciumMgPer100g: 110,
-    ironMgPer100g: 0,
-    vitaminCMgPer100g: 0,
-    sodiumMgPer100g: 36,
-    category: 'breakfast',
-    servingLabel: '100 g',
-  ),
-  FoodItem(
-    id: '10',
-    name: 'Peanut Butter',
-    caloriesPer100g: 588,
-    proteinPer100g: 25,
-    carbsPer100g: 20,
-    fatPer100g: 50,
-    fiberPer100g: 6,
-    potassiumMgPer100g: 658,
-    calciumMgPer100g: 43,
-    ironMgPer100g: 2,
-    vitaminCMgPer100g: 0,
-    sodiumMgPer100g: 17,
-    category: 'breakfast',
-    servingLabel: '100 g',
-  ),
-];
-
 class MealEntryBottomSheet extends StatefulWidget {
-  final Function(String foodName, int calories, String mealType) onMealAdded;
+  final void Function(String foodName, int calories, double protein,
+      double carbs, double fat, String mealType) onMealAdded;
 
   const MealEntryBottomSheet({required this.onMealAdded});
 
@@ -258,7 +96,7 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
-    filteredFoods = sampleFoods;
+    filteredFoods = const [];
   }
 
   @override
@@ -271,11 +109,11 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
   void _filterFoods(String query) {
     _debounce?.cancel();
 
-    // Empty query → back to the built-in curated list.
+    // Empty query → clear results; show search prompt state.
     if (query.trim().isEmpty) {
       setState(() {
         _isSearching = false;
-        filteredFoods = sampleFoods;
+        filteredFoods = const [];
       });
       return;
     }
@@ -292,10 +130,7 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
       final mapped = results.map(_fromNutritionFood).toList();
       setState(() {
         _isSearching = false;
-        filteredFoods = mapped.isNotEmpty
-            ? mapped
-            : sampleFoods.where((food) =>
-                food.name.toLowerCase().contains(query.toLowerCase())).toList();
+        filteredFoods = mapped;
       });
     });
   }
@@ -529,9 +364,11 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: _border),
                   ),
-                  child: const Text(
-                    'No matching food items found. Try another search term or category.',
-                    style: TextStyle(
+                  child: Text(
+                    _searchController.text.trim().isEmpty
+                        ? 'Search for a food (e.g. chicken, banana, oats) or use your camera to scan a barcode.'
+                        : 'No matching food items found. Try another search term.',
+                    style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       color: _textSecondary,
@@ -567,7 +404,8 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
 
 class FoodNutritionDetailSheet extends StatefulWidget {
   final FoodItem food;
-  final Function(String foodName, int calories, String mealType) onMealAdded;
+  final void Function(String foodName, int calories, double protein,
+      double carbs, double fat, String mealType) onMealAdded;
 
   const FoodNutritionDetailSheet({required this.food, required this.onMealAdded});
 
@@ -582,7 +420,7 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
   @override
   void initState() {
     super.initState();
-    selectedMealType = widget.food.category;
+    selectedMealType = 'breakfast';
   }
 
   int get calories => (widget.food.caloriesPer100g * servingGrams / 100).round();
@@ -597,7 +435,14 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
   int get sodium => (widget.food.sodiumMgPer100g * servingGrams / 100).round();
 
   void _handleLogMeal() {
-    widget.onMealAdded(widget.food.name, calories, selectedMealType);
+    widget.onMealAdded(
+      widget.food.name,
+      calories,
+      protein.toDouble(),
+      carbs.toDouble(),
+      fat.toDouble(),
+      selectedMealType,
+    );
     Navigator.pop(context, true);
   }
 
@@ -826,12 +671,18 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
               const SizedBox(height: 12),
               Column(
                 children: [
-                  _MicronutrientRow(label: 'Vitamin C', value: '$vitaminC mg'),
-                  _MicronutrientRow(label: 'Iron', value: '$iron mg'),
-                  _MicronutrientRow(label: 'Calcium', value: '$calcium mg'),
-                  _MicronutrientRow(label: 'Potassium', value: '$potassium mg'),
-                  _MicronutrientRow(label: 'Fiber', value: '$fiber g'),
-                  _MicronutrientRow(label: 'Sodium', value: '$sodium mg'),
+                  if (vitaminC > 0)
+                    _MicronutrientRow(label: 'Vitamin C', value: '$vitaminC mg'),
+                  if (iron > 0)
+                    _MicronutrientRow(label: 'Iron', value: '$iron mg'),
+                  if (calcium > 0)
+                    _MicronutrientRow(label: 'Calcium', value: '$calcium mg'),
+                  if (potassium > 0)
+                    _MicronutrientRow(label: 'Potassium', value: '$potassium mg'),
+                  if (fiber > 0)
+                    _MicronutrientRow(label: 'Fiber', value: '$fiber g'),
+                  if (sodium > 0)
+                    _MicronutrientRow(label: 'Sodium', value: '$sodium mg'),
                 ],
               ),
               const SizedBox(height: 24),
