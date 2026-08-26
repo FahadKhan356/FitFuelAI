@@ -30,4 +30,11 @@ abstract class MealRepository {
 
   /// Remove a single meal item, auto-recalculate meal total calories
   Future<MealEntity> deleteMealItem(String itemId, String mealId);
+
+  /// Total calories consumed per date within a range. Key = 'yyyy-MM-dd'.
+  Future<Map<String, int>> getCalorieTotalsByDateRange(
+    String userId,
+    DateTime start,
+    DateTime end,
+  );
 }

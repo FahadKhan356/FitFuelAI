@@ -131,6 +131,30 @@ class SupabaseRemoteDataSource {
     return response as Map<String, dynamic>?;
   }
 
+  /// Total calories consumed per date within [start, end] (inclusive). Key = 'yyyy-MM-dd'.
+  Future<Map<String, int>> getCalorieTotalsByDateRange(
+    String userId,
+    DateTime start,
+    DateTime end,
+  ) async {
+    final startStr = start.toIso8601String().split('T').first;
+    final endStr = end.toIso8601String().split('T').first;
+    final response = await _client
+        .from('meals')
+        .select('date, total_calories')
+        .eq('user_id', userId)
+        .gte('date', startStr)
+        .lte('date', endStr);
+
+    final totals = <String, int>{};
+    for (final row in response as List) {
+      final map = row as Map<String, dynamic>;
+      final dateStr = map['date'] as String;
+      totals[dateStr] = (totals[dateStr] ?? 0) + (map['total_calories'] as int? ?? 0);
+    }
+    return totals;
+  }
+
   // ==================== FOOD ITEMS ====================
   Future<List<FoodItemModel>> searchFoodItems(String query) async {
     final response = await _client
@@ -183,7 +207,54 @@ class SupabaseRemoteDataSource {
     return (response as List).map((e) => WaterModel.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  /// Total water consumed per date within [start, end] (inclusive). Key = 'yyyy-MM-dd'.
+  Future<Map<String, int>> getWaterTotalsByDateRange(
+    String userId,
+    DateTime start,
+    DateTime end,
+  ) async {
+    final startStr = start.toIso8601String().split('T').first;
+    final endStr = end.toIso8601String().split('T').first;
+    final response = await _client
+        .from('water_intake')
+        .select('date, amount_ml')
+        .eq('user_id', userId)
+        .gte('date', startStr)
+        .lte('date', endStr);
+
+    final totals = <String, int>{};
+    for (final row in response as List) {
+      final map = row as Map<String, dynamic>;
+      final dateStr = map['date'] as String;
+      totals[dateStr] = (totals[dateStr] ?? 0) + (map['amount_ml'] as int? ?? 0);
+    }
+    return totals;
+  }
+
   Future<WaterModel> addWaterEntry(Map<String, dynamic> data) async {
+    final userId = data['user_id'] as String;
+    final date = data['date'] as String;
+    final amount = data['amount_ml'] as int;
+
+    // Per-day record: if a row already exists for this user+date, accumulate.
+    final existing = await _client
+        .from('water_intake')
+        .select()
+        .eq('user_id', userId)
+        .eq('date', date)
+        .maybeSingle();
+
+    if (existing != null) {
+      final newTotal = (existing['amount_ml'] as int? ?? 0) + amount;
+      final updated = await _client
+          .from('water_intake')
+          .update({'amount_ml': newTotal})
+          .eq('id', existing['id'])
+          .select()
+          .single();
+      return WaterModel.fromJson(updated as Map<String, dynamic>);
+    }
+
     final response = await _client.from('water_intake').insert(data).select().single();
     return WaterModel.fromJson(response as Map<String, dynamic>);
   }

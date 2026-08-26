@@ -140,6 +140,15 @@ class MealRepositoryImpl implements MealRepository {
     return _toEntity(MealModel.fromJson(finalMealData!));
   }
 
+  @override
+  Future<Map<String, int>> getCalorieTotalsByDateRange(
+    String userId,
+    DateTime start,
+    DateTime end,
+  ) {
+    return _dataSource.getCalorieTotalsByDateRange(userId, start, end);
+  }
+
   MealEntity _toEntity(MealModel model) {
     return MealEntity(
       id: model.id,

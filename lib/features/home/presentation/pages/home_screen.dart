@@ -773,6 +773,24 @@ class _TopBar extends StatelessWidget {
                 child: Text('👤', style: TextStyle(fontSize: 18)),
               ),
             ),
+            const SizedBox(width: 10),
+            // Activity calendar (extreme top-right)
+            GestureDetector(
+              onTap: () => context.push(AppRoutes.activityCalendar),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: kPurpleLight,
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: const Icon(
+                  Icons.calendar_month_rounded,
+                  color: kPurple,
+                  size: 20,
+                ),
+              ),
+            ),
           ],
         ),
       ],

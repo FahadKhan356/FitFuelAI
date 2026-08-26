@@ -45,4 +45,13 @@ class WaterRepositoryImpl implements WaterRepository {
     final entries = await _dataSource.getWaterEntries(userId, date);
     return entries.fold<int>(0, (sum, e) => sum + e.amountMl);
   }
+
+  @override
+  Future<Map<String, int>> getWaterTotalsByDateRange(
+    String userId,
+    DateTime start,
+    DateTime end,
+  ) {
+    return _dataSource.getWaterTotalsByDateRange(userId, start, end);
+  }
 }

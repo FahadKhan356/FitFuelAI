@@ -7,4 +7,11 @@ abstract class WaterRepository {
 
   /// Get total water consumed for a date
   Future<int> getDailyWaterTotal(String userId, DateTime date);
+
+  /// Total water consumed per date within a range. Key = 'yyyy-MM-dd'.
+  Future<Map<String, int>> getWaterTotalsByDateRange(
+    String userId,
+    DateTime start,
+    DateTime end,
+  );
 }

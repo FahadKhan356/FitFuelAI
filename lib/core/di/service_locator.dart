@@ -86,6 +86,7 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<TrackWaterUseCase>(() => TrackWaterUseCase(sl()));
   sl.registerLazySingleton<TrackWeightUseCase>(() => TrackWeightUseCase(sl()));
   sl.registerLazySingleton<FetchAnalyticsUseCase>(() => FetchAnalyticsUseCase(sl()));
+  sl.registerLazySingleton<FetchCalendarTrackingUseCase>(() => FetchCalendarTrackingUseCase(sl(), sl(), sl()));
   sl.registerLazySingleton<SendAiCoachMessageUseCase>(() => SendAiCoachMessageUseCase(sl()));
   sl.registerLazySingleton<SubscribePremiumUseCase>(() => SubscribePremiumUseCase(sl()));
 

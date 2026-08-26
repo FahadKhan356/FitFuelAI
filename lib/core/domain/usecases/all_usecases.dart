@@ -10,6 +10,7 @@ import '../entities/water_entry_entity.dart';
 import '../entities/weight_entry_entity.dart';
 import '../entities/user_profile_entity.dart';
 import '../entities/goal_entity.dart';
+import '../entities/calendar_tracking.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/user_repository.dart';
 import '../repositories/meal_repository.dart';
@@ -176,6 +177,31 @@ class SendAiCoachMessageUseCase {
 class SubscribePremiumUseCase {
   final SubscriptionRepository _repo; SubscribePremiumUseCase(this._repo);
   Future<bool> call(String userId) => _repo.isSubscribed(userId);
+}
+
+// ==================== CALENDAR TRACKING ====================
+class FetchCalendarTrackingUseCase {
+  final WaterRepository _waterRepo;
+  final MealRepository _mealRepo;
+  final UserRepository _userRepo;
+  FetchCalendarTrackingUseCase(this._waterRepo, this._mealRepo, this._userRepo);
+
+  Future<CalendarTracking> call({
+    required String userId,
+    required DateTime start,
+    required DateTime end,
+  }) async {
+    final water = await _waterRepo.getWaterTotalsByDateRange(userId, start, end);
+    final calories = await _mealRepo.getCalorieTotalsByDateRange(userId, start, end);
+    final goals = await _userRepo.getUserGoals(userId);
+
+    return CalendarTracking(
+      waterByDate: water,
+      caloriesByDate: calories,
+      targetCalories: goals?.targetCalories ?? 0,
+      targetWaterMl: goals?.dailyWaterMl ?? 0,
+    );
+  }
 }
 
 // ==================== ACHIEVEMENTS ====================

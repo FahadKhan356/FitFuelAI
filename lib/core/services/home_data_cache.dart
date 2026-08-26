@@ -61,7 +61,7 @@ class HomeCachedData {
 
   factory HomeCachedData.fromJson(Map<String, dynamic> json) => HomeCachedData(
         name: json['name'] as String?,
-        targetCalories: _parseInt(json['target_calories']) == 0 ? 2000 : _parseInt(json['target_calories']),
+        targetCalories: _parseInt(json['target_calories']),
         consumedCalories: _parseInt(json['consumed_calories']),
         burnedCalories: _parseInt(json['burned_calories']),
         targetProtein: _parseDouble(json['target_protein']),
@@ -70,7 +70,7 @@ class HomeCachedData {
         consumedCarbs: _parseDouble(json['consumed_carbs']),
         targetFat: _parseDouble(json['target_fat']),
         consumedFat: _parseDouble(json['consumed_fat']),
-        targetWaterMl: _parseInt(json['target_water_ml']) == 0 ? 2000 : _parseInt(json['target_water_ml']),
+        targetWaterMl: _parseInt(json['target_water_ml']),
         consumedWaterMl: _parseInt(json['consumed_water_ml']),
       );
 }

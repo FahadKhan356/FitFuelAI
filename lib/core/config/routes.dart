@@ -20,6 +20,7 @@ import '../../features/water_tracker/presentation/pages/water_tracker_screen.dar
 import '../../features/weight_tracker/presentation/pages/bmi_screen.dart';
 import '../../features/weight_tracker/presentation/pages/weight_tracker_screen.dart';
 import '../../features/home/presentation/pages/home_screen.dart';
+import '../../features/calendar/presentation/pages/activity_calendar_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -41,6 +42,7 @@ class AppRoutes {
   static const String bmi = '/bmi';
   static const String notifications = '/notifications';
   static const String barcode = '/barcode';
+  static const String activityCalendar = '/activity-calendar';
 }
 
 final goRouter = GoRouter(
@@ -143,6 +145,10 @@ final goRouter = GoRouter(
     GoRoute(
       path: AppRoutes.barcode,
       builder: (context, state) => const BarcodeScannerScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.activityCalendar,
+      builder: (context, state) => const ActivityCalendarScreen(),
     ),
   ],
 );
