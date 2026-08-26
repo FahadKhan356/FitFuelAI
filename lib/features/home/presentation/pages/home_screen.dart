@@ -484,6 +484,24 @@ class _HomeContentState extends State<_HomeContent>
                 Expanded(child: _AICoachCard(animation: _entryController)),
               ],
             ),
+AnimatedBuilder(
+              animation: _entryController,
+              builder: (context, child) {
+                final t = _clamp01(CurvedAnimation(
+                  parent: _entryController,
+                  curve: const Interval(0.46, 0.66, curve: Curves.easeOutCubic),
+                ).value);
+                return Opacity(
+                  opacity: t,
+                  child: Transform.translate(
+                    offset: Offset(0, 24 * (1 - t)),
+                    child: child,
+                  ),
+                );
+              },
+              child: _MealCard(animation: _entryController),
+            ),
+            const SizedBox(height: 14),
             const SizedBox(height: 14),
             AnimatedBuilder(
               animation: _entryController,
@@ -1140,6 +1158,108 @@ class _MacroCard extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────
+//  Meal Add Card
+// ─────────────────────────────────────────────
+class _MealCard extends StatelessWidget {
+  const _MealCard({required this.animation});
+
+  final Animation<double> animation;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        final t = _clamp01(CurvedAnimation(
+          parent: animation,
+          curve: const Interval(0.46, 0.66, curve: Curves.easeOutBack),
+        ).value);
+        return Transform.translate(
+          offset: Offset(0, 22 * (1 - t)),
+          child: Opacity(opacity: t, child: child),
+        );
+      },
+      child: GestureDetector(
+        onTap: () => context.push(AppRoutes.mealTracking),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: kCardBg,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: kBorder, width: 1),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: kOrange.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: const Icon(
+                  Icons.restaurant_rounded,
+                  color: kOrange,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'Track a Meal',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: kHeadline,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Add your breakfast, lunch or dinner in seconds.',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w500,
+                        color: kBody,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: kOrange,
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.add_rounded, color: kWhite, size: 16),
+                    SizedBox(width: 2),
+                    Text(
+                      'ADD',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: kWhite,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 // ─────────────────────────────────────────────
 //  Water Card
 // ─────────────────────────────────────────────
