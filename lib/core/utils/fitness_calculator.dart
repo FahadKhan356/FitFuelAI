@@ -65,8 +65,10 @@ class FitnessCalculator {
         final target = tdee - adjustment;
         return target.round().clamp(minCaloriesForLoss, 0x7FFFFFFF);
       case 'weight_gain':
+      case 'muscle_gain':
         return (tdee + adjustment).round();
       case 'maintain':
+      case 'maintenance':
       case 'cutting':
       default:
         return tdee.round();

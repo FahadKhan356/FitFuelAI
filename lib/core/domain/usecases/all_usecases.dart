@@ -1,4 +1,5 @@
 
+import 'package:flutter/foundation.dart';
 import 'package:fitfuel_ai/core/domain/entities/user_entity.dart';
 
 import '../entities/meal_entity.dart';
@@ -60,21 +61,26 @@ class FetchHomeDashboardUseCase {
       _mealRepo.getMealsByDate(userId, date).then((res) {
         meals = res;
       }).catchError((e) {
+        debugPrint('FetchHomeDashboard: getMealsByDate error: $e');
         return <MealEntity>[];
       }),
       _waterRepo.getWaterEntries(userId, date).then((res) {
         water = res;
       }).catchError((e) {
+        debugPrint('FetchHomeDashboard: getWaterEntries error: $e');
         return <WaterEntryEntity>[];
       }),
       _userRepo.getUserGoals(userId).then((res) {
         goals = res;
+        debugPrint('FetchHomeDashboard: goals fetched = ${res?.targetCalories} kcal');
       }).catchError((e) {
+        debugPrint('FetchHomeDashboard: getUserGoals error: $e');
         return null;
       }),
       _userRepo.getUserProfile(userId).then((res) {
         profile = res;
       }).catchError((e) {
+        debugPrint('FetchHomeDashboard: getUserProfile error: $e');
         return null;
       }),
     ]);

@@ -246,6 +246,14 @@ class _HomeContentState extends State<_HomeContent>
 
       final hasValidGoals = goals != null && goals.targetCalories > 0;
 
+      if (!hasValidGoals) {
+        debugPrint(
+            'HomeScreen: ⚠️ USING FALLBACK — goals is ${goals == null ? "null" : "invalid (calories=${goals.targetCalories})"}. Profile goalType: ${profile?.goalType}');
+      } else {
+        debugPrint(
+            'HomeScreen: ✅ Using DB goals — calories=${goals.targetCalories}, protein=${goals.targetProtein}, carbs=${goals.targetCarbs}, fat=${goals.targetFat}, water=${goals.dailyWaterMl}');
+      }
+
       final dailyKcal = hasValidGoals
           ? goals.targetCalories
           : _calculateFallbackCalories(profile);

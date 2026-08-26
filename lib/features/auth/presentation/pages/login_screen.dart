@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/config/routes.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../bloc/auth_bloc.dart';
@@ -42,10 +43,32 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// After sign-in: if the user hasn't completed onboarding, send them through
   /// the personalization flow first; otherwise go straight to Home.
+  /// Also checks DB for existing profile (handles reinstall case where
+  /// SharedPreferences is wiped but DB still has data).
   Future<void> _navigateAfterAuth() async {
     final prefs = await SharedPreferences.getInstance();
-    final hasCompletedOnboarding =
+    bool hasCompletedOnboarding =
         prefs.getBool('onboarding_completed') ?? false;
+
+    if (!hasCompletedOnboarding) {
+      // Check DB — user may have completed onboarding before reinstall
+      try {
+        final currentUser =
+            Supabase.instance.client.auth.currentUser;
+        if (currentUser != null) {
+          final response = await Supabase.instance.client
+              .from('user_profiles')
+              .select('user_id')
+              .eq('user_id', currentUser.id)
+              .limit(1);
+          if (response is List && response.isNotEmpty) {
+            await prefs.setBool('onboarding_completed', true);
+            hasCompletedOnboarding = true;
+          }
+        }
+      } catch (_) {}
+    }
+
     if (!hasCompletedOnboarding) {
       context.go(AppRoutes.onboarding);
     } else {
