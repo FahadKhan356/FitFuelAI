@@ -28,6 +28,7 @@ class WaterTrackerScreen extends StatefulWidget {
 class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
   late final WaterTrackerBloc _bloc;
   int waterGoal = WaterGoalResolver.defaultWaterMl;
+  bool _isSubtract = false;
 
   @override
   void initState() {
@@ -49,28 +50,32 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
     }
   }
 
+  /// Logs water, honouring the current add/subtract mode.
+  void _logWater(int amount) {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId != null) {
+      final signed = _isSubtract ? -amount : amount;
+      _bloc.add(AddWaterLog(userId, signed, DateTime.now()));
+    }
+  }
+
   void _showWaterEntryDialog() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => WaterEntryBottomSheet(
-        onWaterAdded: (amount) {
+        initialSubtract: _isSubtract,
+        onWaterAdded: (amount, isSubtract) {
           final userId = Supabase.instance.client.auth.currentUser?.id;
           if (userId != null) {
-            _bloc.add(AddWaterLog(userId, amount, DateTime.now()));
+            final signed = isSubtract ? -amount : amount;
+            _bloc.add(AddWaterLog(userId, signed, DateTime.now()));
           }
           Navigator.pop(context);
         },
       ),
     );
-  }
-
-  void _addWater(int amount) {
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId != null) {
-      _bloc.add(AddWaterLog(userId, amount, DateTime.now()));
-    }
   }
 
   @override
@@ -263,12 +268,43 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
                     ),
                   ),
                   const SizedBox(height: 22),
+                  // Add / Subtract mode toggle
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0EEF7),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _ModeButton(
+                            icon: Icons.add_rounded,
+                            label: 'Add',
+                            selected: !_isSubtract,
+                            color: _cyan,
+                            onTap: () => setState(() => _isSubtract = false),
+                          ),
+                        ),
+                        Expanded(
+                          child: _ModeButton(
+                            icon: Icons.remove_rounded,
+                            label: 'Subtract',
+                            selected: _isSubtract,
+                            color: const Color(0xFFFF5E7A),
+                            onTap: () => setState(() => _isSubtract = true),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'QUICK LOG',
-                        style: TextStyle(
+                      Text(
+                        _isSubtract ? 'REMOVE WATER' : 'QUICK LOG',
+                        style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
                           color: _textSecondary,
@@ -277,9 +313,9 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
                       ),
                       GestureDetector(
                         onTap: _showWaterEntryDialog,
-                        child: const Text(
-                          'Custom  ›',
-                          style: TextStyle(
+                        child: Text(
+                          _isSubtract ? 'Custom Remove  ›' : 'Custom Add  ›',
+                          style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: _purple,
@@ -293,38 +329,44 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
                     children: [
                       Expanded(
                         child: _QuickLogCard(
-                          icon: Icons.local_drink_outlined,
-                          iconColor: _cyan,
-                          bg: _blueTint,
+                          icon: _isSubtract
+                              ? Icons.remove_circle_outline_rounded
+                              : Icons.local_drink_outlined,
+                          iconColor: _isSubtract ? const Color(0xFFFF5B7A) : _cyan,
+                          bg: _isSubtract ? const Color(0xFFFFEBEF) : _blueTint,
                           amount: '250ml',
                           label: 'GLASS',
-                          onTap: () => _addWater(250),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _QuickLogCard(
-                                icon: Icons.water_sharp,
-                                iconColor: _cyan,
-                                bg: _blueTint,
-                                amount: '500ml',
-                                label: 'BOTTLE',
-                                onTap: () => _addWater(500),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: _QuickLogCard(
-                                icon: Icons.water_drop_outlined,
-                                iconColor: _cyan,
-                                bg: _blueTint,
-                                amount: '750ml',
-                                label: 'LARGE',
-                                onTap: () => _addWater(750),
-                              ),
-                            ),
-                          ],
+                          onTap: () => _logWater(250),
                         ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _QuickLogCard(
+                          icon: _isSubtract
+                              ? Icons.remove_circle_outline_rounded
+                              : Icons.water_sharp,
+                          iconColor: _isSubtract ? const Color(0xFFFF5B7A) : _cyan,
+                          bg: _isSubtract ? const Color(0xFFFFEBEF) : _blueTint,
+                          amount: '500ml',
+                          label: 'BOTTLE',
+                          onTap: () => _logWater(500),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _QuickLogCard(
+                          icon: _isSubtract
+                              ? Icons.remove_circle_outline_rounded
+                              : Icons.water_drop_outlined,
+                          iconColor: _isSubtract ? const Color(0xFFFF5B7A) : _cyan,
+                          bg: _isSubtract ? const Color(0xFFFFEBEF) : _blueTint,
+                          amount: '750ml',
+                          label: 'LARGE',
+                          onTap: () => _logWater(750),
+                        ),
+                      ),
+                    ],
+                  ),
                         const SizedBox(height: 18),
                         Row(
                           children: [
@@ -390,6 +432,56 @@ class _IconButton extends StatelessWidget {
           width: 34,
           height: 34,
           child: Icon(icon, size: 20, color: _textPrimary),
+        ),
+      ),
+    );
+  }
+}
+
+class _ModeButton extends StatelessWidget {
+  const _ModeButton({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? color : Colors.transparent,
+          borderRadius: BorderRadius.circular(9),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: selected ? Colors.white : _textSecondary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: selected ? Colors.white : _textSecondary,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -633,9 +725,13 @@ class _TipCard extends StatelessWidget {
 //  Water Entry Bottom Sheet
 // ─────────────────────────────────────────────
 class WaterEntryBottomSheet extends StatefulWidget {
-  final Function(int) onWaterAdded;
+  final void Function(int amount, bool isSubtract) onWaterAdded;
+  final bool initialSubtract;
 
-  const WaterEntryBottomSheet({required this.onWaterAdded});
+  const WaterEntryBottomSheet({
+    required this.onWaterAdded,
+    this.initialSubtract = false,
+  });
 
   @override
   State<WaterEntryBottomSheet> createState() => _WaterEntryBottomSheetState();
@@ -644,10 +740,12 @@ class WaterEntryBottomSheet extends StatefulWidget {
 class _WaterEntryBottomSheetState extends State<WaterEntryBottomSheet> {
   late TextEditingController _mlController;
   int customAmount = 250;
+  late bool _isSubtract;
 
   @override
   void initState() {
     super.initState();
+    _isSubtract = widget.initialSubtract;
     _mlController = TextEditingController(text: '250');
   }
 
@@ -665,7 +763,7 @@ class _WaterEntryBottomSheetState extends State<WaterEntryBottomSheet> {
       );
       return;
     }
-    widget.onWaterAdded(amount);
+    widget.onWaterAdded(amount, _isSubtract);
   }
 
   @override
@@ -685,9 +783,9 @@ class _WaterEntryBottomSheetState extends State<WaterEntryBottomSheet> {
           children: [
             Row(
               children: [
-                const Text(
-                  'Add Water',
-                  style: TextStyle(
+                Text(
+                  _isSubtract ? 'Remove Water' : 'Add Water',
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                     color: _textPrimary,
@@ -700,7 +798,39 @@ class _WaterEntryBottomSheetState extends State<WaterEntryBottomSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+
+            // Add / Subtract toggle inside dialog
+            Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0EEF7),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _ModeButton(
+                      icon: Icons.add_rounded,
+                      label: 'Add',
+                      selected: !_isSubtract,
+                      color: _cyan,
+                      onTap: () => setState(() => _isSubtract = false),
+                    ),
+                  ),
+                  Expanded(
+                    child: _ModeButton(
+                      icon: Icons.remove_rounded,
+                      label: 'Subtract',
+                      selected: _isSubtract,
+                      color: const Color(0xFFFF5E7A),
+                      onTap: () => setState(() => _isSubtract = true),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
 
             // Quick preset buttons
             Row(
@@ -830,15 +960,15 @@ class _WaterEntryBottomSheetState extends State<WaterEntryBottomSheet> {
                   child: ElevatedButton(
                     onPressed: _handleAdd,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _cyan,
+                      backgroundColor: _isSubtract ? const Color(0xFFFF5E7A) : _cyan,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
-                      'Add Water',
-                      style: TextStyle(
+                    child: Text(
+                      _isSubtract ? 'Remove Water' : 'Add Water',
+                      style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,

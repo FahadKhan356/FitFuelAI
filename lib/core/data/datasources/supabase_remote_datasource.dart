@@ -235,6 +235,7 @@ class SupabaseRemoteDataSource {
     final userId = data['user_id'] as String;
     final date = data['date'] as String;
     final amount = data['amount_ml'] as int;
+    final isSubtract = amount < 0;
 
     // Per-day record: if a row already exists for this user+date, accumulate.
     final existing = await _client
@@ -245,7 +246,8 @@ class SupabaseRemoteDataSource {
         .maybeSingle();
 
     if (existing != null) {
-      final newTotal = (existing['amount_ml'] as int? ?? 0) + amount;
+      final newTotal = ((existing['amount_ml'] as int? ?? 0) + amount)
+          .clamp(0, 0x7FFFFFFF);
       final updated = await _client
           .from('water_intake')
           .update({'amount_ml': newTotal})
@@ -253,6 +255,16 @@ class SupabaseRemoteDataSource {
           .select()
           .single();
       return WaterModel.fromJson(updated as Map<String, dynamic>);
+    }
+
+    // No record yet and it's a subtract (negative): nothing to remove.
+    if (isSubtract) {
+      return WaterModel(
+        id: '',
+        userId: userId,
+        date: DateTime.parse(date),
+        amountMl: 0,
+      );
     }
 
     final response = await _client.from('water_intake').insert(data).select().single();
