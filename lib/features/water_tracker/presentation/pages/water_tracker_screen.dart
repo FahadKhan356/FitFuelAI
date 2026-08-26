@@ -29,6 +29,7 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
   late final WaterTrackerBloc _bloc;
   int waterGoal = WaterGoalResolver.defaultWaterMl;
   bool _isSubtract = false;
+  bool _goalReady = false;
 
   @override
   void initState() {
@@ -46,7 +47,10 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
   Future<void> _loadWaterGoal(String userId) async {
     final goal = await WaterGoalResolver.resolve(userId);
     if (mounted) {
-      setState(() => waterGoal = goal);
+      setState(() {
+        waterGoal = goal;
+        _goalReady = true;
+      });
     }
   }
 
@@ -159,7 +163,7 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
                                     ),
                                   ),
                                   TextSpan(
-                                    text: ' / ${waterGoal}ml',
+                                    text: _goalReady ? ' / ${waterGoal}ml' : ' / —',
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
@@ -195,7 +199,7 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '${waterGoal - waterIntake}ml to go',
+                    _goalReady ? '${waterGoal - waterIntake}ml to go' : 'Loading…',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -230,7 +234,9 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
                                   borderRadius: BorderRadius.circular(999),
                                   child: LinearProgressIndicator(
                                     minHeight: 16,
-                                    value: waterIntake / waterGoal,
+                                    value: _goalReady
+                                        ? (waterIntake / waterGoal).clamp(0.0, 1.0)
+                                        : 0,
                                     backgroundColor: const Color(0xFFF0F0F6),
                                     valueColor: const AlwaysStoppedAnimation<Color>(_purple),
                                   ),
@@ -245,7 +251,9 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                '${((waterIntake / waterGoal) * 100).toStringAsFixed(0)}%',
+                                _goalReady
+                                    ? '${((waterIntake / waterGoal) * 100).toStringAsFixed(0)}%'
+                                    : '—',
                                 style: const TextStyle(
                                   fontSize: 34,
                                   fontWeight: FontWeight.w800,
