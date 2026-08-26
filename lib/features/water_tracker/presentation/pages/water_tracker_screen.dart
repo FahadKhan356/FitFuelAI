@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/domain/repositories/user_repository.dart';
 import '../../../../core/di/service_locator.dart';
+import '../../../../core/services/water_goal_resolver.dart';
 import '../bloc/water_tracker_bloc.dart';
 import 'package:intl/intl.dart';
 
@@ -27,7 +27,7 @@ class WaterTrackerScreen extends StatefulWidget {
 
 class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
   late final WaterTrackerBloc _bloc;
-  int waterGoal = 3000;
+  int waterGoal = WaterGoalResolver.defaultWaterMl;
 
   @override
   void initState() {
@@ -40,17 +40,12 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
     }
   }
 
-  /// Fetches the user's daily water goal from the database so the tracker
-  /// always reflects the live target (not a hardcoded/cached value).
+  /// Resolves the daily water goal from the same shared source the home screen
+  /// uses, so the tracker target always matches home (DB → weight fallback).
   Future<void> _loadWaterGoal(String userId) async {
-    try {
-      final goals = await sl<UserRepository>().getUserGoals(userId);
-      final dailyWater = goals?.dailyWaterMl;
-      if (dailyWater != null && dailyWater > 0 && mounted) {
-        setState(() => waterGoal = dailyWater);
-      }
-    } catch (_) {
-      // Keep existing goal (default 3000) if fetch fails.
+    final goal = await WaterGoalResolver.resolve(userId);
+    if (mounted) {
+      setState(() => waterGoal = goal);
     }
   }
 

@@ -3,8 +3,15 @@ import 'package:fitfuel_ai/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import 'dart:math' as math;
+
+import '../../../../core/di/service_locator.dart';
+import '../../../../core/services/water_goal_resolver.dart';
+import '../../../../core/domain/repositories/user_repository.dart';
+import '../../../../core/domain/repositories/water_repository.dart';
+import '../../../../core/domain/repositories/meal_repository.dart';
 
 const _bg = Color(0xFFF5F5FA);
 const _surface = Colors.white;
@@ -32,6 +39,14 @@ class _ProfileScreenState extends State<ProfileScreen>
   late final AnimationController _flameCtrl;
   late final AnimationController _shimmerCtrl;
 
+  // Today's goal live data (defaults shown until async fetch resolves).
+  int _waterGoalMl = WaterGoalResolver.defaultWaterMl;
+  int _waterConsumedMl = 0;
+  int _calorieGoal = 2000;
+  int _calorieConsumed = 0;
+  double _proteinGoal = 120;
+  double _proteinConsumed = 0;
+
   @override
   void initState() {
     super.initState();
@@ -56,6 +71,63 @@ class _ProfileScreenState extends State<ProfileScreen>
       vsync: this,
       duration: const Duration(milliseconds: 4500),
     )..repeat();
+    _loadTodayGoals();
+  }
+
+  /// Fetches today's targets and totals so the "Today's Goals" card shows real
+  /// data (consistently with the home screen / water tracker).
+  Future<void> _loadTodayGoals() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    // Targets from the goals table.
+    await _resolveGoalTargets(user.id);
+
+    // Water goal from the shared resolver (DB → weight fallback).
+    final waterGoal = await WaterGoalResolver.resolve(user.id);
+
+    final wRepo = sl<WaterRepository>();
+    final mRepo = sl<MealRepository>();
+    final today = DateTime.now();
+
+    var waterConsumed = 0;
+    var calorieConsumed = 0;
+    var proteinConsumed = 0.0;
+    try {
+      final waterEntries = await wRepo.getWaterEntries(user.id, today);
+      waterConsumed = waterEntries.fold<int>(0, (s, e) => s + e.amountMl);
+    } catch (_) {}
+    try {
+      final meals = await mRepo.getMealsByDate(user.id, today);
+      calorieConsumed = meals.fold<int>(0, (s, m) => s + m.totalCalories);
+      for (final meal in meals) {
+        for (final item in meal.items) {
+          proteinConsumed += item.protein;
+        }
+      }
+    } catch (_) {}
+
+    if (!mounted) return;
+    setState(() {
+      _waterGoalMl = waterGoal;
+      _waterConsumedMl = waterConsumed;
+      _calorieConsumed = calorieConsumed;
+      _proteinConsumed = proteinConsumed;
+    });
+  }
+
+  /// Populates calorie/protein goals from the goals table.
+  Future<void> _resolveGoalTargets(String userId) async {
+    try {
+      final goals = await sl<UserRepository>().getUserGoals(userId);
+      final cal = goals?.targetCalories ?? 0;
+      final prot = goals?.targetProtein ?? 0;
+      if (!mounted) return;
+      setState(() {
+        if (cal > 0) _calorieGoal = cal;
+        if (prot > 0) _proteinGoal = prot;
+      });
+    } catch (_) {}
   }
 
   void _listenToAuthState() {
@@ -265,6 +337,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                 child: _GoalsCard(
                   textTheme: textTheme,
                   mainCtrl: _mainCtrl,
+                  waterGoal: _waterGoalMl,
+                  waterConsumed: _waterConsumedMl,
+                  calorieGoal: _calorieGoal,
+                  calorieConsumed: _calorieConsumed,
+                  proteinGoal: _proteinGoal,
+                  proteinConsumed: _proteinConsumed,
                 ),
               ),
               const SizedBox(height: 22),
@@ -858,10 +936,22 @@ class _AchievementItem extends StatelessWidget {
 class _GoalsCard extends StatelessWidget {
   final TextTheme textTheme;
   final Animation<double> mainCtrl;
+  final int waterGoal;
+  final int waterConsumed;
+  final int calorieGoal;
+  final int calorieConsumed;
+  final double proteinGoal;
+  final double proteinConsumed;
 
   const _GoalsCard({
     required this.textTheme,
     required this.mainCtrl,
+    this.waterGoal = 2000,
+    this.waterConsumed = 0,
+    this.calorieGoal = 2000,
+    this.calorieConsumed = 0,
+    this.proteinGoal = 120,
+    this.proteinConsumed = 0,
   });
 
   @override
@@ -912,10 +1002,11 @@ class _GoalsCard extends StatelessWidget {
                   parent: mainCtrl,
                   curve: const Interval(0.54, 0.70),
                 ).value);
+                final overall = _goalPercent(calorieConsumed, calorieGoal);
                 return Opacity(
                   opacity: fadeT,
                   child: Text(
-                    "You're 75% through your daily targets!",
+                    "You're $overall% through your daily calorie target!",
                     style: textTheme.bodyMedium?.copyWith(
                       fontSize: 13.5,
                       color: const Color(0xFF7C798A),
@@ -932,8 +1023,8 @@ class _GoalsCard extends StatelessWidget {
               icon: Icons.bolt_rounded,
               iconColor: const Color(0xFF5B4EE8),
               label: 'Calories',
-              progress: 0.75,
-              value: '1650 / 2200',
+              progress: _goalProgress(calorieConsumed, calorieGoal),
+              value: '$calorieConsumed / $calorieGoal',
             ),
             const SizedBox(height: 12),
             _GoalRow(
@@ -942,8 +1033,8 @@ class _GoalsCard extends StatelessWidget {
               icon: Icons.water_drop_outlined,
               iconColor: const Color(0xFF52C7D8),
               label: 'Water Intake',
-              progress: 0.70,
-              value: '2100 / 3000',
+              progress: _goalProgress(waterConsumed, waterGoal),
+              value: '$waterConsumed / $waterGoal ml',
               onTap: () => context.push(AppRoutes.waterTracker),
             ),
             const SizedBox(height: 12),
@@ -953,13 +1044,24 @@ class _GoalsCard extends StatelessWidget {
               icon: Icons.adjust_outlined,
               iconColor: const Color(0xFF8B4DE8),
               label: 'Protein',
-              progress: 0.76,
-              value: '92 / 120',
+              progress: _goalProgress(proteinConsumed.toInt(), proteinGoal.toInt()),
+              value:
+                  '${proteinConsumed.toStringAsFixed(0)} / ${proteinGoal.toStringAsFixed(0)}',
             ),
           ],
         ),
       ),
     );
+  }
+
+  static double _goalProgress(int consumed, int target) {
+    if (target <= 0) return 0;
+    return (consumed / target).clamp(0.0, 1.0);
+  }
+
+  static int _goalPercent(int consumed, int target) {
+    if (target <= 0) return 0;
+    return ((consumed / target) * 100).round().clamp(0, 999);
   }
 }
 
