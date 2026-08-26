@@ -1,13 +1,12 @@
-import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/domain/repositories/user_repository.dart';
 import '../../../../core/di/service_locator.dart';
 import '../bloc/water_tracker_bloc.dart';
 import 'package:intl/intl.dart';
 
 import 'package:fitfuel_ai/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 const _bg = Color(0xFFF7F6FB);
 const _surface = Colors.white;
@@ -34,24 +33,24 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
   void initState() {
     super.initState();
     _bloc = sl<WaterTrackerBloc>();
-    _loadCachedGoals();
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId != null) {
+      _loadWaterGoal(userId);
       _bloc.add(LoadWaterData(userId, DateTime.now()));
     }
   }
 
-  Future<void> _loadCachedGoals() async {
+  /// Fetches the user's daily water goal from the database so the tracker
+  /// always reflects the live target (not a hardcoded/cached value).
+  Future<void> _loadWaterGoal(String userId) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final goalsJson = prefs.getString('current_goals');
-      if (goalsJson != null) {
-        final Map<String, dynamic> goals = jsonDecode(goalsJson) as Map<String, dynamic>;
-        final int dailyWater = (goals['daily_water_ml'] as num?)?.toInt() ?? 3000;
+      final goals = await sl<UserRepository>().getUserGoals(userId);
+      final dailyWater = goals?.dailyWaterMl;
+      if (dailyWater != null && dailyWater > 0 && mounted) {
         setState(() => waterGoal = dailyWater);
       }
     } catch (_) {
-      // ignore
+      // Keep existing goal (default 3000) if fetch fails.
     }
   }
 
