@@ -10,6 +10,7 @@ import 'package:fitfuel_ai/core/domain/entities/meal_entity.dart';
 import 'package:fitfuel_ai/core/domain/entities/user_profile_entity.dart';
 import 'package:fitfuel_ai/core/domain/usecases/all_usecases.dart';
 import 'package:fitfuel_ai/core/services/home_data_cache.dart';
+import 'package:fitfuel_ai/core/services/water_goal_resolver.dart';
 import 'package:fitfuel_ai/core/utils/fitness_calculator.dart';
 import '../../../analytics/presentation/pages/analytics_screen.dart';
 import '../../../food_scanner/presentation/pages/food_scanner_screen.dart';
@@ -215,18 +216,6 @@ class _HomeContentState extends State<_HomeContent>
     return FitnessCalculator.calculateFat(targetCalories: calories);
   }
 
-  int _calculateFallbackWater(UserProfileEntity? profile) {
-    if (profile == null ||
-        profile.weightKg == null ||
-        profile.activityLevel == null) {
-      return 2500;
-    }
-    return FitnessCalculator.calculateDailyWater(
-      weightKg: profile.weightKg!,
-      activityLevel: profile.activityLevel!,
-    );
-  }
-
   /// Fetches DB dashboard (goals + profile + meals + water) in a single parallel query.
   Future<void> _loadData() async {
     try {
@@ -266,9 +255,10 @@ class _HomeContentState extends State<_HomeContent>
       final fatTarget = (hasValidGoals && goals.targetFat > 0)
           ? goals.targetFat
           : _calculateFallbackFat(dailyKcal);
-      final waterTarget = (hasValidGoals && goals.dailyWaterMl > 0)
-          ? goals.dailyWaterMl
-          : _calculateFallbackWater(profile);
+      // Use the SAME shared resolver as the water tracker so both screens always
+      // show an identical target (DB goal → weight-based fallback).
+      final waterTarget =
+          await WaterGoalResolver.resolve(user.id);
 
       debugPrint(
           'HomeScreen DB targets: dailyKcal=$dailyKcal (from DB: ${goals?.targetCalories}), protein=$proteinTarget, carbs=$carbsTarget, fat=$fatTarget, water=$waterTarget');
@@ -1832,18 +1822,6 @@ class _BottomNav extends StatelessWidget {
 
   double _calculateFallbackFat(int calories) {
     return FitnessCalculator.calculateFat(targetCalories: calories);
-  }
-
-  int _calculateFallbackWater(UserProfileEntity? profile) {
-    if (profile == null ||
-        profile.weightKg == null ||
-        profile.activityLevel == null) {
-      return 2500; // Default fallback
-    }
-    return FitnessCalculator.calculateDailyWater(
-      weightKg: profile.weightKg!,
-      activityLevel: profile.activityLevel!,
-    );
   }
 }
 
