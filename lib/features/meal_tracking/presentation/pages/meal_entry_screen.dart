@@ -1,5 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/di/service_locator.dart';
+import '../../../../features/food_search/data/datasources/nutrition_api_datasource.dart';
+import '../../../../core/data/models/nutrition_food.dart';
 
 const _surface = Colors.white;
 const _purple = Color(AppColors.authPurple);
@@ -43,6 +47,29 @@ class FoodItem {
     required this.category,
     required this.servingLabel,
   });
+}
+
+/// Maps a real API food result onto the screen's local `FoodItem` model so the
+/// existing nutrition UI can render USDA / OpenFoodFacts data unchanged.
+FoodItem _fromNutritionFood(NutritionFood n) {
+  return FoodItem(
+    id: n.externalId.isEmpty ? n.name : n.externalId,
+    name: n.brand != null && n.brand!.isNotEmpty
+        ? '${n.name} (${n.brand})'
+        : n.name,
+    caloriesPer100g: n.energyKcal.round(),
+    proteinPer100g: n.protein.round(),
+    carbsPer100g: n.carbs.round(),
+    fatPer100g: n.fat.round(),
+    fiberPer100g: n.fiber.round(),
+    potassiumMgPer100g: n.potassiumMg.round(),
+    calciumMgPer100g: n.calciumMg.round(),
+    ironMgPer100g: n.ironMg.round(),
+    vitaminCMgPer100g: n.vitaminCMg.round(),
+    sodiumMgPer100g: n.sodiumMg.round(),
+    category: 'All',
+    servingLabel: '100 g',
+  );
 }
 
 final sampleFoods = [
@@ -222,7 +249,10 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
   String selectedCategory = 'All';
   FoodItem? selectedFood;
   List<FoodItem> filteredFoods = [];
+  bool _isSearching = false;
+  Timer? _debounce;
   final categories = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Snack'];
+  NutritionApiDataSource get _api => sl<NutritionApiDataSource>();
 
   @override
   void initState() {
@@ -233,25 +263,50 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
 
   void _filterFoods(String query) {
-    setState(() {
-      filteredFoods = sampleFoods.where((food) {
-        final matchesSearch = query.isEmpty || food.name.toLowerCase().contains(query.toLowerCase());
-        final matchesCategory = selectedCategory == 'All' || food.category.toLowerCase() == selectedCategory.toLowerCase();
-        return matchesSearch && matchesCategory;
-      }).toList();
+    _debounce?.cancel();
+
+    // Empty query → back to the built-in curated list.
+    if (query.trim().isEmpty) {
+      setState(() {
+        _isSearching = false;
+        filteredFoods = sampleFoods;
+      });
+      return;
+    }
+
+    _debounce = Timer(const Duration(milliseconds: 350), () async {
+      setState(() => _isSearching = true);
+      List<NutritionFood> results;
+      try {
+        results = await _api.searchFoods(query);
+      } catch (_) {
+        results = const [];
+      }
+      if (!mounted) return;
+      final mapped = results.map(_fromNutritionFood).toList();
+      setState(() {
+        _isSearching = false;
+        filteredFoods = mapped.isNotEmpty
+            ? mapped
+            : sampleFoods.where((food) =>
+                food.name.toLowerCase().contains(query.toLowerCase())).toList();
+      });
     });
   }
 
   void _selectCategory(String category) {
     setState(() {
       selectedCategory = category;
-      _filterFoods(_searchController.text);
     });
+    if (_searchController.text.trim().isNotEmpty) {
+      _filterFoods(_searchController.text);
+    }
   }
 
   Future<void> _openFoodDetail(FoodItem food) async {
@@ -364,7 +419,14 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
                 ),
               ),
               const SizedBox(height: 18),
-              if (filteredFoods.isNotEmpty)
+              if (_isSearching)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Center(
+                    child: CircularProgressIndicator(color: _purple),
+                  ),
+                )
+              else if (filteredFoods.isNotEmpty)
                 ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),

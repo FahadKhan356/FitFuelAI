@@ -9,6 +9,14 @@ class AppConstants {
   static String get supabaseUrl => dotenv.env['SUPABASE_URL'] ?? 'YOUR_SUPABASE_URL_HERE';
   static String get supabaseAnonKey => dotenv.env['SUPABASE_ANON_KEY'] ?? 'YOUR_SUPABASE_ANON_KEY_HERE';
 
+  // Nutrition APIs (from .env file)
+  // USDA FoodData Central — free API key from https://fdc.nal.usda.gov/api-key-signup.html
+  static String get usdaApiKey => dotenv.env['USDA_API_KEY'] ?? '';
+  static String get usdaApiBase => dotenv.env['USDA_API_BASE'] ?? 'https://api.nal.usda.gov/fdc/v1';
+  // OpenFoodFacts — free, no key required
+  static const String openFoodFactsSearchBase = 'https://world.openfoodfacts.org/cgi/search.pl';
+  static const String openFoodFactsProductBase = 'https://world.openfoodfacts.org/api/v0/product';
+
   // Timeouts
   static const int apiTimeoutSeconds = 30;
   static const int connectionTimeoutSeconds = 15;

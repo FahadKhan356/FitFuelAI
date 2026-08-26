@@ -1,5 +1,6 @@
 import 'package:fitfuel_ai/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:fitfuel_ai/features/barcode/presentation/bloc/barcode_bloc.dart';
+import 'package:fitfuel_ai/features/food_search/data/datasources/nutrition_api_datasource.dart';
 import 'package:fitfuel_ai/features/food_scanner/presentation/bloc/food_scan_bloc.dart';
 import 'package:fitfuel_ai/features/notifications/data/repositories/notification_repository_impl.dart';
 import 'package:fitfuel_ai/features/notifications/domain/repositories/notification_repository.dart';
@@ -54,6 +55,9 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<SupabaseRemoteDataSource>(
     () => SupabaseRemoteDataSource(sl()),
   );
+  sl.registerLazySingleton<NutritionApiDataSource>(
+    () => NutritionApiDataSource(),
+  );
 
   // Repositories
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(sl()));
@@ -63,7 +67,7 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<MealRepository>(() => MealRepositoryImpl(sl()));
   sl.registerLazySingleton<FoodSearchRepository>(() => FoodSearchRepositoryImpl(sl()));
   sl.registerLazySingleton<FoodScanRepository>(() => FoodScanRepositoryImpl(sl()));
-  sl.registerLazySingleton<BarcodeRepository>(() => BarcodeRepositoryImpl(sl()));
+  sl.registerLazySingleton<BarcodeRepository>(() => BarcodeRepositoryImpl(sl(), sl()));
   sl.registerLazySingleton<WaterRepository>(() => WaterRepositoryImpl(sl()));
   sl.registerLazySingleton<WeightRepository>(() => WeightRepositoryImpl(sl()));
   sl.registerLazySingleton<AnalyticsRepository>(() => AnalyticsRepositoryImpl(sl()));

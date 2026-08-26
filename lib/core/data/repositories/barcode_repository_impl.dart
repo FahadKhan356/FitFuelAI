@@ -1,26 +1,63 @@
 import '../../domain/entities/barcode_product_entity.dart';
 import '../../domain/repositories/barcode_repository.dart';
+import '../../../../features/food_search/data/datasources/nutrition_api_datasource.dart';
 import '../datasources/supabase_remote_datasource.dart';
 
 class BarcodeRepositoryImpl implements BarcodeRepository {
   final SupabaseRemoteDataSource _dataSource;
+  final NutritionApiDataSource _nutritionApi;
 
-  BarcodeRepositoryImpl(this._dataSource);
+  BarcodeRepositoryImpl(this._dataSource,
+      [NutritionApiDataSource? nutritionApi])
+      : _nutritionApi = nutritionApi ?? NutritionApiDataSource();
 
   @override
   Future<BarcodeProductEntity?> getProductByBarcode(String barcode) async {
-    final model = await _dataSource.getProductByBarcode(barcode);
-    if (model == null) return null;
-    return BarcodeProductEntity(
-      id: model.id,
-      barcode: model.barcode,
-      productName: model.productName,
-      brand: model.brand,
-      calories: model.calories,
-      nutritionData: model.nutritionData,
-      source: model.source,
-      createdAt: model.createdAt,
+    // 1. Try the local Supabase cache first.
+    final cached = await _dataSource.getProductByBarcode(barcode);
+    if (cached != null) {
+      return BarcodeProductEntity(
+        id: cached.id,
+        barcode: cached.barcode,
+        productName: cached.productName,
+        brand: cached.brand,
+        calories: cached.calories,
+        nutritionData: cached.nutritionData,
+        source: cached.source,
+        createdAt: cached.createdAt,
+      );
+    }
+
+    // 2. Fall back to a live OpenFoodFacts lookup and cache the result.
+    final live = await _nutritionApi.getProductByBarcode(barcode);
+    if (live == null) return null;
+
+    final entity = BarcodeProductEntity(
+      id: barcode,
+      barcode: barcode,
+      productName: live.name,
+      brand: live.brand,
+      calories: live.energyKcal > 0 ? live.energyKcal.round() : null,
+      nutritionData: {
+        'calories': live.energyKcal,
+        'protein': live.protein,
+        'carbs': live.carbs,
+        'fat': live.fat,
+        'fiber': live.fiber,
+        'sugar': live.sugar,
+        'sodium': live.sodiumMg,
+        'serving_size': 100,
+        'serving_unit': 'g',
+      },
+      source: live.source,
     );
+
+    try {
+      await saveBarcodeProduct(entity);
+    } catch (_) {
+      // Caching failure is non-fatal.
+    }
+    return entity;
   }
 
   @override
