@@ -257,7 +257,10 @@ class _BmiScreenState extends State<BmiScreen> with SingleTickerProviderStateMix
                                         ),
                                       ),
                                       const SizedBox(height: 6),
-                                      Row(
+                                      Wrap(
+                                        spacing: 10,
+                                        runSpacing: 8,
+                                        crossAxisAlignment: WrapCrossAlignment.center,
                                         children: [
                                           Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -274,7 +277,6 @@ class _BmiScreenState extends State<BmiScreen> with SingleTickerProviderStateMix
                                               ),
                                             ),
                                           ),
-                                          const SizedBox(width: 10),
                                           Text(
                                             'Healthy $_healthyRangeText',
                                             style: TextStyle(

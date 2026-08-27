@@ -812,8 +812,10 @@ class _BmiCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.end,
+                          spacing: 6,
+                          runSpacing: 4,
                           children: [
                             Text(
                               bmiVal.toStringAsFixed(1),
@@ -824,7 +826,6 @@ class _BmiCard extends StatelessWidget {
                                 height: 1.0,
                               ),
                             ),
-                            const SizedBox(width: 6),
                             Padding(
                               padding: const EdgeInsets.only(bottom: 3),
                               child: Text(
