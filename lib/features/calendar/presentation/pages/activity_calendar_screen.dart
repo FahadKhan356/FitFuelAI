@@ -281,10 +281,14 @@ Widget _buildMonthCard() {
   Widget _buildDayCell(DateTime date) {
     final tracking = _tracking;
     final isToday = _isSameDay(date, _today);
+    final isSelected = _selectedDay != null && _isSameDay(date, _selectedDay!);
+
+    final hasWaterGoal = (tracking?.targetWaterMl ?? 0) > 0;
+    final hasCalGoal = (tracking?.targetCalories ?? 0) > 0;
+    final waterLogged = (tracking?.waterOn(date) ?? 0) > 0;
+    final caloriesLogged = (tracking?.caloriesOn(date) ?? 0) > 0;
     final waterHit = tracking?.waterHitOn(date) ?? false;
     final caloriesHit = tracking?.caloriesHitOn(date) ?? false;
-    final anyHit = waterHit || caloriesHit;
-    final isSelected = _selectedDay != null && _isSameDay(date, _selectedDay!);
 
     final bg = isToday
         ? _purple
@@ -311,20 +315,47 @@ Widget _buildMonthCard() {
                 color: numberColor,
               ),
             ),
-            const SizedBox(height: 3),
+            const SizedBox(height: 2),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (waterHit) const _MiniDot(color: _waterBlue),
-                if (waterHit && caloriesHit) const SizedBox(width: 2),
-                if (caloriesHit) const _MiniDot(color: _calorieOrange),
-                if (!anyHit) const SizedBox(height: 3),
+                _goalDayIcon(
+                  hasGoal: hasWaterGoal,
+                  hit: waterHit,
+                  logged: waterLogged,
+                ),
+                const SizedBox(width: 3),
+                _goalDayIcon(
+                  hasGoal: hasCalGoal,
+                  hit: caloriesHit,
+                  logged: caloriesLogged,
+                ),
               ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  /// Per-goal mini mark in a calendar cell:
+  /// - green check → goal reached that day
+  /// - red cross → activity logged that day but below goal
+  /// - gray dot   → nothing logged (or no goal set)
+  Widget _goalDayIcon({
+    required bool hasGoal,
+    required bool hit,
+    required bool logged,
+  }) {
+    if (hasGoal && hit) {
+      return const Icon(Icons.check_circle_rounded,
+          size: 11, color: Color(0xFF34C759));
+    }
+    if (hasGoal && logged) {
+      return const Icon(Icons.cancel_rounded,
+          size: 11, color: Color(0xFFE53935));
+    }
+    return const _MiniDot(color: Color(0xFFD0CDDD), size: 4);
   }
 Widget _buildLegend() {
     return Container(
@@ -337,8 +368,15 @@ Widget _buildLegend() {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _legendItem(const _MiniDot(color: _waterBlue), 'Water OK'),
-          _legendItem(const _MiniDot(color: _calorieOrange), 'Calories OK'),
+          _legendItem(
+            const Icon(Icons.check_circle_rounded,
+                size: 14, color: Color(0xFF34C759)),
+            'Goal met',
+          ),
+          _legendItem(
+            const Icon(Icons.cancel_rounded, size: 14, color: Color(0xFFE53935)),
+            'Below goal',
+          ),
           _legendItem(
             const Icon(Icons.today_rounded, size: 14, color: _purple),
             'Today',
