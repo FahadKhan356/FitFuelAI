@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fitfuel_ai/core/constants/app_colors.dart';
+import 'package:fitfuel_ai/core/di/service_locator.dart';
+import 'package:fitfuel_ai/core/domain/usecases/all_usecases.dart';
 import 'package:fitfuel_ai/core/utils/bmi_calculator.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 const _bg = Color(0xFFF7F6FB);
 const _surface = Colors.white;
@@ -39,6 +42,39 @@ class _BmiScreenState extends State<BmiScreen> with SingleTickerProviderStateMix
     _weightController = TextEditingController(text: '72.4');
     _heightController = TextEditingController(text: '1.75');
     _calculateBmi();
+    _loadProfileValues();
+  }
+
+  /// Pre-fills the height/weight fields from the logged-in user's real profile
+  /// (`user_profiles.height_cm` / `weight_kg`) so the calculator reflects their
+  /// actual body metrics instead of the demo defaults. Falls back to the demo
+  /// values when the profile isn't set up yet.
+  Future<void> _loadProfileValues() async {
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) return;
+      final profile = await sl<LoadUserProfileUseCase>().call(userId);
+      if (profile == null || !mounted) return;
+
+      String? weightText;
+      if (profile.weightKg != null && profile.weightKg! > 0) {
+        weightText = profile.weightKg!.toStringAsFixed(1);
+      }
+      String? heightText;
+      if (profile.heightCm != null && profile.heightCm! > 0) {
+        // Store in metres (the height field is in m).
+        heightText = (profile.heightCm! / 100.0).toStringAsFixed(2);
+      }
+
+      if (weightText == null && heightText == null) return;
+      setState(() {
+        if (weightText != null) _weightController.text = weightText;
+        if (heightText != null) _heightController.text = heightText;
+        _calculateBmi();
+      });
+    } catch (_) {
+      // Non-fatal — keep the demo defaults if the profile lookup fails.
+    }
   }
 
   @override

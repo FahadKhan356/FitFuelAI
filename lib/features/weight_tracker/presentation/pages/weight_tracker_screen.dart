@@ -1,7 +1,11 @@
 import 'package:fitfuel_ai/core/constants/app_colors.dart';
+import 'package:fitfuel_ai/core/di/service_locator.dart';
+import 'package:fitfuel_ai/core/domain/usecases/all_usecases.dart';
+import 'package:fitfuel_ai/core/utils/bmi_calculator.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 const _bg = Color(0xFFF7F6FB);
 const _surface = Colors.white;
@@ -54,6 +58,10 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
   double get weightLost => startWeight - currentWeight;
   double get goalProgress => ((startWeight - currentWeight) / (startWeight - goalWeight)) * 100;
 
+  // Real profile height (cm) used to compute the live BMI card. Falls back to
+  // 175 cm when the profile hasn't loaded yet.
+  double _heightCm = 175.0;
+
   @override
   void initState() {
     super.initState();
@@ -65,6 +73,20 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
       vsync: this,
       duration: const Duration(milliseconds: 3200),
     )..repeat(reverse: true);
+    _loadProfileHeight();
+  }
+
+  Future<void> _loadProfileHeight() async {
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) return;
+      final profile = await sl<LoadUserProfileUseCase>().call(userId);
+      if (profile?.heightCm != null && profile!.heightCm! > 0) {
+        setState(() => _heightCm = profile.heightCm!);
+      }
+    } catch (_) {
+      // Non-fatal — keep the 175 cm fallback.
+    }
   }
 
   @override
@@ -256,8 +278,8 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
                   // ── E. BMI Card ──
                   _BmiCard(
                     mainCtrl: _mainCtrl,
-                    currentBmi: '23.4',
-                    idealRange: '18.5 - 24.9',
+                    currentWeight: currentWeight,
+                    heightCm: _heightCm,
                   ),
                 ],
               ),
@@ -710,17 +732,42 @@ class _MilestoneCard extends StatelessWidget {
 // ─────────────────────────────────────────────
 class _BmiCard extends StatelessWidget {
   final Animation<double> mainCtrl;
-  final String currentBmi;
-  final String idealRange;
+  final double currentWeight;
+  final double heightCm;
 
   const _BmiCard({
     required this.mainCtrl,
-    required this.currentBmi,
-    required this.idealRange,
+    required this.currentWeight,
+    required this.heightCm,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Live BMI from the real current weight + profile height. Falls back to a
+    // safe neutral value when inputs are invalid so the card never breaks.
+    final double bmi;
+    final double idealMin;
+    final double idealMax;
+    final String categoryLabel;
+    if (currentWeight > 0 && heightCm > 0) {
+      final result = BmiCalculator.calculate(
+        weightKg: currentWeight,
+        heightCm: heightCm,
+      );
+      bmi = result.bmi;
+      idealMin = result.healthyWeightMinKg;
+      idealMax = result.healthyWeightMaxKg;
+      categoryLabel = result.category.label;
+    } else {
+      bmi = 0;
+      idealMin = 0;
+      idealMax = 0;
+      categoryLabel = '—';
+    }
+    final idealRange = idealMax > 0
+        ? '${idealMin.toStringAsFixed(0)} – ${idealMax.toStringAsFixed(0)} kg'
+        : '— —';
+
     return AnimatedBuilder(
       animation: mainCtrl,
       builder: (context, child) {
@@ -728,7 +775,7 @@ class _BmiCard extends StatelessWidget {
           parent: mainCtrl,
           curve: const Interval(0.60, 0.78, curve: Curves.easeOutCubic),
         ).value);
-        final bmiVal = 23.4 * t;
+        final bmiVal = bmi * t;
         return Transform.scale(
           scale: 0.96 + (t * 0.04),
           child: Opacity(
@@ -778,11 +825,11 @@ class _BmiCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 6),
-                            const Padding(
-                              padding: EdgeInsets.only(bottom: 3),
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 3),
                               child: Text(
-                                'Normal',
-                                style: TextStyle(
+                                categoryLabel,
+                                style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
                                   color: _textSecondary,
