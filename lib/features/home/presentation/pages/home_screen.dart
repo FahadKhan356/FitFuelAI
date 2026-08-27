@@ -10,6 +10,7 @@ import 'package:fitfuel_ai/core/domain/entities/meal_entity.dart';
 import 'package:fitfuel_ai/core/domain/entities/user_profile_entity.dart';
 import 'package:fitfuel_ai/core/domain/usecases/all_usecases.dart';
 import 'package:fitfuel_ai/core/services/home_data_cache.dart';
+import 'package:fitfuel_ai/core/services/home_data_refresh_notifier.dart';
 import 'package:fitfuel_ai/core/services/water_goal_resolver.dart';
 import 'package:fitfuel_ai/core/utils/fitness_calculator.dart';
 import '../../../analytics/presentation/pages/analytics_screen.dart';
@@ -122,7 +123,14 @@ class _HomeContentState extends State<_HomeContent>
       duration: const Duration(milliseconds: 3000),
     )..repeat(reverse: true);
 
+    // Reload dashboard whenever meal logging (or similar) signals a change.
+    HomeDataRefreshNotifier.instance.addListener(_onExternalRefresh);
+
     _initFromCache();
+    _loadData();
+  }
+
+  void _onExternalRefresh() {
     _loadData();
   }
 
@@ -379,6 +387,7 @@ class _HomeContentState extends State<_HomeContent>
 
   @override
   void dispose() {
+    HomeDataRefreshNotifier.instance.removeListener(_onExternalRefresh);
     _entryController.dispose();
     _floatingController.dispose();
     super.dispose();

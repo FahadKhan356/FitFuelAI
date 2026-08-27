@@ -3,6 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/domain/repositories/meal_repository.dart';
+import '../../../../core/domain/repositories/user_repository.dart';
+import '../../../../core/services/home_data_refresh_notifier.dart';
 import 'meal_entry_screen.dart';
 
 const _bg = Color(0xFFF7F6FB);
@@ -46,28 +48,63 @@ class MealTrackingScreen extends StatefulWidget {
 }
 
 class _MealTrackingScreenState extends State<MealTrackingScreen> {
-  int totalCalories = 1850;
-  int calorieGoal = 2000;
-  List<MealLog> todaysMeals = [
-    MealLog(
-      foodName: 'Oatmeal + Banana',
-      calories: 450,
-      mealType: 'breakfast',
-      date: DateTime.now(),
-    ),
-    MealLog(
-      foodName: 'Chicken + Brown Rice',
-      calories: 550,
-      mealType: 'lunch',
-      date: DateTime.now(),
-    ),
-    MealLog(
-      foodName: 'Salmon + Broccoli',
-      calories: 450,
-      mealType: 'dinner',
-      date: DateTime.now(),
-    ),
-  ];
+  int totalCalories = 0;
+  int calorieGoal = 0;
+  double totalProtein = 0, totalCarbs = 0, totalFat = 0;
+  List<MealLog> todaysMeals = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  /// Loads today's real meals + goals from the database and recomputes the
+  /// consumed calories / macros so the tracker reflects live data.
+  Future<void> _loadData() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    try {
+      final goals = user != null
+          ? await sl<UserRepository>().getUserGoals(user.id)
+          : null;
+
+      var cal = 0, protein = 0.0, carbs = 0.0, fat = 0.0;
+      final meals = <MealLog>[];
+      if (user != null) {
+        final entities =
+            await sl<MealRepository>().getMealsByDate(user.id, DateTime.now());
+        for (final meal in entities) {
+          for (final item in meal.items) {
+            cal += item.calories;
+            protein += item.protein;
+            carbs += item.carbs;
+            fat += item.fat;
+            meals.add(MealLog(
+              foodName: item.foodName,
+              calories: item.calories,
+              protein: item.protein,
+              carbs: item.carbs,
+              fat: item.fat,
+              mealType: meal.mealType,
+              date: meal.date,
+            ));
+          }
+        }
+      }
+
+      if (!mounted) return;
+      setState(() {
+        totalCalories = cal;
+        calorieGoal = goals?.targetCalories ?? 2000;
+        totalProtein = protein;
+        totalCarbs = carbs;
+        totalFat = fat;
+        todaysMeals = meals;
+      });
+    } catch (e) {
+      debugPrint('MealTracking _loadData error: $e');
+    }
+  }
 
   void _showMealEntryDialog() {
     showModalBottomSheet(
@@ -76,9 +113,15 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => MealEntryBottomSheet(
         onMealAdded: (foodName, calories, protein, carbs, fat, mealType) async {
+          final now = DateTime.now();
           final user = Supabase.instance.client.auth.currentUser;
+
+          // Optimistic UI update for instant feedback while the DB write happens.
           setState(() {
             totalCalories += calories;
+            totalProtein += protein;
+            totalCarbs += carbs;
+            totalFat += fat;
             todaysMeals.add(
               MealLog(
                 foodName: foodName,
@@ -87,29 +130,37 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
                 carbs: carbs,
                 fat: fat,
                 mealType: mealType,
-                date: DateTime.now(),
+                date: now,
               ),
             );
           });
 
           // Persist to the user's meal for today so it shows on home/calendar too.
-          if (user != null) {
-            try {
-              await sl<MealRepository>().addFoodToMeal(
-                userId: user.id,
-                mealType: mealType.toLowerCase(),
-                foodName: foodName,
-                calories: calories,
-                protein: protein,
-                carbs: carbs,
-                fat: fat,
-                servingSize: 100,
-                servingUnit: 'g',
-                date: DateTime.now(),
-              );
-            } catch (e) {
-              debugPrint('Failed to persist meal: $e');
+          if (user == null) {
+            return;
+          }
+          try {
+            await sl<MealRepository>().addFoodToMeal(
+              userId: user.id,
+              mealType: mealType.toLowerCase(),
+              foodName: foodName,
+              calories: calories,
+              protein: protein,
+              carbs: carbs,
+              fat: fat,
+              servingSize: 100,
+              servingUnit: 'g',
+              date: now,
+            );
+            // Reload from the DB so the tracker reflects the single source of
+            // truth (totals are recomputed from the persisted items).
+            if (mounted) {
+              await _loadData();
             }
+            // Let the home dashboard know to reload its consumed calories.
+            HomeDataRefreshNotifier.instance.refresh();
+          } catch (e) {
+            debugPrint('Failed to persist meal: $e');
           }
         },
       ),

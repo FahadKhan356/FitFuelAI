@@ -28,7 +28,8 @@ class MealModel {
       totalCalories: (json['total_calories'] as int?) ?? 0,
       notes: json['notes'] as String?,
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : null,
-      items: (json['items'] as List<dynamic>?)
+      items: (json['meal_items'] as List<dynamic>? ??
+                  json['items'] as List<dynamic>?)
               ?.map((e) => MealItemModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
