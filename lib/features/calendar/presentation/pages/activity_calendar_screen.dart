@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/domain/entities/calendar_tracking.dart';
 import '../../../../core/domain/usecases/all_usecases.dart';
 import '../../../../core/di/service_locator.dart';
+import '../../../../core/services/home_data_refresh_notifier.dart';
 
 const _bg = Color(0xFFF7F6FB);
 const _surface = Colors.white;
@@ -38,7 +39,16 @@ class _ActivityCalendarScreenState extends State<ActivityCalendarScreen> {
     final now = DateTime.now();
     _month = DateTime(now.year, now.month);
     _selectedDay = DateTime(now.year, now.month, now.day);
+    // Reload the visible month whenever a meal/water is logged elsewhere so the
+    // calendar always reflects the latest daily totals.
+    HomeDataRefreshNotifier.instance.addListener(_load);
     _load();
+  }
+
+  @override
+  void dispose() {
+    HomeDataRefreshNotifier.instance.removeListener(_load);
+    super.dispose();
   }
 
   Future<void> _load() async {

@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../../core/domain/entities/water_entry_entity.dart';
 import '../../../../core/domain/repositories/water_repository.dart';
+import '../../../../core/services/home_data_refresh_notifier.dart';
 
 // ── Events ──
 abstract class WaterTrackerEvent extends Equatable {
@@ -98,6 +99,7 @@ class WaterTrackerBloc extends Bloc<WaterTrackerEvent, WaterTrackerState> {
       final entries = await _waterRepository.getWaterEntries(event.userId, event.date);
       final totalMl = entries.fold<int>(0, (sum, e) => sum + e.amountMl);
       emit(WaterDataLoaded(entries: entries, totalMl: totalMl, selectedDate: event.date));
+      HomeDataRefreshNotifier.instance.refresh();
     } catch (e) {
       emit(WaterTrackerError(e.toString()));
     }
@@ -110,6 +112,7 @@ class WaterTrackerBloc extends Bloc<WaterTrackerEvent, WaterTrackerState> {
       final entries = await _waterRepository.getWaterEntries(event.userId, event.date);
       final totalMl = entries.fold<int>(0, (sum, e) => sum + e.amountMl);
       emit(WaterDataLoaded(entries: entries, totalMl: totalMl, selectedDate: event.date));
+      HomeDataRefreshNotifier.instance.refresh();
     } catch (e) {
       emit(WaterTrackerError(e.toString()));
     }

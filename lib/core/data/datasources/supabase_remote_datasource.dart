@@ -141,7 +141,7 @@ class SupabaseRemoteDataSource {
     final endStr = end.toIso8601String().split('T').first;
     final response = await _client
         .from('meals')
-        .select('date, total_calories')
+        .select('date, meal_items(calories)')
         .eq('user_id', userId)
         .gte('date', startStr)
         .lte('date', endStr);
@@ -150,7 +150,16 @@ class SupabaseRemoteDataSource {
     for (final row in response as List) {
       final map = row as Map<String, dynamic>;
       final dateStr = map['date'] as String;
-      totals[dateStr] = (totals[dateStr] ?? 0) + (map['total_calories'] as int? ?? 0);
+      // Count calories from the individual items (same source as home/tracker)
+      // so the calendar always agrees with the other screens, even if the
+      // denormalized `total_calories` column is stale.
+      final items = (map['meal_items'] as List<dynamic>?) ?? const [];
+      var dayCalories = 0;
+      for (final item in items) {
+        final im = item as Map<String, dynamic>;
+        dayCalories += (im['calories'] as int? ?? 0);
+      }
+      totals[dateStr] = (totals[dateStr] ?? 0) + dayCalories;
     }
     return totals;
   }
