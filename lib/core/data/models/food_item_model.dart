@@ -10,10 +10,16 @@ class FoodItemModel {
   final double fiber;
   final double sugar;
   final double sodium;
+  final double potassiumMg;
+  final double calciumMg;
+  final double ironMg;
+  final double vitaminCMg;
+  final double saturatedFatG;
   final double servingSize;
   final String servingUnit;
   final String? barcode;
   final String? externalId;
+  final String? imageUrl;
 
   const FoodItemModel({
     required this.id,
@@ -27,10 +33,16 @@ class FoodItemModel {
     this.fiber = 0,
     this.sugar = 0,
     this.sodium = 0,
+    this.potassiumMg = 0,
+    this.calciumMg = 0,
+    this.ironMg = 0,
+    this.vitaminCMg = 0,
+    this.saturatedFatG = 0,
     this.servingSize = 100,
     this.servingUnit = 'g',
     this.barcode,
     this.externalId,
+    this.imageUrl,
   });
 
   factory FoodItemModel.fromJson(Map<String, dynamic> json) {
@@ -46,10 +58,16 @@ class FoodItemModel {
       fiber: (json['fiber'] as num?)?.toDouble() ?? 0,
       sugar: (json['sugar'] as num?)?.toDouble() ?? 0,
       sodium: (json['sodium'] as num?)?.toDouble() ?? 0,
+      potassiumMg: (json['potassium'] as num?)?.toDouble() ?? 0,
+      calciumMg: (json['calcium'] as num?)?.toDouble() ?? 0,
+      ironMg: (json['iron'] as num?)?.toDouble() ?? 0,
+      vitaminCMg: (json['vitamin_c'] as num?)?.toDouble() ?? 0,
+      saturatedFatG: (json['saturated_fat'] as num?)?.toDouble() ?? 0,
       servingSize: (json['serving_size'] as num?)?.toDouble() ?? 100,
       servingUnit: json['serving_unit'] as String? ?? 'g',
       barcode: json['barcode'] as String?,
       externalId: json['external_id'] as String?,
+      imageUrl: json['image_url'] as String?,
     );
   }
 
@@ -66,10 +84,16 @@ class FoodItemModel {
       'fiber': fiber,
       'sugar': sugar,
       'sodium': sodium,
+      'potassium': potassiumMg,
+      'calcium': calciumMg,
+      'iron': ironMg,
+      'vitamin_c': vitaminCMg,
+      'saturated_fat': saturatedFatG,
       'serving_size': servingSize,
       'serving_unit': servingUnit,
       if (barcode != null) 'barcode': barcode,
       if (externalId != null) 'external_id': externalId,
+      if (imageUrl != null) 'image_url': imageUrl,
     };
   }
 }

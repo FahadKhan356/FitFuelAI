@@ -16,6 +16,9 @@ class AppConstants {
   // OpenFoodFacts — free, no key required
   static const String openFoodFactsSearchBase = 'https://world.openfoodfacts.org/cgi/search.pl';
   static const String openFoodFactsProductBase = 'https://world.openfoodfacts.org/api/v0/product';
+  // CalorieNinjas — free natural-language API, key from https://calorieninjas.com/api
+  static String get calorieNinjasApiKey => dotenv.env['CALORIE_NINJAS_API_KEY'] ?? '';
+  static String get calorieNinjasApiBase => dotenv.env['CALORIE_NINJAS_API_BASE'] ?? 'https://api.calorieninjas.com/v1/nutrition';
 
   // Timeouts
   static const int apiTimeoutSeconds = 30;

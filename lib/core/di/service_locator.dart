@@ -70,7 +70,7 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<ProfileRepository>(() => ProfileRepositoryImpl(sl()));
   sl.registerLazySingleton<OnboardingRepository>(() => OnboardingRepositoryImpl(sl()));
   sl.registerLazySingleton<MealRepository>(() => MealRepositoryImpl(sl()));
-  sl.registerLazySingleton<FoodSearchRepository>(() => FoodSearchRepositoryImpl(sl()));
+  sl.registerLazySingleton<FoodSearchRepository>(() => FoodSearchRepositoryImpl(sl<SupabaseRemoteDataSource>(), sl<NutritionApiDataSource>()));
   sl.registerLazySingleton<FoodScanRepository>(() => FoodScanRepositoryImpl(sl()));
   sl.registerLazySingleton<BarcodeRepository>(() => BarcodeRepositoryImpl(sl<SupabaseRemoteDataSource>(), sl<NutritionApiDataSource>()));
   sl.registerLazySingleton<WaterRepository>(() => WaterRepositoryImpl(sl()));
