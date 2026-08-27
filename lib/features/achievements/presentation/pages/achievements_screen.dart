@@ -1,5 +1,9 @@
 import 'package:fitfuel_ai/core/constants/app_colors.dart';
+import 'package:fitfuel_ai/core/di/service_locator.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../bloc/achievements_bloc.dart';
 
 const _bg = Color(0xFFF7F6FB);
 const _surface = Colors.white;
@@ -13,325 +17,360 @@ const _gold = Color(0xFFF2B84B);
 const _cyan = Color(0xFF5BDBF5);
 const _orange = Color(0xFFFFA24A);
 
-class AchievementsScreen extends StatelessWidget {
+class AchievementsScreen extends StatefulWidget {
   const AchievementsScreen({super.key});
 
   @override
+  State<AchievementsScreen> createState() => _AchievementsScreenState();
+}
+
+class _AchievementsScreenState extends State<AchievementsScreen> {
+  late final AchievementsBloc _bloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _bloc = sl<AchievementsBloc>();
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId != null) {
+      _bloc.add(LoadGamification(userId));
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _bg,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  _IconButton(
-                    icon: Icons.arrow_back_ios_new_rounded,
-                    onTap: () => Navigator.of(context).maybePop(),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Achievements',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontSize: 21,
-                          fontWeight: FontWeight.w700,
-                          color: _textPrimary,
-                        ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              _RecentAchievementCard(),
-              const SizedBox(height: 18),
-              Row(
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.emoji_events_outlined, size: 19, color: _textPrimary),
-                      const SizedBox(width: 7),
-                      Text(
-                        'Your Progress',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: _textPrimary,
-                            ),
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  Text(
-                    'Leaderboard',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                          color: _purple,
-                        ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFFF8F5FF), Color(0xFFD6C7FF)],
-                  ),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: const Color(0xFFD4C6FF)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 14,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
+    return BlocProvider.value(
+      value: _bloc,
+      child: BlocBuilder<AchievementsBloc, AchievementsState>(
+        builder: (context, state) {
+          int xp = 12450;
+          int level = 14;
+          int streak = 12;
+          int weeklyXp = 840;
+
+          if (state is AchievementsLoaded && state.gamification != null) {
+            xp = state.gamification!.xpTotal;
+            level = state.gamification!.level;
+            streak = state.gamification!.streakDays;
+          }
+
+          return Scaffold(
+            backgroundColor: _bg,
+            body: SafeArea(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: const [
-                        _EliteBadge(),
+                      children: [
+                        _IconButton(
+                          icon: Icons.arrow_back_ios_new_rounded,
+                          onTap: () => Navigator.of(context).maybePop(),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Achievements',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontSize: 21,
+                                fontWeight: FontWeight.w700,
+                                color: _textPrimary,
+                              ),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    Center(
-                      child: Stack(
-                        alignment: Alignment.center,
+                    const SizedBox(height: 16),
+                    _RecentAchievementCard(),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.emoji_events_outlined, size: 19, color: _textPrimary),
+                            const SizedBox(width: 7),
+                            Text(
+                              'Your Progress',
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                    color: _textPrimary,
+                                  ),
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        Text(
+                          'Leaderboard',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: _purple,
+                              ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFFF8F5FF), Color(0xFFD6C7FF)],
+                        ),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: const Color(0xFFD4C6FF)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 14,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Column(
                         children: [
-                          Container(
-                            width: 108,
-                            height: 108,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _surface,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: _purple.withValues(alpha: 0.16),
-                                  blurRadius: 18,
-                                  offset: const Offset(0, 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: const [
+                              _EliteBadge(),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Center(
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Container(
+                                  width: 108,
+                                  height: 108,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: _surface,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: _purple.withValues(alpha: 0.16),
+                                        blurRadius: 18,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  width: 88,
+                                  height: 88,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: _purpleTint, width: 5),
+                                  ),
+                                ),
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      '$level',
+                                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                                            fontSize: 36,
+                                            fontWeight: FontWeight.w800,
+                                            color: _purple,
+                                            height: 1,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: _purple,
+                                        borderRadius: BorderRadius.circular(999),
+                                      ),
+                                      child: const Text(
+                                        'LEVEL',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 9.5,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: 0.4,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
                           ),
-                          Container(
-                            width: 88,
-                            height: 88,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: _purpleTint, width: 5),
+                          const SizedBox(height: 10),
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'CURRENT XP',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w800,
+                                color: _textSecondary,
+                                letterSpacing: 0.3,
+                              ),
                             ),
                           ),
-                          Column(
-                            mainAxisSize: MainAxisSize.min,
+                          const SizedBox(height: 4),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                '14',
-                                style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                                      fontSize: 36,
-                                      fontWeight: FontWeight.w800,
-                                      color: _purple,
-                                      height: 1,
-                                    ),
-                              ),
-                              const SizedBox(height: 2),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: _purple,
-                                  borderRadius: BorderRadius.circular(999),
+                                '$xp',
+                                style: const TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w800,
+                                  color: _textPrimary,
+                                  height: 1,
                                 ),
-                                child: const Text(
-                                  'LEVEL',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 9.5,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 0.4,
-                                  ),
+                              ),
+                              const SizedBox(width: 6),
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: Text(
+                                  '/ ${(xp + 2550).toStringAsFixed(0)}',
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        fontSize: 15,
+                                        color: _textSecondary,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                '${((xp / (xp + 2550)) * 100).toInt()}%',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: _textSecondary,
                                 ),
                               ),
                             ],
                           ),
+                          const SizedBox(height: 10),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(999),
+                            child: LinearProgressIndicator(
+                              minHeight: 8,
+                              value: (xp / (xp + 2550)).clamp(0.0, 1.0),
+                              backgroundColor: const Color(0xFFE9E4F6),
+                              valueColor: const AlwaysStoppedAnimation<Color>(_purple),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '${(xp + 2550 - xp).toStringAsFixed(0)} XP to Level ${level + 1} • Keep scanning meals!',
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: _textSecondary,
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'CURRENT XP',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w800,
-                          color: _textSecondary,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 18),
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Text(
-                          '12,450',
-                          style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w800,
-                            color: _textPrimary,
-                            height: 1,
+                        Expanded(
+                          child: _StatCard(
+                            icon: Icons.local_fire_department_outlined,
+                            iconColor: _orange,
+                            iconBg: const Color(0xFFFFF0E4),
+                            value: '$streak',
+                            label: 'Day Streak',
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 4),
-                          child: Text(
-                            '/ 15,000',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontSize: 15,
-                                  color: _textSecondary,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _StatCard(
+                            icon: Icons.trending_up_rounded,
+                            iconColor: _cyan,
+                            iconBg: const Color(0xFFE8F8FD),
+                            value: '$weeklyXp',
+                            label: 'Weekly XP',
+                            badge: '+240',
                           ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.workspace_premium_outlined, size: 19, color: _purple),
+                            const SizedBox(width: 7),
+                            Text(
+                              'Badges Gallery',
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                    color: _textPrimary,
+                                  ),
+                            ),
+                          ],
                         ),
                         const Spacer(),
                         const Text(
-                          '83%',
+                          '12 / 48 Unlocked',
                           style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
                             color: _textSecondary,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(999),
-                      child: LinearProgressIndicator(
-                        minHeight: 8,
-                        value: 0.83,
-                        backgroundColor: const Color(0xFFE9E4F6),
-                        valueColor: const AlwaysStoppedAnimation<Color>(_purple),
+                    const SizedBox(height: 12),
+                    GridView.count(
+                      crossAxisCount: 3,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.05,
+                      children: const [
+                        _BadgeCard(icon: Icons.bolt_rounded, label: 'Early Bird', color: _gold, unlocked: true),
+                        _BadgeCard(icon: Icons.center_focus_strong, label: 'Perfect Macro', color: _purple, unlocked: true),
+                        _BadgeCard(icon: Icons.workspace_premium_outlined, label: 'Weight Master', color: _orange, unlocked: true),
+                        _BadgeCard(icon: Icons.shield_outlined, label: 'Consistent', color: Color(0xFF4A90FF), unlocked: true),
+                        _BadgeCard(icon: Icons.fastfood_outlined, label: 'First Scan', color: Color(0xFF16C89A), unlocked: true),
+                        _BadgeCard(icon: Icons.star_border_rounded, label: 'AI Expert', color: Color(0xFFFF5B7E), unlocked: true),
+                        _BadgeCard(icon: Icons.emoji_events_outlined, label: 'Centurion', color: Color(0xFFB6B6C1), unlocked: false),
+                        _BadgeCard(icon: Icons.local_fire_department_outlined, label: 'Month Streak', color: Color(0xFFB6B6C1), unlocked: false),
+                        _BadgeCard(icon: Icons.verified_outlined, label: 'Super Coach', color: Color(0xFFB6B6C1), unlocked: false),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton(
+                      onPressed: () {},
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(54),
+                        side: const BorderSide(color: Color(0xFF1F1F2E)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: const Text(
+                        'VIEW ALL 48 ACHIEVEMENTS',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: _textPrimary,
+                          letterSpacing: 0.3,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      '2,550 XP to Level 15 • Keep scanning meals!',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                        color: _textSecondary,
-                      ),
-                    ),
+                    const SizedBox(height: 12),
+                    _MilestoneCard(),
                   ],
                 ),
               ),
-              const SizedBox(height: 18),
-              Row(
-                children: const [
-                  Expanded(
-                    child: _StatCard(
-                      icon: Icons.local_fire_department_outlined,
-                      iconColor: _orange,
-                      iconBg: Color(0xFFFFF0E4),
-                      value: '12',
-                      label: 'Day Streak',
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _StatCard(
-                      icon: Icons.trending_up_rounded,
-                      iconColor: _cyan,
-                      iconBg: Color(0xFFE8F8FD),
-                      value: '840',
-                      label: 'Weekly XP',
-                      badge: '+240',
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.workspace_premium_outlined, size: 19, color: _purple),
-                      const SizedBox(width: 7),
-                      Text(
-                        'Badges Gallery',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: _textPrimary,
-                            ),
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  const Text(
-                    '12 / 48 Unlocked',
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: _textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              GridView.count(
-                crossAxisCount: 3,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.05,
-                children: const [
-                  _BadgeCard(icon: Icons.bolt_rounded, label: 'Early Bird', color: _gold, unlocked: true),
-                  _BadgeCard(icon: Icons.center_focus_strong, label: 'Perfect Macro', color: _purple, unlocked: true),
-                  _BadgeCard(icon: Icons.workspace_premium_outlined, label: 'Weight Master', color: _orange, unlocked: true),
-                  _BadgeCard(icon: Icons.shield_outlined, label: 'Consistent', color: Color(0xFF4A90FF), unlocked: true),
-                  _BadgeCard(icon: Icons.fastfood_outlined, label: 'First Scan', color: Color(0xFF16C89A), unlocked: true),
-                  _BadgeCard(icon: Icons.star_border_rounded, label: 'AI Expert', color: Color(0xFFFF5B7E), unlocked: true),
-                  _BadgeCard(icon: Icons.emoji_events_outlined, label: 'Centurion', color: Color(0xFFB6B6C1), unlocked: false),
-                  _BadgeCard(icon: Icons.local_fire_department_outlined, label: 'Month Streak', color: Color(0xFFB6B6C1), unlocked: false),
-                  _BadgeCard(icon: Icons.verified_outlined, label: 'Super Coach', color: Color(0xFFB6B6C1), unlocked: false),
-                ],
-              ),
-              const SizedBox(height: 16),
-              OutlinedButton(
-                onPressed: () {},
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(54),
-                  side: const BorderSide(color: Color(0xFF1F1F2E)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-                child: const Text(
-                  'VIEW ALL 48 ACHIEVEMENTS',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: _textPrimary,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              _MilestoneCard(),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

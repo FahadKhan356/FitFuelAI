@@ -75,8 +75,9 @@ FoodItem _fromNutritionFood(NutritionFood n) {
 class MealEntryBottomSheet extends StatefulWidget {
   final void Function(String foodName, int calories, double protein,
       double carbs, double fat, String mealType) onMealAdded;
+  final VoidCallback? onSearchFood;
 
-  const MealEntryBottomSheet({required this.onMealAdded});
+  const MealEntryBottomSheet({required this.onMealAdded, this.onSearchFood});
 
   @override
   State<MealEntryBottomSheet> createState() => _MealEntryBottomSheetState();
@@ -372,6 +373,21 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       color: _textSecondary,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 20),
+              if (widget.onSearchFood != null)
+                ElevatedButton.icon(
+                  onPressed: widget.onSearchFood,
+                  icon: const Icon(Icons.search_rounded, size: 20),
+                  label: const Text('Search Food Database'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _purple,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                 ),

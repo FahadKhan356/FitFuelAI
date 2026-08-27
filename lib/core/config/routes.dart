@@ -9,6 +9,7 @@ import '../../features/auth/presentation/pages/login_screen.dart';
 import '../../features/auth/presentation/pages/signup_screen.dart';
 import '../../features/auth/presentation/pages/splash_screen.dart';
 import '../../features/food_scanner/presentation/pages/food_scanner_screen.dart';
+import '../../features/food_search/presentation/pages/food_search_screen.dart';
 import '../../features/barcode/presentation/pages/barcode_scanner_screen.dart';
 import '../../features/notifications/presentation/pages/notifications_screen.dart';
 import '../../features/meal_tracking/presentation/pages/meal_tracking_screen.dart';
@@ -20,10 +21,12 @@ import '../../features/water_tracker/presentation/pages/water_tracker_screen.dar
 import '../../features/weight_tracker/presentation/pages/bmi_screen.dart';
 import '../../features/weight_tracker/presentation/pages/weight_tracker_screen.dart';
 import '../../features/home/presentation/pages/home_screen.dart';
+import '../../features/home/presentation/pages/welcome_screen.dart';
 import '../../features/calendar/presentation/pages/activity_calendar_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
+  static const String welcome = '/welcome';
   static const String login = '/login';
   static const String signup = '/signup';
   static const String onboarding = '/onboarding';
@@ -31,6 +34,7 @@ class AppRoutes {
   static const String personalization = '/personalization';
   static const String home = '/home';
   static const String foodScanner = '/food-scanner';
+  static const String foodSearch = '/food-search';
   static const String mealTracking = '/meal-tracking';
   static const String waterTracker = '/water-tracker';
   static const String weightTracker = '/weight-tracker';
@@ -51,6 +55,10 @@ final goRouter = GoRouter(
     GoRoute(
       path: AppRoutes.splash,
       builder: (context, state) => const SplashScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.welcome,
+      builder: (context, state) => const WelcomeScreen(),
     ),
     GoRoute(
       path: AppRoutes.onboarding,
@@ -101,6 +109,16 @@ final goRouter = GoRouter(
     GoRoute(
       path: AppRoutes.foodScanner,
       builder: (context, state) => const FoodScannerScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.foodSearch,
+      builder: (context, state) => FoodSearchScreen(
+        onFoodSelected: state.uri.queryParameters['onFoodSelected'] == 'true'
+            ? (String foodName, int calories, double protein, double carbs, double fat) {
+                // Handle food selection from meal tracking
+              }
+            : null,
+      ),
     ),
     GoRoute(
       path: AppRoutes.mealTracking,

@@ -483,9 +483,8 @@ AnimatedBuilder(
               },
               child: _MealCard(animation: _entryController),
             ),
-            const SizedBox(height: 14),
-            const SizedBox(height: 14),
-            AnimatedBuilder(
+             const SizedBox(height: 14),
+             AnimatedBuilder(
               animation: _entryController,
               builder: (context, child) {
                 final t = CurvedAnimation(

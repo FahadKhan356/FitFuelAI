@@ -1,3 +1,4 @@
+import 'package:fitfuel_ai/features/food_search/presentation/pages/food_search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -118,11 +119,22 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => MealEntryBottomSheet(
+        onSearchFood: () {
+          Navigator.pop(context);
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => FoodSearchScreen(
+                onFoodSelected: (foodName, calories, protein, carbs, fat) {
+                  _addMealFromSearch(foodName, calories, protein, carbs, fat);
+                },
+              ),
+            ),
+          );
+        },
         onMealAdded: (foodName, calories, protein, carbs, fat, mealType) async {
           final now = DateTime.now();
           final user = Supabase.instance.client.auth.currentUser;
 
-          // Optimistic UI update for instant feedback while the DB write happens.
           setState(() {
             totalCalories += calories;
             totalProtein += protein;
@@ -141,7 +153,6 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
             );
           });
 
-          // Persist to the user's meal for today so it shows on home/calendar too.
           if (user == null) {
             return;
           }
@@ -158,12 +169,9 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
               servingUnit: 'g',
               date: now,
             );
-            // Reload from the DB so the tracker reflects the single source of
-            // truth (totals are recomputed from the persisted items).
             if (mounted) {
               await _loadData();
             }
-            // Let the home dashboard know to reload its consumed calories.
             HomeDataRefreshNotifier.instance.refresh();
           } catch (e) {
             debugPrint('Failed to persist meal: $e');
@@ -171,6 +179,49 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
         },
       ),
     );
+  }
+
+  Future<void> _addMealFromSearch(String foodName, int calories, double protein, double carbs, double fat) async {
+    final now = DateTime.now();
+    final user = Supabase.instance.client.auth.currentUser;
+
+    setState(() {
+      totalCalories += calories;
+      totalProtein += protein;
+      totalCarbs += carbs;
+      totalFat += fat;
+      todaysMeals.add(
+        MealLog(
+          foodName: foodName,
+          calories: calories,
+          protein: protein,
+          carbs: carbs,
+          fat: fat,
+          mealType: 'snack',
+          date: now,
+        ),
+      );
+    });
+
+    if (user == null) return;
+    try {
+      await sl<MealRepository>().addFoodToMeal(
+        userId: user.id,
+        mealType: 'snack',
+        foodName: foodName,
+        calories: calories,
+        protein: protein,
+        carbs: carbs,
+        fat: fat,
+        servingSize: 100,
+        servingUnit: 'g',
+        date: now,
+      );
+      if (mounted) await _loadData();
+      HomeDataRefreshNotifier.instance.refresh();
+    } catch (e) {
+      debugPrint('Failed to add meal from search: $e');
+    }
   }
 
   /// Removes an item locally and from the DB, then recomputes totals from the

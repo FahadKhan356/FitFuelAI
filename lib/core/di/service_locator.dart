@@ -1,46 +1,51 @@
+import 'package:fitfuel_ai/features/achievements/presentation/bloc/achievements_bloc.dart';
+import 'package:fitfuel_ai/features/ai_coach/presentation/bloc/ai_coach_bloc.dart';
+import 'package:fitfuel_ai/features/analytics/presentation/bloc/analytics_bloc.dart';
 import 'package:fitfuel_ai/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:fitfuel_ai/features/barcode/presentation/bloc/barcode_bloc.dart';
-import 'package:fitfuel_ai/features/food_search/data/datasources/nutrition_api_datasource.dart';
 import 'package:fitfuel_ai/features/food_scanner/presentation/bloc/food_scan_bloc.dart';
-import 'package:fitfuel_ai/features/notifications/data/repositories/notification_repository_impl.dart';
-import 'package:fitfuel_ai/features/notifications/domain/repositories/notification_repository.dart';
-import 'package:fitfuel_ai/features/notifications/presentation/bloc/notifications_bloc.dart';
-import 'package:fitfuel_ai/features/subscription/presentation/bloc/subscription_bloc.dart';
-import 'package:fitfuel_ai/core/data/repositories/subscription_repository_impl.dart';
+import 'package:fitfuel_ai/features/food_search/presentation/bloc/food_search_bloc.dart';
 import 'package:fitfuel_ai/features/meal_tracking/presentation/bloc/meal_tracking_bloc.dart';
-import 'package:fitfuel_ai/features/onboarding/data/repositories/onboarding_repository_impl.dart';
+import 'package:fitfuel_ai/features/notifications/presentation/bloc/notifications_bloc.dart';
 import 'package:fitfuel_ai/features/onboarding/domain/repositories/onboarding_repository.dart';
 import 'package:fitfuel_ai/features/onboarding/presentation/bloc/onboarding_bloc.dart';
-import 'package:fitfuel_ai/features/profile/data/repositories/profile_repository_impl.dart';
 import 'package:fitfuel_ai/features/profile/domain/repositories/profile_repository.dart';
 import 'package:fitfuel_ai/features/profile/presentation/bloc/profile_bloc.dart';
+import 'package:fitfuel_ai/features/subscription/presentation/bloc/subscription_bloc.dart';
 import 'package:fitfuel_ai/features/water_tracker/presentation/bloc/water_tracker_bloc.dart';
 import 'package:fitfuel_ai/features/weight_tracker/presentation/bloc/weight_tracker_bloc.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../features/food_search/data/datasources/nutrition_api_datasource.dart';
+import '../../features/notifications/data/repositories/notification_repository_impl.dart';
+import '../../features/notifications/domain/repositories/notification_repository.dart';
+import '../../features/onboarding/data/repositories/onboarding_repository_impl.dart';
+import '../../features/profile/data/repositories/profile_repository_impl.dart';
 import '../data/datasources/supabase_remote_datasource.dart';
+import '../data/repositories/ai_coach_repository_impl.dart';
+import '../data/repositories/analytics_repository_impl.dart';
 import '../data/repositories/auth_repository_impl.dart';
-import '../data/repositories/user_repository_impl.dart';
-import '../data/repositories/meal_repository_impl.dart';
-import '../data/repositories/food_search_repository_impl.dart';
-import '../data/repositories/food_scan_repository_impl.dart';
 import '../data/repositories/barcode_repository_impl.dart';
+import '../data/repositories/food_scan_repository_impl.dart';
+import '../data/repositories/food_search_repository_impl.dart';
+import '../data/repositories/meal_repository_impl.dart';
+import '../data/repositories/subscription_repository_impl.dart';
+import '../data/repositories/user_repository_impl.dart';
 import '../data/repositories/water_repository_impl.dart';
 import '../data/repositories/weight_repository_impl.dart';
-import '../data/repositories/analytics_repository_impl.dart';
+import '../domain/repositories/ai_coach_repository.dart';
+import '../domain/repositories/analytics_repository.dart';
 import '../domain/repositories/auth_repository.dart';
-import '../domain/repositories/user_repository.dart';
-import '../domain/repositories/meal_repository.dart';
-import '../domain/repositories/food_search_repository.dart';
-import '../domain/repositories/food_scan_repository.dart';
 import '../domain/repositories/barcode_repository.dart';
+import '../domain/repositories/food_scan_repository.dart';
+import '../domain/repositories/food_search_repository.dart';
+import '../domain/repositories/meal_repository.dart';
+import '../domain/repositories/subscription_repository.dart';
+import '../domain/repositories/user_repository.dart';
 import '../domain/repositories/water_repository.dart';
 import '../domain/repositories/weight_repository.dart';
-import '../domain/repositories/analytics_repository.dart';
-import '../domain/repositories/ai_coach_repository.dart';
-import '../domain/repositories/subscription_repository.dart';
 import '../domain/usecases/all_usecases.dart';
 
 
@@ -56,7 +61,7 @@ Future<void> initDependencies() async {
     () => SupabaseRemoteDataSource(sl()),
   );
   sl.registerLazySingleton<NutritionApiDataSource>(
-    () => NutritionApiDataSource(),
+    NutritionApiDataSource.new,
   );
 
   // Repositories
@@ -67,12 +72,13 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<MealRepository>(() => MealRepositoryImpl(sl()));
   sl.registerLazySingleton<FoodSearchRepository>(() => FoodSearchRepositoryImpl(sl()));
   sl.registerLazySingleton<FoodScanRepository>(() => FoodScanRepositoryImpl(sl()));
-  sl.registerLazySingleton<BarcodeRepository>(() => BarcodeRepositoryImpl(sl(), sl()));
+  sl.registerLazySingleton<BarcodeRepository>(() => BarcodeRepositoryImpl(sl<SupabaseRemoteDataSource>(), sl<NutritionApiDataSource>()));
   sl.registerLazySingleton<WaterRepository>(() => WaterRepositoryImpl(sl()));
   sl.registerLazySingleton<WeightRepository>(() => WeightRepositoryImpl(sl()));
   sl.registerLazySingleton<AnalyticsRepository>(() => AnalyticsRepositoryImpl(sl()));
-  sl.registerLazySingleton<AiCoachRepository>(() => throw UnimplementedError('AiCoachRepositoryImpl not yet created'));
+  sl.registerLazySingleton<AiCoachRepository>(() => AiCoachRepositoryImpl(sl()));
   sl.registerLazySingleton<SubscriptionRepository>(() => SubscriptionRepositoryImpl(sl()));
+  sl.registerLazySingleton<NotificationRepository>(() => NotificationRepositoryImpl(sl<SupabaseRemoteDataSource>()));
 
   // Use Cases
   sl.registerLazySingleton<SignInWithEmailUseCase>(() => SignInWithEmailUseCase(sl()));
@@ -123,16 +129,26 @@ Future<void> initDependencies() async {
     foodScanRepository: sl(),
   ));
   sl.registerFactory<NotificationsBloc>(() => NotificationsBloc(
-    notificationRepository: sl(),
+    notificationRepository: sl<NotificationRepository>(),
   ));
   sl.registerFactory<SubscriptionBloc>(() => SubscriptionBloc(
     subscriptionRepository: sl(),
   ));
+  sl.registerFactory<AnalyticsBloc>(() => AnalyticsBloc(
+    fetchCalendarTrackingUseCase: sl(),
+  ));
+  sl.registerFactory<AchievementsBloc>(() => AchievementsBloc(
+    dataSource: sl<SupabaseRemoteDataSource>(),
+  ));
+  sl.registerFactory<AiCoachBloc>(() => AiCoachBloc(
+    aiCoachRepository: sl(),
+  ));
+  sl.registerFactory<FoodSearchBloc>(() => FoodSearchBloc(
+    searchFoodUseCase: sl(),
+  ));
 }
 
 // Helper to get all providers for MaterialApp
-List<BlocProvider> get blocProviders {
-  return [
+List<BlocProvider> get blocProviders => [
     BlocProvider<AuthBloc>(create: (_) => sl<AuthBloc>()),
   ];
-}

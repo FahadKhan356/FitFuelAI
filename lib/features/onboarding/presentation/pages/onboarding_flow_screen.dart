@@ -60,11 +60,9 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
             setState(() => _isSubmitting = true);
           } else if (state is OnboardingSuccess) {
             setState(() => _isSubmitting = false);
-            // If user is authenticated, go to home; otherwise go to login so
-            // they can create an account and we can sync local onboarding data.
             final currentUser = Supabase.instance.client.auth.currentUser;
             if (currentUser != null) {
-              context.go(AppRoutes.home);
+              context.go(AppRoutes.welcome);
             } else {
               context.go(AppRoutes.login);
             }
