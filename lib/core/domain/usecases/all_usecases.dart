@@ -86,7 +86,10 @@ class FetchHomeDashboardUseCase {
       }),
     ]);
 
-    final totalCalories = meals.fold<int>(0, (sum, m) => sum + m.totalCalories);
+    final totalCalories = meals.fold<int>(
+      0,
+      (sum, m) => sum + m.items.fold<int>(0, (itemSum, i) => itemSum + i.calories),
+    );
     final totalWater = water.fold<int>(0, (sum, w) => sum + w.amountMl);
 
     return {
