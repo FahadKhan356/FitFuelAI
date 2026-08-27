@@ -158,17 +158,20 @@ class _HomeContentState extends State<_HomeContent>
     if (cached.name != null && cached.name!.isNotEmpty) {
       _greetingName = cached.name!.split(' ').first;
     }
-    _dailyGoalKcal = cached.targetCalories;
+    // Guard against stale cached 0/negative targets (older buggy saves wrote 0
+    // for the calorie goal). Default to 2000 so the card never shows a dead 0.
+    _dailyGoalKcal =
+        cached.targetCalories > 0 ? cached.targetCalories : 2000;
     _consumedKcal = cached.consumedCalories;
     _burnedKcal = cached.burnedCalories;
-    _proteinTarget = cached.targetProtein;
+    _proteinTarget = cached.targetProtein > 0 ? cached.targetProtein : 150;
     _proteinConsumed = cached.consumedProtein;
-    _carbsTarget = cached.targetCarbs;
+    _carbsTarget = cached.targetCarbs > 0 ? cached.targetCarbs : 200;
     _carbsConsumed = cached.consumedCarbs;
-    _fatTarget = cached.targetFat;
+    _fatTarget = cached.targetFat > 0 ? cached.targetFat : 65;
     _fatConsumed = cached.consumedFat;
     _waterTotalMl = cached.consumedWaterMl;
-    _waterTargetMl = cached.targetWaterMl;
+    _waterTargetMl = cached.targetWaterMl > 0 ? cached.targetWaterMl : 2000;
     _loading = false;
   }
 
@@ -1868,59 +1871,6 @@ class _BottomNav extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  // Fallback calculation methods for when goals are not available
-  int _calculateFallbackCalories(UserProfileEntity? profile) {
-    if (profile == null ||
-        profile.weightKg == null ||
-        profile.heightCm == null ||
-        profile.age == null ||
-        profile.gender == null ||
-        profile.activityLevel == null) {
-      return 2000; // Default fallback
-    }
-
-    final bmr = FitnessCalculator.calculateBMR(
-      weightKg: profile.weightKg!,
-      heightCm: profile.heightCm!,
-      age: profile.age!,
-      gender: profile.gender!,
-    );
-
-    final tdee = FitnessCalculator.calculateTDEE(
-      bmr: bmr,
-      activityLevel: profile.activityLevel!,
-    );
-
-    return FitnessCalculator.calculateTargetCalories(
-      tdee: tdee,
-      goalType: profile.goalType ?? 'maintain',
-      weeklyPaceKg: 0.5,
-    );
-  }
-
-  double _calculateFallbackProtein(UserProfileEntity? profile) {
-    if (profile == null || profile.weightKg == null) {
-      return 150.0; // Default fallback
-    }
-    return FitnessCalculator.calculateProtein(weightKg: profile.weightKg!);
-  }
-
-  double _calculateFallbackCarbs(
-      UserProfileEntity? profile, int calories, double protein) {
-    if (profile == null) {
-      return 200.0; // Default fallback
-    }
-    return FitnessCalculator.calculateCarbs(
-      targetCalories: calories,
-      targetProtein: protein,
-      targetFat: _calculateFallbackFat(calories),
-    );
-  }
-
-  double _calculateFallbackFat(int calories) {
-    return FitnessCalculator.calculateFat(targetCalories: calories);
   }
 }
 
