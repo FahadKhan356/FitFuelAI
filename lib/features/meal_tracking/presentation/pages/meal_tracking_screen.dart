@@ -18,6 +18,8 @@ const _border = Color(0xFFE7E3EF);
 //  Meal Entry Model
 // ─────────────────────────────────────────────
 class MealLog {
+  final String mealId;
+  final String itemId;
   final String foodName;
   final int calories;
   final double protein;
@@ -27,6 +29,8 @@ class MealLog {
   final DateTime date;
 
   MealLog({
+    this.mealId = '',
+    this.itemId = '',
     required this.foodName,
     required this.calories,
     this.protein = 0,
@@ -80,6 +84,8 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
             carbs += item.carbs;
             fat += item.fat;
             meals.add(MealLog(
+              mealId: meal.id,
+              itemId: item.id,
               foodName: item.foodName,
               calories: item.calories,
               protein: item.protein,
@@ -165,6 +171,40 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
         },
       ),
     );
+  }
+
+  /// Removes an item locally and from the DB, then recomputes totals from the
+  /// source of truth and refreshes the home dashboard.
+  Future<void> _removeMeal(MealLog meal) async {
+    final user = Supabase.instance.client.auth.currentUser;
+
+    // Optimistic UI update for instant feedback.
+    setState(() {
+      totalCalories -= meal.calories;
+      totalProtein -= meal.protein;
+      totalCarbs -= meal.carbs;
+      totalFat -= meal.fat;
+      todaysMeals.removeWhere((m) => m.itemId == meal.itemId);
+    });
+
+    if (user == null) {
+      return;
+    }
+    // Nothing to delete yet (e.g. a just-added item before reload finished).
+    if (meal.itemId.isEmpty || meal.mealId.isEmpty) {
+      return;
+    }
+
+    try {
+      await sl<MealRepository>().deleteMealItem(meal.itemId, meal.mealId);
+    } catch (e) {
+      debugPrint('Failed to delete meal item: $e');
+    }
+    // Recompute from stored data so home/calendar totals stay correct.
+    if (mounted) {
+      await _loadData();
+    }
+    HomeDataRefreshNotifier.instance.refresh();
   }
 
   @override
@@ -283,12 +323,7 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
                   final meal = todaysMeals[index];
                   return _MealCard(
                     meal: meal,
-                    onRemove: () {
-                      setState(() {
-                        totalCalories -= meal.calories;
-                        todaysMeals.removeAt(index);
-                      });
-                    },
+                    onRemove: () => _removeMeal(meal),
                   );
                 },
               ),
