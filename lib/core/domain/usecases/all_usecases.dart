@@ -22,6 +22,8 @@ import '../repositories/weight_repository.dart';
 import '../repositories/analytics_repository.dart';
 import '../repositories/ai_coach_repository.dart';
 import '../repositories/subscription_repository.dart';
+import '../../services/calorie_goal_resolver.dart';
+import '../../services/water_goal_resolver.dart';
 
 // ==================== AUTH USE CASES ====================
 class SignInWithEmailUseCase {
@@ -186,8 +188,7 @@ class SubscribePremiumUseCase {
 class FetchCalendarTrackingUseCase {
   final WaterRepository _waterRepo;
   final MealRepository _mealRepo;
-  final UserRepository _userRepo;
-  FetchCalendarTrackingUseCase(this._waterRepo, this._mealRepo, this._userRepo);
+  FetchCalendarTrackingUseCase(this._waterRepo, this._mealRepo);
 
   Future<CalendarTracking> call({
     required String userId,
@@ -196,13 +197,18 @@ class FetchCalendarTrackingUseCase {
   }) async {
     final water = await _waterRepo.getWaterTotalsByDateRange(userId, start, end);
     final calories = await _mealRepo.getCalorieTotalsByDateRange(userId, start, end);
-    final goals = await _userRepo.getUserGoals(userId);
+
+    // Resolve non-zero targets via shared resolvers. The goals row can carry
+    // 0/null targets when the calculate_user_goals RPC hasn't run, which would
+    // otherwise show a broken `0 kcal`/`0 ml` goal and hide the tick/cross.
+    final targetCalories = await CalorieGoalResolver.resolve(userId);
+    final targetWaterMl = await WaterGoalResolver.resolve(userId);
 
     return CalendarTracking(
       waterByDate: water,
       caloriesByDate: calories,
-      targetCalories: goals?.targetCalories ?? 0,
-      targetWaterMl: goals?.dailyWaterMl ?? 0,
+      targetCalories: targetCalories,
+      targetWaterMl: targetWaterMl,
     );
   }
 }
