@@ -9,6 +9,7 @@ import 'package:fitfuel_ai/core/domain/entities/goal_entity.dart';
 import 'package:fitfuel_ai/core/domain/entities/meal_entity.dart';
 import 'package:fitfuel_ai/core/domain/entities/user_profile_entity.dart';
 import 'package:fitfuel_ai/core/domain/usecases/all_usecases.dart';
+import 'package:fitfuel_ai/core/services/calorie_goal_resolver.dart';
 import 'package:fitfuel_ai/core/services/home_data_cache.dart';
 import 'package:fitfuel_ai/core/services/home_data_refresh_notifier.dart';
 import 'package:fitfuel_ai/core/services/water_goal_resolver.dart';
@@ -172,35 +173,6 @@ class _HomeContentState extends State<_HomeContent>
   }
 
   // Fallback calculation methods for when goals are not available in DB
-  int _calculateFallbackCalories(UserProfileEntity? profile) {
-    if (profile == null ||
-        profile.weightKg == null ||
-        profile.heightCm == null ||
-        profile.age == null ||
-        profile.gender == null ||
-        profile.activityLevel == null) {
-      return 2000;
-    }
-
-    final bmr = FitnessCalculator.calculateBMR(
-      weightKg: profile.weightKg!,
-      heightCm: profile.heightCm!,
-      age: profile.age!,
-      gender: profile.gender!,
-    );
-
-    final tdee = FitnessCalculator.calculateTDEE(
-      bmr: bmr,
-      activityLevel: profile.activityLevel!,
-    );
-
-    return FitnessCalculator.calculateTargetCalories(
-      tdee: tdee,
-      goalType: profile.goalType ?? 'maintenance',
-      weeklyPaceKg: 0.5,
-    );
-  }
-
   double _calculateFallbackProtein(UserProfileEntity? profile) {
     if (profile == null || profile.weightKg == null) {
       return 150.0;
@@ -251,9 +223,7 @@ class _HomeContentState extends State<_HomeContent>
             'HomeScreen: ✅ Using DB goals — calories=${goals.targetCalories}, protein=${goals.targetProtein}, carbs=${goals.targetCarbs}, fat=${goals.targetFat}, water=${goals.dailyWaterMl}');
       }
 
-      final dailyKcal = hasValidGoals
-          ? goals.targetCalories
-          : _calculateFallbackCalories(profile);
+      final dailyKcal = await CalorieGoalResolver.resolve(user.id);
       final proteinTarget = (hasValidGoals && goals.targetProtein > 0)
           ? goals.targetProtein
           : _calculateFallbackProtein(profile);
