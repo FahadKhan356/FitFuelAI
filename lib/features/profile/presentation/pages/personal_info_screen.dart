@@ -1,3 +1,4 @@
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -62,6 +63,8 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   String _activityLevel = 'sedentary';
   String _goalType = 'maintenance';
   String _dietPreference = 'balanced';
+  String? _avatarUrl; // Local display URL; set when loaded or after upload.
+  bool _uploading = false;
 
   @override
   void initState() {
@@ -113,11 +116,65 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     _activityLevel = p.activityLevel ?? 'sedentary';
     _goalType = p.goalType ?? 'maintenance';
     _dietPreference = p.dietPreference ?? 'balanced';
+    _avatarUrl = p.avatarUrl;
   }
 
   static String _fmtNum(double? v) => v == null
       ? ''
       : (v == v.roundToDouble() ? v.toInt().toString() : v.toString());
+
+  /// Lets the user pick a photo and upload it to Supabase Storage, then keeps
+  /// the returned public URL so it can be saved with the profile.
+  Future<void> _pickAndUploadAvatar() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      if (picked == null) return;
+
+      setState(() => _uploading = true);
+      final bytes = await picked.readAsBytes();
+
+      final path =
+          'avatars/${user.id}/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      await Supabase.instance.client.storage.from('avatars').uploadBinary(
+            path,
+            bytes,
+            fileOptions: const FileOptions(upsert: true),
+          );
+      final url = Supabase.instance.client.storage.from('avatars').getPublicUrl(path);
+
+      if (!mounted) return;
+      setState(() {
+        _avatarUrl = url;
+        _uploading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Photo ready — tap Save to apply it'),
+          backgroundColor: Color(0xFF22C55E),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Avatar upload error: $e');
+      if (!mounted) return;
+      setState(() => _uploading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not upload photo. Please try again.'),
+          backgroundColor: Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
 
   Future<void> _save() async {
     FocusScope.of(context).unfocus();
@@ -139,6 +196,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
         activityLevel: _activityLevel,
         goalType: _goalType,
         dietPreference: _dietPreference,
+        avatarUrl: _avatarUrl,
       );
 
       final repo = sl<ProfileRepository>();
@@ -280,6 +338,72 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Center(
+              child: GestureDetector(
+                onTap: _uploading ? null : _pickAndUploadAvatar,
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 112,
+                      height: 112,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: const Color(0xFFEAE6FF),
+                        border: Border.all(color: _purple, width: 2),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: _avatarUrl != null && _avatarUrl!.isNotEmpty
+                          ? Image.network(
+                              _avatarUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stack) =>
+                                  const Center(
+                                child: Icon(Icons.person_rounded,
+                                    size: 56, color: _purple),
+                              ),
+                            )
+                          : const Center(
+                              child: Icon(Icons.person_rounded,
+                                  size: 56, color: _purple),
+                            ),
+                    ),
+                    // Small "camera" badge bottom-right to hint tap-to-change.
+                    Positioned(
+                      right: 2,
+                      bottom: 2,
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _purple,
+                          border: Border.all(color: _surface, width: 2),
+                        ),
+                        child: _uploading
+                            ? const Padding(
+                                padding: EdgeInsets.all(8),
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white),
+                              )
+                            : const Icon(Icons.camera_alt_rounded,
+                                size: 18, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Center(
+              child: TextButton.icon(
+                onPressed: _uploading ? null : _pickAndUploadAvatar,
+                icon: const Icon(Icons.photo_library_outlined, size: 18),
+                label: const Text('Change Photo'),
+                style: TextButton.styleFrom(foregroundColor: _purple),
+              ),
+            ),
+            const SizedBox(height: 10),
             _card(
               'Profile',
               Icons.person_outline_rounded,

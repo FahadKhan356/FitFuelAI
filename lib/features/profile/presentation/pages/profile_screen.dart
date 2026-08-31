@@ -3,6 +3,7 @@ import 'package:fitfuel_ai/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import 'dart:math' as math;
@@ -47,6 +48,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   double _proteinGoal = 120;
   double _proteinConsumed = 0;
   String? _avatarUrl;
+  bool _changingPhoto = false;
 
   @override
   void initState() {
@@ -145,6 +147,63 @@ class _ProfileScreenState extends State<ProfileScreen>
     } catch (_) {}
   }
 
+  /// Tap avatar -> pick a photo, upload to storage, save the URL to the
+  /// profile and refresh the avatar everywhere immediately.
+  Future<void> _changeAvatar() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      if (picked == null) return;
+
+      setState(() => _changingPhoto = true);
+      final bytes = await picked.readAsBytes();
+      final path =
+          'avatars/${user.id}/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      await Supabase.instance.client.storage.from('avatars').uploadBinary(
+            path,
+            bytes,
+            fileOptions: const FileOptions(upsert: true),
+          );
+      final url =
+          Supabase.instance.client.storage.from('avatars').getPublicUrl(path);
+
+      await sl<UserRepository>().updateUserProfile(
+        user.id,
+        {'avatar_url': url},
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _avatarUrl = url;
+        _changingPhoto = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile photo updated ✓'),
+          backgroundColor: Color(0xFF22C55E),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Profile avatar change error: $e');
+      if (!mounted) return;
+      setState(() => _changingPhoto = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not update photo. Please try again.'),
+          backgroundColor: Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   void _listenToAuthState() {
     final authBloc = context.read<AuthBloc>();
     authBloc.stream.listen((state) {
@@ -212,6 +271,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                       rotateCtrl: _rotateCtrl,
                       mainCtrl: _mainCtrl,
                       avatarUrl: _avatarUrl,
+                      changing: _changingPhoto,
+                      onTap: _changeAvatar,
                     ),
                     const SizedBox(height: 18),
                     const Text(
@@ -499,12 +560,16 @@ class _AvatarWithBadge extends StatelessWidget {
   final Animation<double> rotateCtrl;
   final Animation<double> mainCtrl;
   final String? avatarUrl;
+  final VoidCallback? onTap;
+  final bool changing;
 
   const _AvatarWithBadge({
     required this.floatCtrl,
     required this.rotateCtrl,
     required this.mainCtrl,
     this.avatarUrl,
+    this.onTap,
+    this.changing = false,
   });
 
   @override
@@ -551,46 +616,77 @@ class _AvatarWithBadge extends StatelessWidget {
             ),
             // Avatar image
             Center(
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
+              child: GestureDetector(
+                onTap: changing ? null : onTap,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.06),
+                            blurRadius: 18,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: SizedBox(
+                          width: 108,
+                          height: 108,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              if (avatarUrl != null && avatarUrl!.isNotEmpty)
+                                Image.network(
+                                  avatarUrl!,
+                                  fit: BoxFit.cover,
+                                  alignment: Alignment.center,
+                                  errorBuilder: (context, error, stack) =>
+                                      Image.asset(
+                                    'assets/images/onBoarding_Hero_Image.png',
+                                    fit: BoxFit.cover,
+                                    alignment: Alignment.center,
+                                  ),
+                                )
+                              else
+                                Image.asset(
+                                  'assets/images/onBoarding_Hero_Image.png',
+                                  fit: BoxFit.cover,
+                                  alignment: Alignment.center,
+                                ),
+                              Container(color: const Color(0x2AFFFFFF)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Camera / edit badge at bottom-left to hint tap-to-change
+                    Positioned(
+                      left: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _purple,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: changing
+                            ? const Padding(
+                                padding: EdgeInsets.all(8),
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white),
+                              )
+                            : const Icon(Icons.camera_alt_rounded,
+                                size: 16, color: Colors.white),
+                      ),
                     ),
                   ],
-                ),
-                child: ClipOval(
-                  child: SizedBox(
-                    width: 108,
-                    height: 108,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        if (avatarUrl != null && avatarUrl!.isNotEmpty)
-                          Image.network(
-                            avatarUrl!,
-                            fit: BoxFit.cover,
-                            alignment: Alignment.center,
-                            errorBuilder: (context, error, stack) =>
-                                Image.asset(
-                              'assets/images/onBoarding_Hero_Image.png',
-                              fit: BoxFit.cover,
-                              alignment: Alignment.center,
-                            ),
-                          )
-                        else
-                          Image.asset(
-                            'assets/images/onBoarding_Hero_Image.png',
-                            fit: BoxFit.cover,
-                            alignment: Alignment.center,
-                          ),
-                        Container(color: const Color(0x2AFFFFFF)),
-                      ],
-                    ),
-                  ),
                 ),
               ),
             ),
