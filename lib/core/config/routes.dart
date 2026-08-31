@@ -1,4 +1,5 @@
-import 'package:fitfuel_ai/features/onboarding/presentation/pages/personalization_screen.dart';
+import '../../features/onboarding/presentation/pages/personalization_screen.dart';
+import '../../features/profile/presentation/pages/personal_info_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -42,6 +43,7 @@ class AppRoutes {
   static const String aiCoach = '/ai-coach';
   static const String achievements = '/achievements';
   static const String profile = '/profile';
+  static const String personalInfo = '/personal-info';
   static const String subscription = '/subscription';
   static const String bmi = '/bmi';
   static const String notifications = '/notifications';
@@ -151,6 +153,10 @@ final goRouter = GoRouter(
     GoRoute(
       path: AppRoutes.profile,
       builder: (context, state) => const ProfileScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.personalInfo,
+      builder: (context, state) => const PersonalInfoScreen(),
     ),
     GoRoute(
       path: AppRoutes.subscription,

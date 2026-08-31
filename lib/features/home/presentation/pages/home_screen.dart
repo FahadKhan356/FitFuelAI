@@ -73,7 +73,10 @@ class _HomeScreenState extends State<HomeScreen> {
       body: IndexedStack(
         index: _navIndex,
         children: [
-          _HomeContent(key: ValueKey('home_${_tabKeys[0]}')),
+          _HomeContent(
+            key: ValueKey('home_${_tabKeys[0]}'),
+            onNavigateToProfile: () => _switchTab(4),
+          ),
           AnalyticsScreen(key: ValueKey('analytics_${_tabKeys[1]}')),
           FoodScannerScreen(key: ValueKey('scanner_${_tabKeys[2]}')),
           AiCoachScreen(key: ValueKey('coach_${_tabKeys[3]}')),
@@ -88,7 +91,9 @@ class _HomeScreenState extends State<HomeScreen> {
 //  Home Tab Content
 // ─────────────────────────────────────────────
 class _HomeContent extends StatefulWidget {
-  const _HomeContent({super.key});
+  const _HomeContent({super.key, this.onNavigateToProfile});
+
+  final VoidCallback? onNavigateToProfile;
 
   @override
   State<_HomeContent> createState() => _HomeContentState();
@@ -376,7 +381,10 @@ class _HomeContentState extends State<_HomeContent>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 14),
-            _TopBar(floating: _floatingController),
+            _TopBar(
+              floating: _floatingController,
+              onAvatarTap: widget.onNavigateToProfile,
+            ),
             const SizedBox(height: 20),
             AnimatedBuilder(
               animation: _entryController,
@@ -665,9 +673,10 @@ double _clamp01(double value) => value.clamp(0.0, 1.0);
 //  Top Bar
 // ─────────────────────────────────────────────
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.floating});
+  const _TopBar({required this.floating, this.onAvatarTap});
 
   final Animation<double> floating;
+  final VoidCallback? onAvatarTap;
 
   @override
   Widget build(BuildContext context) {
@@ -750,16 +759,19 @@ class _TopBar extends StatelessWidget {
               ],
             ),
             const SizedBox(width: 10),
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: kPurpleCard,
-                border: Border.all(color: kPurple, width: 2),
-              ),
-              child: const Center(
-                child: Text('👤', style: TextStyle(fontSize: 18)),
+            GestureDetector(
+              onTap: onAvatarTap,
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: kPurpleCard,
+                  border: Border.all(color: kPurple, width: 2),
+                ),
+                child: const Center(
+                  child: Text('👤', style: TextStyle(fontSize: 18)),
+                ),
               ),
             ),
             const SizedBox(width: 10),

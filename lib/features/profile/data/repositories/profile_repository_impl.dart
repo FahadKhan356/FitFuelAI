@@ -81,26 +81,52 @@ class ProfileRepositoryImpl implements ProfileRepository {
       userId: userId,
       name: profile?['name'] as String?,
       avatarUrl: profile?['avatar_url'] as String?,
-      age: profile?['age'] as int?,
+      age: _toInt(profile?['age']),
       gender: profile?['gender'] as String?,
-      heightCm: (profile?['height_cm'] as num?)?.toDouble(),
-      weightKg: (profile?['weight_kg'] as num?)?.toDouble(),
-      goalWeightKg: (profile?['goal_weight_kg'] as num?)?.toDouble(),
+      heightCm: _toDouble(profile?['height_cm']),
+      weightKg: _toDouble(profile?['weight_kg']),
+      goalWeightKg: _toDouble(profile?['goal_weight_kg']),
       activityLevel: profile?['activity_level'] as String?,
       goalType: profile?['goal_type'] as String? ?? goals?['goal_type'] as String?,
       dietPreference: profile?['diet_preference'] as String?,
-      workoutFrequency: profile?['workout_frequency'] as int?,
+      workoutFrequency: _toInt(profile?['workout_frequency']),
       bio: profile?['bio'] as String?,
-      createdAt: profile?['created_at'] != null ? DateTime.parse(profile!['created_at'] as String) : null,
-      targetCalories: (goals?['target_calories'] as int?) ?? 2000,
-      targetProtein: (goals?['target_protein'] as num?)?.toDouble() ?? 150,
-      targetCarbs: (goals?['target_carbs'] as num?)?.toDouble() ?? 200,
-      targetFat: (goals?['target_fat'] as num?)?.toDouble() ?? 65,
-      dailyWaterMl: (goals?['daily_water_ml'] as int?) ?? 2500,
-      weeklyPaceKg: (goals?['weekly_pace_kg'] as num?)?.toDouble(),
-      targetDate: goals?['target_date'] != null
+      createdAt: profile?['created_at'] is String
+          ? DateTime.tryParse(profile!['created_at'] as String)
+          : null,
+      targetCalories: _toInt(goals?['target_calories']) ?? 2000,
+      targetProtein: _toDouble(goals?['target_protein']) ?? 150,
+      targetCarbs: _toDouble(goals?['target_carbs']) ?? 200,
+      targetFat: _toDouble(goals?['target_fat']) ?? 65,
+      dailyWaterMl: _toInt(goals?['daily_water_ml']) ?? 2500,
+      weeklyPaceKg: _toDouble(goals?['weekly_pace_kg']),
+      targetDate: goals?['target_date'] is String
           ? DateTime.tryParse(goals!['target_date'] as String)
           : null,
     );
+  }
+
+  /// Robust parser that accepts both native numbers and string-encoded numbers
+  /// (e.g. `"160.00"`, `"3"`) since Supabase may return them as strings.
+  static int? _toInt(dynamic v) {
+    if (v == null) return null;
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    if (v is String) {
+      return int.tryParse(v.trim()) ?? double.tryParse(v.trim())?.toInt();
+    }
+    return null;
+  }
+
+  static double? _toDouble(dynamic v) {
+    if (v == null) return null;
+    if (v is double) return v;
+    if (v is num) return v.toDouble();
+    if (v is String) {
+      final d = double.tryParse(v.trim());
+      if (d != null) return d;
+      return int.tryParse(v.trim())?.toDouble();
+    }
+    return null;
   }
 }

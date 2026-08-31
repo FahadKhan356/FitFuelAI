@@ -369,6 +369,15 @@ class _ProfileScreenState extends State<ProfileScreen>
                       index: 0,
                       icon: Icons.shield_outlined,
                       title: 'Personal Information',
+                      trailingText: 'View & edit',
+                      onTap: () async {
+                        final updated = await context.push<dynamic>(
+                            AppRoutes.personalInfo);
+                        if (updated != null && mounted) {
+                          // Refresh greeting/goals if needed after edit.
+                          setState(() {});
+                        }
+                      },
                     ),
                     const SizedBox(height: 10),
                     _SettingTile(
