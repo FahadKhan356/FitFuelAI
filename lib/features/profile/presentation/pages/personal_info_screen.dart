@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/di/service_locator.dart';
+import '../../../../core/services/avatar_uploader.dart';
 import '../../data/models/user_profile_model.dart';
 import '../../domain/repositories/profile_repository.dart';
 
@@ -141,17 +142,10 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       setState(() => _uploading = true);
       final bytes = await picked.readAsBytes();
 
-      final now = DateTime.now();
-      final dateStr = now.toIso8601String().split('T').first;
-      final path =
-          'profile/${user.id}/$dateStr/${now.millisecondsSinceEpoch}.jpg';
-      await Supabase.instance.client.storage.from('profile').uploadBinary(
-            path,
-            bytes,
-            fileOptions: const FileOptions(upsert: true),
-          );
-      final url =
-          Supabase.instance.client.storage.from('profile').getPublicUrl(path);
+      final url = await AvatarUploader.upload(
+        userId: user.id,
+        bytes: bytes,
+      );
 
       if (!mounted) return;
       setState(() {

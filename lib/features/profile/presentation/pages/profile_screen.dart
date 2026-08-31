@@ -9,6 +9,7 @@ import '../../../auth/presentation/bloc/auth_bloc.dart';
 import 'dart:math' as math;
 
 import '../../../../core/di/service_locator.dart';
+import '../../../../core/services/avatar_uploader.dart';
 import '../../../../core/services/water_goal_resolver.dart';
 import '../../../../core/domain/repositories/user_repository.dart';
 import '../../../../core/domain/repositories/water_repository.dart';
@@ -163,17 +164,11 @@ class _ProfileScreenState extends State<ProfileScreen>
 
       setState(() => _changingPhoto = true);
       final bytes = await picked.readAsBytes();
-      final now = DateTime.now();
-      final dateStr = now.toIso8601String().split('T').first;
-      final path =
-          'profile/${user.id}/$dateStr/${now.millisecondsSinceEpoch}.jpg';
-      await Supabase.instance.client.storage.from('profile').uploadBinary(
-            path,
-            bytes,
-            fileOptions: const FileOptions(upsert: true),
-          );
-      final url =
-          Supabase.instance.client.storage.from('profile').getPublicUrl(path);
+
+      final url = await AvatarUploader.upload(
+        userId: user.id,
+        bytes: bytes,
+      );
 
       await sl<UserRepository>().updateUserProfile(
         user.id,
