@@ -141,14 +141,17 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       setState(() => _uploading = true);
       final bytes = await picked.readAsBytes();
 
+      final now = DateTime.now();
+      final dateStr = now.toIso8601String().split('T').first;
       final path =
-          'avatars/${user.id}/${DateTime.now().millisecondsSinceEpoch}.jpg';
-      await Supabase.instance.client.storage.from('avatars').uploadBinary(
+          'profile/${user.id}/$dateStr/${now.millisecondsSinceEpoch}.jpg';
+      await Supabase.instance.client.storage.from('profile').uploadBinary(
             path,
             bytes,
             fileOptions: const FileOptions(upsert: true),
           );
-      final url = Supabase.instance.client.storage.from('avatars').getPublicUrl(path);
+      final url =
+          Supabase.instance.client.storage.from('profile').getPublicUrl(path);
 
       if (!mounted) return;
       setState(() {
