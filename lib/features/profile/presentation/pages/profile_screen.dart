@@ -46,6 +46,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   int _calorieConsumed = 0;
   double _proteinGoal = 120;
   double _proteinConsumed = 0;
+  String? _avatarUrl;
 
   @override
   void initState() {
@@ -72,6 +73,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       duration: const Duration(milliseconds: 4500),
     )..repeat();
     _loadTodayGoals();
+    _loadProfileAvatar();
   }
 
   /// Fetches today's targets and totals so the "Today's Goals" card shows real
@@ -127,6 +129,19 @@ class _ProfileScreenState extends State<ProfileScreen>
         if (cal > 0) _calorieGoal = cal;
         if (prot > 0) _proteinGoal = prot;
       });
+    } catch (_) {}
+  }
+
+  /// Loads the user's profile photo URL so the avatar shows the real image
+  /// from `user_profiles.avatar_url` (falls back to the default illustration).
+  Future<void> _loadProfileAvatar() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+    try {
+      final profile =
+          await sl<UserRepository>().getUserProfile(user.id);
+      if (!mounted) return;
+      setState(() => _avatarUrl = profile?.avatarUrl);
     } catch (_) {}
   }
 
@@ -196,6 +211,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       floatCtrl: _floatCtrl,
                       rotateCtrl: _rotateCtrl,
                       mainCtrl: _mainCtrl,
+                      avatarUrl: _avatarUrl,
                     ),
                     const SizedBox(height: 18),
                     const Text(
@@ -482,11 +498,13 @@ class _AvatarWithBadge extends StatelessWidget {
   final Animation<double> floatCtrl;
   final Animation<double> rotateCtrl;
   final Animation<double> mainCtrl;
+  final String? avatarUrl;
 
   const _AvatarWithBadge({
     required this.floatCtrl,
     required this.rotateCtrl,
     required this.mainCtrl,
+    this.avatarUrl,
   });
 
   @override
@@ -551,11 +569,24 @@ class _AvatarWithBadge extends StatelessWidget {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        Image.asset(
-                          'assets/images/onBoarding_Hero_Image.png',
-                          fit: BoxFit.cover,
-                          alignment: Alignment.center,
-                        ),
+                        if (avatarUrl != null && avatarUrl!.isNotEmpty)
+                          Image.network(
+                            avatarUrl!,
+                            fit: BoxFit.cover,
+                            alignment: Alignment.center,
+                            errorBuilder: (context, error, stack) =>
+                                Image.asset(
+                              'assets/images/onBoarding_Hero_Image.png',
+                              fit: BoxFit.cover,
+                              alignment: Alignment.center,
+                            ),
+                          )
+                        else
+                          Image.asset(
+                            'assets/images/onBoarding_Hero_Image.png',
+                            fit: BoxFit.cover,
+                            alignment: Alignment.center,
+                          ),
                         Container(color: const Color(0x2AFFFFFF)),
                       ],
                     ),

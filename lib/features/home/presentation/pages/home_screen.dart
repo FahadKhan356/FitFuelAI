@@ -106,6 +106,7 @@ class _HomeContentState extends State<_HomeContent>
 
   // ── Real, DB-backed dashboard data ──
   String _greetingName = 'there';
+  String? _avatarUrl;
   int _dailyGoalKcal = 2000;
   int _consumedKcal = 0;
   int _burnedKcal = 0;
@@ -288,6 +289,7 @@ class _HomeContentState extends State<_HomeContent>
         setState(() {
           _greetingName =
               resolvedName.isNotEmpty ? resolvedName.split(' ').first : 'there';
+          _avatarUrl = profile?.avatarUrl;
           _dailyGoalKcal = dailyKcal;
           _consumedKcal = consumedCalories;
           _proteinTarget = proteinTarget;
@@ -383,6 +385,7 @@ class _HomeContentState extends State<_HomeContent>
             const SizedBox(height: 14),
             _TopBar(
               floating: _floatingController,
+              avatarUrl: _avatarUrl,
               onAvatarTap: widget.onNavigateToProfile,
             ),
             const SizedBox(height: 20),
@@ -673,9 +676,14 @@ double _clamp01(double value) => value.clamp(0.0, 1.0);
 //  Top Bar
 // ─────────────────────────────────────────────
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.floating, this.onAvatarTap});
+  const _TopBar({
+    required this.floating,
+    this.avatarUrl,
+    this.onAvatarTap,
+  });
 
   final Animation<double> floating;
+  final String? avatarUrl;
   final VoidCallback? onAvatarTap;
 
   @override
@@ -769,9 +777,21 @@ class _TopBar extends StatelessWidget {
                   color: kPurpleCard,
                   border: Border.all(color: kPurple, width: 2),
                 ),
-                child: const Center(
-                  child: Text('👤', style: TextStyle(fontSize: 18)),
-                ),
+                clipBehavior: Clip.antiAlias,
+                child: avatarUrl != null && avatarUrl!.isNotEmpty
+                    ? Image.network(
+                        avatarUrl!,
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stack) =>
+                            const Center(
+                          child: Text('👤', style: TextStyle(fontSize: 18)),
+                        ),
+                      )
+                    : const Center(
+                        child: Text('👤', style: TextStyle(fontSize: 18)),
+                      ),
               ),
             ),
             const SizedBox(width: 10),
