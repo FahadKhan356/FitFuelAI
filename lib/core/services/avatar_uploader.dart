@@ -8,9 +8,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 ///
 /// and returns the public URL (to be saved into `user_profiles.avatar_url`).
 ///
-/// If the `profile` bucket hasn't been created yet (e.g. the storage migration
-/// wasn't applied), it auto-creates the bucket and retries once so the feature
-/// works even before migrations are run.
+/// NOTE: The bucket MUST be created server-side (see the `profile` storage
+/// migration). It cannot be created at runtime from the client because the
+/// anon key has no INSERT rights on `storage.buckets` (RLS) — attempting to do
+/// so throws "new row violates row-level security policy for table buckets".
 class AvatarUploader {
   const AvatarUploader._();
 
@@ -27,27 +28,11 @@ class AvatarUploader {
     final path =
         'profile/$userId/$dateStr/${now.millisecondsSinceEpoch}.jpg';
 
-    try {
-      await storage.from(bucket).uploadBinary(
-            path,
-            bytes,
-            fileOptions: const FileOptions(upsert: true),
-          );
-    } catch (_) {
-      // Bucket might be missing — try to create it (public) then retry once.
-      try {
-        await storage.createBucket(bucket,
-            const BucketOptions(public: true));
-        await storage.from(bucket).uploadBinary(
-              path,
-              bytes,
-              fileOptions: const FileOptions(upsert: true),
-            );
-      } catch (retryError) {
-        // Re-throw so callers show a meaningful message.
-        throw retryError;
-      }
-    }
+    await storage.from(bucket).uploadBinary(
+          path,
+          bytes,
+          fileOptions: const FileOptions(upsert: true),
+        );
 
     return storage.from(bucket).getPublicUrl(path);
   }
