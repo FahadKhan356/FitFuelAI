@@ -1,28 +1,30 @@
 -- ============================================================
--- 006_profile_avatars_bucket.sql
--- Creates a public storage bucket 'profile' for user profile photos.
+-- 007_fix_profile_bucket_rls.sql
+-- Fixes the folder check in the 'profile' storage RLS policies.
 --
--- Files are stored under:
---   profile/{user_id}/{date}/{image}.jpg
+-- Upload path: profile/{userId}/{date}/{image}.jpg
 --
--- e.g.  profile/77cfa4ee-.../2026-08-31/1725100000000.jpg
+-- storage.foldername('profile/{uid}/{date}/{file}.jpg')
+--   -> { profile, {uid}, {date} }   (Postgres arrays are 1-indexed)
 --
--- The public URL is saved into user_profiles.avatar_url so the image
--- shows on the home top bar, profile screen and personal info screen.
+-- So [1] = 'profile'  (bucket name only) and [2] = the userId.
+-- The earlier policies used [1], which never matched auth.uid()
+-- and every upload failed with:
+--   'new row violates row-level security policy' (403).
 -- ============================================================
 
--- 1) Create the public bucket.
+-- Ensure the public bucket exists (idempotent).
 insert into storage.buckets (id, name, public)
 values ('profile', 'profile', true)
 on conflict (id) do nothing;
 
--- 2) Anyone can read (bucket is public -> used via public URLs).
+-- 1) Anyone can read (bucket is public).
 drop policy if exists "Anyone can read profile avatar" on storage.objects;
 create policy "Anyone can read profile avatar"
   on storage.objects for select
   using (bucket_id = 'profile');
 
--- 3) Users can upload their own image.
+-- 2) Users can upload their own image.
 --    Path: profile/{user_id}/...  -> userId is the 2nd folder: [2]
 drop policy if exists "Users can upload own profile avatar" on storage.objects;
 create policy "Users can upload own profile avatar"
@@ -32,7 +34,7 @@ create policy "Users can upload own profile avatar"
     and auth.uid()::text = (storage.foldername(name))[2]
   );
 
--- 4) Users can overwrite their own image.
+-- 3) Users can overwrite their own image.
 drop policy if exists "Users can update own profile avatar" on storage.objects;
 create policy "Users can update own profile avatar"
   on storage.objects for update
@@ -41,7 +43,7 @@ create policy "Users can update own profile avatar"
     and auth.uid()::text = (storage.foldername(name))[2]
   );
 
--- 5) Users can delete their own image.
+-- 4) Users can delete their own image.
 drop policy if exists "Users can delete own profile avatar" on storage.objects;
 create policy "Users can delete own profile avatar"
   on storage.objects for delete
@@ -49,10 +51,3 @@ create policy "Users can delete own profile avatar"
     bucket_id = 'profile'
     and auth.uid()::text = (storage.foldername(name))[2]
   );
-
--- ============================================================
--- NOTE: If the previous 'avatars' bucket (migration 005) is no
--- longer needed you can optionally remove it with:
---
---   delete from storage.buckets where id = 'avatars';
--- ============================================================
