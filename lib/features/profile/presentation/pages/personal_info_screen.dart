@@ -161,6 +161,11 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       );
     } catch (e) {
       debugPrint('Avatar upload error: $e');
+      debugPrint('Avatar upload error type: ${e.runtimeType}');
+      if (e is StorageException) {
+        debugPrint('Avatar StorageException status=${e.statusCode} '
+            'msg=${e.message}');
+      }
       if (!mounted) return;
       setState(() => _uploading = false);
       ScaffoldMessenger.of(context).showSnackBar(

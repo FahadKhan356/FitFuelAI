@@ -189,6 +189,11 @@ class _ProfileScreenState extends State<ProfileScreen>
       );
     } catch (e) {
       debugPrint('Profile avatar change error: $e');
+      debugPrint('Profile avatar change error type: ${e.runtimeType}');
+      if (e is StorageException) {
+        debugPrint('Profile avatar StorageException status=${e.statusCode} '
+            'msg=${e.message}');
+      }
       if (!mounted) return;
       setState(() => _changingPhoto = false);
       ScaffoldMessenger.of(context).showSnackBar(
