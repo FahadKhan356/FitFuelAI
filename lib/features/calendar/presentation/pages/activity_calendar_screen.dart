@@ -7,6 +7,7 @@ import '../../../../core/domain/entities/calendar_tracking.dart';
 import '../../../../core/domain/usecases/all_usecases.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/services/home_data_refresh_notifier.dart';
+import '../../../../core/services/streak_service.dart';
 
 const _bg = Color(0xFFF7F6FB);
 const _surface = Colors.white;
@@ -32,6 +33,7 @@ class _ActivityCalendarScreenState extends State<ActivityCalendarScreen> {
   String? _error;
   DateTime? _selectedDay;
   final DateTime _today = DateTime.now();
+  int _streak = 0;
 
   @override
   void initState() {
@@ -80,6 +82,13 @@ class _ActivityCalendarScreenState extends State<ActivityCalendarScreen> {
         _tracking = data;
         _loading = false;
       });
+      // Load the real streak (consecutive days with a logged meal) so the
+      // "Streak Tracker" pill in the header shows live data.
+      try {
+        final info = await StreakService.compute(user.id);
+        if (!mounted) return;
+        setState(() => _streak = info.current);
+      } catch (_) {}
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -157,14 +166,14 @@ Widget _buildHeader() {
               color: _purpleSoft,
               borderRadius: BorderRadius.circular(100),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(Icons.local_fire_department_rounded,
+                const Icon(Icons.local_fire_department_rounded,
                     size: 15, color: _purple),
-                SizedBox(width: 4),
+                const SizedBox(width: 4),
                 Text(
-                  'Streak Tracker',
-                  style: TextStyle(
+                  '$_streak Day Streak',
+                  style: const TextStyle(
                       fontSize: 12, fontWeight: FontWeight.w700, color: _purple),
                 ),
               ],
