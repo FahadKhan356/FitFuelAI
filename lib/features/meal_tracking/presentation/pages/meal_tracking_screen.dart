@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/domain/repositories/meal_repository.dart';
-import '../../../../core/domain/repositories/user_repository.dart';
+import '../../../../core/services/calorie_goal_resolver.dart';
 import '../../../../core/services/home_data_refresh_notifier.dart';
 import 'meal_entry_screen.dart';
 
@@ -69,9 +69,12 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
   Future<void> _loadData() async {
     final user = Supabase.instance.client.auth.currentUser;
     try {
-      final goals = user != null
-          ? await sl<UserRepository>().getUserGoals(user.id)
-          : null;
+      // Use the same single source of truth for the calorie goal as the home
+      // screen (DB goal → profile-based estimate → 2000) so both screens always
+      // show an identical target (e.g. 2516).
+      final goal = user != null
+          ? await CalorieGoalResolver.resolve(user.id)
+          : CalorieGoalResolver.defaultCalories;
 
       var cal = 0, protein = 0.0, carbs = 0.0, fat = 0.0;
       final meals = <MealLog>[];
@@ -102,7 +105,7 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
       if (!mounted) return;
       setState(() {
         totalCalories = cal;
-        calorieGoal = goals?.targetCalories ?? 2000;
+        calorieGoal = goal;
         totalProtein = protein;
         totalCarbs = carbs;
         totalFat = fat;

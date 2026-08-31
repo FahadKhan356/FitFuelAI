@@ -1,5 +1,6 @@
 import 'package:fitfuel_ai/core/constants/app_colors.dart';
 import 'package:fitfuel_ai/core/di/service_locator.dart';
+import 'package:fitfuel_ai/core/domain/repositories/weight_repository.dart';
 import 'package:fitfuel_ai/core/domain/usecases/all_usecases.dart';
 import 'package:fitfuel_ai/core/utils/bmi_calculator.dart';
 import 'package:flutter/material.dart';
@@ -41,7 +42,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
   late final AnimationController _pulseCtrl;
   bool isWeekly = true;
 
-  // ─── Weight Data State ───
+  // ─── Weight Data State (real values loaded from Supabase, demo as fallback) ───
   double currentWeight = 72.4;
   double startWeight = 77.0;
   double goalWeight = 68.0;
@@ -55,8 +56,68 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
     WeightEntry(date: DateTime.now(), weight: 72.35),
   ];
 
-  double get weightLost => startWeight - currentWeight;
-  double get goalProgress => ((startWeight - currentWeight) / (startWeight - goalWeight)) * 100;
+  /// Real weight history used for the chart (kept distinct from the demo list
+  /// so the Week/Month toggle never mutates fallback data).
+  List<WeightEntry> _realEntries = [];
+  bool _loadedRealData = false;
+
+  /// Whether this profile is on a gain goal (goal weight > start weight) or a
+  /// loss goal (goal below start). Works for both muscle_gain and weight_loss.
+  bool get _isGainGoal => goalWeight > currentWeight;
+
+  /// Progress toward the goal as a percentage (direction-aware). Handles both
+  /// losing weight (start > goal) and gaining (start < goal).
+  double get goalProgress {
+    final span = (goalWeight - startWeight).abs();
+    if (span <= 0) return 0;
+    final currentProgress =
+        _isGainGoal
+            ? (currentWeight - startWeight) / span
+            : (startWeight - currentWeight) / span;
+    return (currentProgress * 100).clamp(0.0, 100.0);
+  }
+
+  /// Total kg between start and goal (always positive). Used for milestones.
+  double get _totalSpan => (startWeight - goalWeight).abs();
+
+  /// How much weight the user has already moved toward their goal (always >= 0).
+  double get _done {
+    final done = _isGainGoal
+        ? (currentWeight - startWeight)
+        : (startWeight - currentWeight);
+    return done < 0 ? 0 : done;
+  }
+
+  /// How much is left until the goal (>= 0, 0 once reached). Direction-aware.
+  double get _remainingToGoal {
+    return (_totalSpan - _done).clamp(0, double.infinity);
+  }
+
+  /// True when the user has already made at least [thresholdKg] of progress in
+  /// their goal direction (loss or gain).
+  bool _reached(double thresholdKg) {
+    final done = _isGainGoal
+        ? (currentWeight - startWeight)
+        : (startWeight - currentWeight);
+    return done >= thresholdKg;
+  }
+
+  /// Human label of net movement so far: "X kg gained" vs "X kg lost".
+  String get _movementLabel {
+    final delta = (currentWeight - startWeight).abs();
+    final unit = delta.toStringAsFixed(1);
+    if (delta == 0) return 'No net change yet';
+    return _isGainGoal ? '${unit} kg gained so far' : '${unit} kg lost so far';
+  }
+
+  /// Difference between the latest logged weight and the previous one (used for
+  /// the header badge). Positive = gained, negative = lost.
+  double get _deltaSinceLastKg {
+    final source = _loadedRealData ? _realEntries : weightEntries;
+    if (source.length < 2) return 0;
+    final sorted = [...source]..sort((a, b) => a.date.compareTo(b.date));
+    return sorted.last.weight - sorted[sorted.length - 2].weight;
+  }
 
   // Real profile height (cm) used to compute the live BMI card. Falls back to
   // 175 cm when the profile hasn't loaded yet.
@@ -73,20 +134,81 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
       vsync: this,
       duration: const Duration(milliseconds: 3200),
     )..repeat(reverse: true);
-    _loadProfileHeight();
+    _loadData();
   }
 
-  Future<void> _loadProfileHeight() async {
+  Future<void> _loadData() async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+
+    // Load profile height, current/start weight, and goal weight.
     try {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
-      if (userId == null) return;
       final profile = await sl<LoadUserProfileUseCase>().call(userId);
+
       if (profile?.heightCm != null && profile!.heightCm! > 0) {
-        setState(() => _heightCm = profile.heightCm!);
+        _heightCm = profile.heightCm!;
+      }
+      if (profile?.weightKg != null && profile!.weightKg! > 0) {
+        currentWeight = profile.weightKg!;
+        // Only seed the start weight from the profile when we have no history
+        // yet (real history below overrides both).
+        if (!_loadedRealData) startWeight = profile.weightKg!;
+      }
+      if (profile?.goalWeightKg != null && profile!.goalWeightKg! > 0) {
+        goalWeight = profile.goalWeightKg!;
       }
     } catch (_) {
-      // Non-fatal — keep the 175 cm fallback.
+      // Keep fallback height/goal.
     }
+
+    // Load real weight history (overrides the profile seed with logged data).
+    try {
+      final history = await sl<WeightRepository>().getWeightHistory(userId);
+      if (history.isNotEmpty) {
+        final real = history
+            .map((e) => WeightEntry(date: e.date, weight: e.weightKg))
+            .toList()
+          ..sort((a, b) => a.date.compareTo(b.date));
+        if (mounted) {
+          setState(() {
+            _realEntries = real;
+            _loadedRealData = true;
+            currentWeight = real.last.weight;
+            startWeight = real.first.weight;
+            weightEntries = real.length > 1 ? real : [...real, real.first];
+          });
+        }
+      } else if (mounted) {
+        // No logged history: build a minimal chart from the profile weight so
+        // the screen reflects real user data even on first open.
+        setState(() {
+          _realEntries = [WeightEntry(date: DateTime.now(), weight: currentWeight)];
+          _loadedRealData = true;
+          weightEntries = _realEntries;
+        });
+      }
+    } catch (_) {
+      // Keep fallback data on failure.
+    }
+  }
+
+  /// Entries shown in the chart: real data when available, otherwise the demo
+  /// list. Applies the active Week/Month range; always returns ≥2 points so the
+  /// chart never crashes for a brand-new user.
+  List<WeightEntry> get _visibleEntries {
+    final source = _loadedRealData ? _realEntries : weightEntries;
+    if (source.isEmpty) {
+      // Synthetic single point so the LineChart still renders a stable dot.
+      return [WeightEntry(date: DateTime.now(), weight: currentWeight)];
+    }
+    final cutoff = DateTime.now().subtract(Duration(days: isWeekly ? 6 : 29));
+    final filtered =
+        source.where((e) => !e.date.isBefore(cutoff)).toList();
+    final eligible = filtered.length >= 2 ? filtered : source;
+    if (eligible.length == 1) {
+      return [eligible.first, eligible.first];
+    }
+    return eligible;
   }
 
   @override
@@ -112,14 +234,33 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
   void _addWeightEntry(double weight, DateTime date) {
     setState(() {
       currentWeight = weight;
-      // Add to entries list
       weightEntries.add(WeightEntry(date: date, weight: weight));
-      // Keep only last 7 days
+      // Keep only last 7 days of demo data (real data keeps its own history).
       if (weightEntries.length > 7) {
         weightEntries.removeAt(0);
       }
     });
     Navigator.pop(context);
+    _persistEntry(weight, date);
+  }
+
+  /// Saves a newly-logged weight to the backend, then refreshes the real chart
+  /// so the whole screen reflects the persisted data. Fails silently offline.
+  Future<void> _persistEntry(double weight, DateTime date) async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+    try {
+      await sl<WeightRepository>().addWeightEntry(
+        userId,
+        weight,
+        _heightCm,
+        null, // bodyFat
+        null, // notes
+      );
+      await _loadData();
+    } catch (_) {
+      // Non-fatal — the local UI already updated.
+    }
   }
 
   @override
@@ -159,8 +300,12 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                 children: [
-                  // ── A. Top Weight Display ──
-                  _WeightHeader(mainCtrl: _mainCtrl, currentWeight: currentWeight),
+                  // ── A. Top Weight Display (latest + real delta) ──
+                  _WeightHeader(
+                    mainCtrl: _mainCtrl,
+                    currentWeight: currentWeight,
+                    deltaKg: _deltaSinceLastKg,
+                  ),
                   const SizedBox(height: 16),
                   // ── B. Weight Trend Chart ──
                   _CardShell(
@@ -195,8 +340,8 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
                           ],
                         ),
                         const SizedBox(height: 2),
-                        const Text(
-                          'Last 7 days',
+                        Text(
+                          isWeekly ? 'Last 7 days' : 'Last 30 days',
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w500,
@@ -204,7 +349,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
                           ),
                         ),
                         const SizedBox(height: 10),
-                        _WeightChart(mainCtrl: _mainCtrl, weightEntries: weightEntries),
+                        _WeightChart(mainCtrl: _mainCtrl, weightEntries: _visibleEntries),
                       ],
                     ),
                   ),
@@ -247,10 +392,12 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
                     icon: Icons.emoji_events_outlined,
                     iconBg: const Color(0xFFE9F3FF),
                     iconColor: const Color(0xFF4A6FFF),
-                    title: 'First 5kg Lost',
-                    subtitle: "You've hit your first major weight",
-                    dateLabel: 'OCT 12, 2023',
-                    highlighted: true,
+                    title: _isGainGoal ? 'Gained 5kg First' : 'First 5kg Lost',
+                    subtitle: _movementLabel == 'No net change yet'
+                        ? 'Keep going to reach your first milestone'
+                        : _movementLabel,
+                    dateLabel: 'IN PROGRESS',
+                    highlighted: _reached(5),
                   ),
                   const SizedBox(height: 12),
                   _MilestoneCard(
@@ -260,8 +407,12 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
                     iconBg: const Color(0xFFF1F0F7),
                     iconColor: const Color(0xFF8A8A96),
                     title: 'Halfway Point',
-                    subtitle: '4.6kg down, 4.4kg to go for your',
-                    dateLabel: 'IN PROGRESS',
+                    subtitle: _remainingToGoal > 0
+                        ? '${_done.toStringAsFixed(1)}kg done, ${_remainingToGoal.toStringAsFixed(1)}kg to go'
+                        : 'You have reached your goal weight',
+                    dateLabel: _done >= _totalSpan / 2
+                        ? 'REACHED'
+                        : 'IN PROGRESS',
                   ),
                   const SizedBox(height: 12),
                   _MilestoneCard(
@@ -270,8 +421,8 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
                     icon: Icons.auto_awesome_rounded,
                     iconBg: const Color(0xFFF1ECFF),
                     iconColor: const Color(0xFF5B4EE8),
-                    title: '7 Day Log Streak',
-                    subtitle: 'Consistency is key! You logged',
+                    title: 'Going Strong',
+                    subtitle: 'Workout streak active — keep logging daily',
                     dateLabel: 'TODAY',
                   ),
                   const SizedBox(height: 12),
@@ -297,14 +448,29 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
 class _WeightHeader extends StatelessWidget {
   final Animation<double> mainCtrl;
   final double currentWeight;
+  final double deltaKg;
 
   const _WeightHeader({
     required this.mainCtrl,
     required this.currentWeight,
+    required this.deltaKg,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isLoss = deltaKg < 0;
+    final isGain = deltaKg > 0;
+    final deltaAbs = deltaKg.abs();
+    final color = isGain ? const Color(0xFFF59E0B) : _mint;
+    final icon = isGain
+        ? Icons.trending_up_rounded
+        : isLoss
+            ? Icons.trending_down_rounded
+            : Icons.trending_flat_rounded;
+    final label = deltaKg == 0
+        ? 'No change since last log'
+        : '${isLoss ? '-' : '+'}${deltaAbs.toStringAsFixed(1)}kg since last log';
+
     return AnimatedBuilder(
       animation: mainCtrl,
       builder: (context, child) {
@@ -359,15 +525,15 @@ class _WeightHeader extends StatelessWidget {
                   child: Opacity(
                     opacity: badgeT,
                     child: Row(
-                      children: const [
-                        Icon(Icons.trending_down_rounded, size: 16, color: _mint),
-                        SizedBox(width: 4),
+                      children: [
+                        Icon(icon, size: 16, color: color),
+                        const SizedBox(width: 4),
                         Text(
-                          '-0.4kg since yesterday',
+                          label,
                           style: TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w700,
-                            color: _mint,
+                            color: color,
                           ),
                         ),
                       ],
