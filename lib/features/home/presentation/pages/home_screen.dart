@@ -12,6 +12,7 @@ import 'package:fitfuel_ai/core/domain/usecases/all_usecases.dart';
 import 'package:fitfuel_ai/core/services/calorie_goal_resolver.dart';
 import 'package:fitfuel_ai/core/services/home_data_cache.dart';
 import 'package:fitfuel_ai/core/services/home_data_refresh_notifier.dart';
+import 'package:fitfuel_ai/core/services/streak_service.dart';
 import 'package:fitfuel_ai/core/services/water_goal_resolver.dart';
 import 'package:fitfuel_ai/core/utils/fitness_calculator.dart';
 import '../../../analytics/presentation/pages/analytics_screen.dart';
@@ -115,6 +116,8 @@ class _HomeContentState extends State<_HomeContent>
   double _fatTarget = 0, _fatConsumed = 0;
   int _waterTotalMl = 0;
   int _waterTargetMl = 2000;
+  int _streak = 0;
+  bool _streakTodayActive = false;
   List<MealEntity> _meals = const [];
   bool _loading = true;
 
@@ -247,6 +250,8 @@ class _HomeContentState extends State<_HomeContent>
       final waterTarget =
           await WaterGoalResolver.resolve(user.id);
 
+      final streakInfo = await StreakService.compute(user.id);
+
       debugPrint(
           'HomeScreen DB targets: dailyKcal=$dailyKcal (from DB: ${goals?.targetCalories}), protein=$proteinTarget, carbs=$carbsTarget, fat=$fatTarget, water=$waterTarget');
 
@@ -300,6 +305,8 @@ class _HomeContentState extends State<_HomeContent>
           _fatConsumed = fat;
           _waterTotalMl = consumedWater;
           _waterTargetMl = waterTarget;
+          _streak = streakInfo.current;
+          _streakTodayActive = streakInfo.todayActive;
           _meals = meals.whereType<MealEntity>().toList()
             ..sort((a, b) =>
                 (b.createdAt ?? b.date).compareTo(a.createdAt ?? a.date));
@@ -386,6 +393,8 @@ class _HomeContentState extends State<_HomeContent>
             _TopBar(
               floating: _floatingController,
               avatarUrl: _avatarUrl,
+              streak: _streak,
+              streakTodayActive: _streakTodayActive,
               onAvatarTap: widget.onNavigateToProfile,
             ),
             const SizedBox(height: 20),
@@ -680,11 +689,15 @@ class _TopBar extends StatelessWidget {
     required this.floating,
     this.avatarUrl,
     this.onAvatarTap,
+    this.streak = 0,
+    this.streakTodayActive = false,
   });
 
   final Animation<double> floating;
   final String? avatarUrl;
   final VoidCallback? onAvatarTap;
+  final int streak;
+  final bool streakTodayActive;
 
   @override
   Widget build(BuildContext context) {
@@ -747,9 +760,9 @@ class _TopBar extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                const Text(
-                  '3 DAY STREAK',
-                  style: TextStyle(
+                Text(
+                  '$streak DAY STREAK',
+                  style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     color: kPurple,
@@ -758,11 +771,22 @@ class _TopBar extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Row(
-                  children: const [
-                    Text('🔥', style: TextStyle(fontSize: 14)),
-                    Text('🔥', style: TextStyle(fontSize: 14)),
-                    Text('🔥', style: TextStyle(fontSize: 14)),
-                  ],
+                  children: streak <= 0
+                      ? const [
+                          Text('🔥', style: TextStyle(fontSize: 14)),
+                          Opacity(
+                            opacity: 0.35,
+                            child: Text('🔥', style: TextStyle(fontSize: 14)),
+                          ),
+                          Opacity(
+                            opacity: 0.35,
+                            child: Text('🔥', style: TextStyle(fontSize: 14)),
+                          ),
+                        ]
+                      : [
+                          for (var i = 0; i < streak.clamp(1, 3); i++)
+                            const Text('🔥', style: TextStyle(fontSize: 14)),
+                        ],
                 ),
               ],
             ),

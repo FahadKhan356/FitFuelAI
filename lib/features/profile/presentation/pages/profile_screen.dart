@@ -10,6 +10,7 @@ import 'dart:math' as math;
 
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/services/avatar_uploader.dart';
+import '../../../../core/services/streak_service.dart';
 import '../../../../core/services/water_goal_resolver.dart';
 import '../../../../core/domain/repositories/user_repository.dart';
 import '../../../../core/domain/repositories/water_repository.dart';
@@ -50,6 +51,9 @@ class _ProfileScreenState extends State<ProfileScreen>
   double _proteinConsumed = 0;
   String? _avatarUrl;
   bool _changingPhoto = false;
+  int _streak = 0;
+  bool _streakTodayActive = false;
+  String? _profileName;
 
   @override
   void initState() {
@@ -144,7 +148,19 @@ class _ProfileScreenState extends State<ProfileScreen>
       final profile =
           await sl<UserRepository>().getUserProfile(user.id);
       if (!mounted) return;
-      setState(() => _avatarUrl = profile?.avatarUrl);
+      setState(() {
+        _avatarUrl = profile?.avatarUrl;
+        _profileName = profile?.name;
+      });
+    } catch (_) {}
+    // Streak is computed from meal history (independent of profile fetch).
+    try {
+      final info = await StreakService.compute(user.id);
+      if (!mounted) return;
+      setState(() {
+        _streak = info.current;
+        _streakTodayActive = info.todayActive;
+      });
     } catch (_) {}
   }
 
@@ -277,8 +293,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                       onTap: _changeAvatar,
                     ),
                     const SizedBox(height: 18),
-                    const Text(
-                      'Alex Johnson',
+                    Text(
+                      _profileName?.isNotEmpty == true ? _profileName! : 'Alex Johnson',
                       style: TextStyle(
                         fontSize: 30,
                         height: 1.0,
@@ -316,9 +332,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                         iconBackground: const Color(0xFFFFF0DE),
                         iconColor: const Color(0xFFF4A340),
                         label: 'STREAK',
-                        targetValue: '12',
+                        targetValue: '$_streak',
                         suffix: ' Days',
-                        subtitle: 'Keep it up, Alex!',
+                        subtitle:
+                            _streakTodayActive ? 'Keep it up, today!' : 'Log a meal today to keep it going',
                         index: 0,
                       ),
                     ),
