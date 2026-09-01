@@ -1,5 +1,7 @@
 import 'package:fitfuel_ai/core/constants/app_colors.dart';
 import 'package:fitfuel_ai/core/di/service_locator.dart';
+import 'package:fitfuel_ai/core/domain/entities/user_profile_entity.dart';
+import 'package:fitfuel_ai/core/domain/entities/weight_entry_entity.dart';
 import 'package:fitfuel_ai/core/domain/repositories/weight_repository.dart';
 import 'package:fitfuel_ai/core/domain/usecases/all_usecases.dart';
 import 'package:fitfuel_ai/core/utils/bmi_calculator.dart';
@@ -61,6 +63,11 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
   /// so the Week/Month toggle never mutates fallback data).
   List<WeightEntry> _realEntries = [];
   bool _loadedRealData = false;
+
+  /// Whether the first fetch from the DB is still in flight. While true we show
+  /// a loading spinner so the screen never flashes stale demo/profile values
+  /// before the real data arrives (the flicker the user reported).
+  bool _loading = true;
 
   /// Whether this profile is on a gain goal (goal weight > start weight) or a
   /// loss goal (goal below start). Works for both muscle_gain and weight_loss.
@@ -140,68 +147,72 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
 
   Future<void> _loadData() async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) return;
+    if (userId == null) {
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
 
-    // Load profile height, current/start weight, and goal weight.
+    // Load profile + weight history in PARALLEL so the screen transitions
+    // directly from the loading spinner to the final real data in one setState —
+    // never through intermediate profile-only values that cause a flicker.
+    UserProfileEntity? profile;
+    List<WeightEntryEntity> history = const [];
     try {
-      final profile = await sl<LoadUserProfileUseCase>().call(userId);
+      final results = await Future.wait<Object?>([
+        sl<LoadUserProfileUseCase>().call(userId),
+        sl<WeightRepository>().getWeightHistory(userId),
+      ]);
+      profile = results[0] as UserProfileEntity?;
+      history = (results[1] as List<WeightEntryEntity>?) ?? const [];
+    } catch (e) {
+      debugPrint('WeightTracker _loadData error: $e');
+    }
 
-      if (profile?.heightCm != null && profile!.heightCm! > 0) {
-        _heightCm = profile.heightCm!;
-      }
+    if (!mounted) return;
+
+    setState(() {
+      List<WeightEntry> real = history
+          .map((e) => WeightEntry(date: e.date, weight: e.weightKg))
+          .toList()
+        ..sort((a, b) => a.date.compareTo(b.date));
+
+      // Profile-derived starting/goal values.
+      final effectiveCurrent =
+          profile?.currentWeightKg ?? profile?.weightKg;
       if (profile != null) {
         if (profile.heightCm != null && profile.heightCm! > 0) {
           _heightCm = profile.heightCm!;
         }
-        // current_weight is the live value; weight_kg is the starting weight.
-        final effective = profile.currentWeightKg ?? profile.weightKg;
-        if (effective != null && effective > 0) {
-          currentWeight = effective;
-        }
-        if (!_loadedRealData &&
-            profile.weightKg != null &&
-            profile.weightKg! > 0) {
+        if (profile.weightKg != null && profile.weightKg! > 0) {
           startWeight = profile.weightKg!;
         }
         if (profile.goalWeightKg != null && profile.goalWeightKg! > 0) {
           goalWeight = profile.goalWeightKg!;
         }
       }
-    } catch (e) {
-      debugPrint('WeightTracker _loadData profile error: $e');
-      // Keep fallback height/goal.
-    }
 
-    // Load real weight history (overrides the profile seed with logged data).
-    try {
-      final history = await sl<WeightRepository>().getWeightHistory(userId);
-      if (history.isNotEmpty) {
-        final real = history
-            .map((e) => WeightEntry(date: e.date, weight: e.weightKg))
-            .toList()
-          ..sort((a, b) => a.date.compareTo(b.date));
-        if (mounted) {
-          setState(() {
-            _realEntries = real;
-            _loadedRealData = true;
-            currentWeight = real.last.weight;
-            startWeight = real.first.weight;
-            weightEntries = real.length > 1 ? real : [...real, real.first];
-          });
+      if (real.isNotEmpty) {
+        // Real history wins: latest point is the current weight, first is start.
+        currentWeight = effectiveCurrent ?? real.last.weight;
+        if (profile?.weightKg == null || profile!.weightKg! <= 0) {
+          startWeight = real.first.weight;
         }
-      } else if (mounted) {
-        // No logged history: build a minimal chart from the profile weight so
-        // the screen reflects real user data even on first open.
-        setState(() {
-          _realEntries = [WeightEntry(date: DateTime.now(), weight: currentWeight)];
-          _loadedRealData = true;
-          weightEntries = _realEntries;
-        });
+        _realEntries = real;
+        _loadedRealData = true;
+        weightEntries = real;
+      } else {
+        // No history: single synthetic point from current weight so the chart
+        // renders, and current weight comes from the profile.
+        currentWeight = effectiveCurrent ?? currentWeight;
+        _realEntries = [
+          WeightEntry(date: DateTime.now(), weight: currentWeight)
+        ];
+        _loadedRealData = true;
+        weightEntries = _realEntries;
       }
-    } catch (e) {
-      debugPrint('WeightTracker _loadData history error: $e');
-      // Keep fallback data on failure.
-    }
+
+      _loading = false;
+    });
   }
 
   /// Entries shown in the chart: real data when available, otherwise the demo
@@ -315,7 +326,9 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
             ),
             const Divider(height: 1, thickness: 1, color: Color(0xFFECE9F4)),
             Expanded(
-              child: ListView(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator(color: _purple))
+                  : ListView(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                 children: [
