@@ -56,10 +56,21 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
       value: _analyticsBloc,
       child: BlocBuilder<AnalyticsBloc, AnalyticsState>(
         builder: (context, state) {
-          CalendarTracking? calendarData;
-          if (state is AnalyticsLoaded) {
-            calendarData = state.calendarData;
+          final isLoaded = state is AnalyticsLoaded;
+          // Only render real data once it's actually loaded. Until then show a
+          // loading spinner so the screen never flashes 0/empty values first
+          // (the flicker the user reported on every visit).
+          if (!isLoaded) {
+            return Scaffold(
+              backgroundColor: _bg,
+              appBar: _buildAppBar(),
+              body: const Center(
+                child: CircularProgressIndicator(color: _purple),
+              ),
+            );
           }
+
+          final calendarData = state.calendarData;
 
           return Scaffold(
             backgroundColor: _bg,
