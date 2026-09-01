@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../domain/entities/weight_entry_entity.dart';
 import '../../domain/repositories/weight_repository.dart';
 import '../datasources/supabase_remote_datasource.dart';
@@ -39,6 +41,19 @@ class WeightRepositoryImpl implements WeightRepository {
 
     // Sync current weight to user_profiles table
     await _dataSource.updateUserProfile(userId, {'weight_kg': weightKg});
+
+    // Recompute nutrition targets (calories / protein / carbs / fat / water)
+    // from the newly-synced weight. The `calculate_user_goals` RPC reads
+    // `user_profiles` and rewrites the `goals` row — exactly like onboarding
+    // does — so home, health-goals, calorie & water resolvers, and the calendar
+    // all pick up the fresh targets based on the current weight.
+    // Non-fatal: the weight entry + profile sync below already succeeded, so a
+    // goal-recalc failure must never block logging a weight.
+    try {
+      await _dataSource.calculateUserGoals(userId);
+    } catch (e) {
+      debugPrint('addWeightEntry calculateUserGoals error: $e');
+    }
 
     return WeightEntryEntity(
       id: model.id,

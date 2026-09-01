@@ -3,6 +3,7 @@ import 'package:fitfuel_ai/core/di/service_locator.dart';
 import 'package:fitfuel_ai/core/domain/repositories/weight_repository.dart';
 import 'package:fitfuel_ai/core/domain/usecases/all_usecases.dart';
 import 'package:fitfuel_ai/core/utils/bmi_calculator.dart';
+import 'package:fitfuel_ai/core/services/home_data_refresh_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
@@ -257,6 +258,11 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
         null, // bodyFat
         null, // notes
       );
+      // The add already synced `user_profiles.weight_kg` and recomputed the
+      // nutrition goals server-side. Ping every mounted dashboard (home,
+      // calendar) so the updated weight + fresh calorie targets appear
+      // everywhere immediately, not just on the next cold open.
+      HomeDataRefreshNotifier.instance.refresh();
       await _loadData();
     } catch (_) {
       // Non-fatal — the local UI already updated.
@@ -623,7 +629,9 @@ class _WeightChart extends StatelessWidget {
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 38,
-                      interval: (maxWeight - minWeight) / 4,
+                      interval: (maxWeight - minWeight).abs() < 0.001
+                          ? 1.0
+                          : (maxWeight - minWeight) / 4,
                       getTitlesWidget: (value, meta) {
                         return Text(
                           value.toStringAsFixed(1),
