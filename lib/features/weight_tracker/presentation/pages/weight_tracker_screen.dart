@@ -253,6 +253,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
     try {
       await sl<WeightRepository>().addWeightEntry(
         userId,
+        date,
         weight,
         _heightCm,
         null, // bodyFat

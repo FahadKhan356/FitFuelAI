@@ -25,14 +25,16 @@ class WeightRepositoryImpl implements WeightRepository {
   }
 
   @override
-  Future<WeightEntryEntity> addWeightEntry(String userId, double weightKg, double heightCm, double? bodyFat, String? notes) async {
+  Future<WeightEntryEntity> addWeightEntry(String userId, DateTime date, double weightKg, double heightCm, double? bodyFat, String? notes) async {
     // Auto-calculate BMI
     final heightM = heightCm / 100;
     final bmi = double.parse((weightKg / (heightM * heightM)).toStringAsFixed(1));
 
-    // Insert into weight_entries
+    // Insert into weight_entries (date is NOT NULL — must be forwarded so the
+    // entry is stored on the exact day the user picked).
     final model = await _dataSource.addWeightEntry({
       'user_id': userId,
+      'date': date.toIso8601String().split('T').first,
       'weight_kg': weightKg,
       'bmi': bmi,
       if (bodyFat != null) 'body_fat': bodyFat,

@@ -19,6 +19,7 @@ class LoadWeightHistory extends WeightTrackerEvent {
 
 class AddWeightEntry extends WeightTrackerEvent {
   final String userId;
+  final DateTime date;
   final double weightKg;
   final double heightCm;
   final double? bodyFat;
@@ -26,13 +27,14 @@ class AddWeightEntry extends WeightTrackerEvent {
 
   const AddWeightEntry({
     required this.userId,
+    required this.date,
     required this.weightKg,
     required this.heightCm,
     this.bodyFat,
     this.notes,
   });
   @override
-  List<Object?> get props => [userId, weightKg, heightCm];
+  List<Object?> get props => [userId, date, weightKg, heightCm];
 }
 
 // ── States ──
@@ -90,6 +92,7 @@ class WeightTrackerBloc extends Bloc<WeightTrackerEvent, WeightTrackerState> {
     try {
       await _weightRepository.addWeightEntry(
         event.userId,
+        event.date,
         event.weightKg,
         event.heightCm,
         event.bodyFat,

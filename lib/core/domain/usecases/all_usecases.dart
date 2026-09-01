@@ -163,7 +163,7 @@ class TrackWaterUseCase {
 // ==================== WEIGHT ====================
 class TrackWeightUseCase {
   final WeightRepository _repo; TrackWeightUseCase(this._repo);
-  Future<WeightEntryEntity> call(String userId, double weightKg, double heightCm, double? bodyFat, String? notes) => _repo.addWeightEntry(userId, weightKg, heightCm, bodyFat, notes);
+  Future<WeightEntryEntity> call(String userId, DateTime date, double weightKg, double heightCm, double? bodyFat, String? notes) => _repo.addWeightEntry(userId, date, weightKg, heightCm, bodyFat, notes);
 }
 
 // ==================== ANALYTICS ====================
