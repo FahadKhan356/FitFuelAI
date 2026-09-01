@@ -158,7 +158,8 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
       if (profile?.goalWeightKg != null && profile!.goalWeightKg! > 0) {
         goalWeight = profile.goalWeightKg!;
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('WeightTracker _loadData profile error: $e');
       // Keep fallback height/goal.
     }
 
@@ -188,7 +189,8 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
           weightEntries = _realEntries;
         });
       }
-    } catch (_) {
+    } catch (e) {
+      debugPrint('WeightTracker _loadData history error: $e');
       // Keep fallback data on failure.
     }
   }
@@ -265,7 +267,8 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
       // everywhere immediately, not just on the next cold open.
       HomeDataRefreshNotifier.instance.refresh();
       await _loadData();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('WeightTracker _persistEntry error: $e');
       // Non-fatal — the local UI already updated.
     }
   }
