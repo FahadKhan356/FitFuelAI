@@ -149,14 +149,23 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
       if (profile?.heightCm != null && profile!.heightCm! > 0) {
         _heightCm = profile.heightCm!;
       }
-      if (profile?.weightKg != null && profile!.weightKg! > 0) {
-        currentWeight = profile.weightKg!;
-        // Only seed the start weight from the profile when we have no history
-        // yet (real history below overrides both).
-        if (!_loadedRealData) startWeight = profile.weightKg!;
-      }
-      if (profile?.goalWeightKg != null && profile!.goalWeightKg! > 0) {
-        goalWeight = profile.goalWeightKg!;
+      if (profile != null) {
+        if (profile.heightCm != null && profile.heightCm! > 0) {
+          _heightCm = profile.heightCm!;
+        }
+        // current_weight is the live value; weight_kg is the starting weight.
+        final effective = profile.currentWeightKg ?? profile.weightKg;
+        if (effective != null && effective > 0) {
+          currentWeight = effective;
+        }
+        if (!_loadedRealData &&
+            profile.weightKg != null &&
+            profile.weightKg! > 0) {
+          startWeight = profile.weightKg!;
+        }
+        if (profile.goalWeightKg != null && profile.goalWeightKg! > 0) {
+          goalWeight = profile.goalWeightKg!;
+        }
       }
     } catch (e) {
       debugPrint('WeightTracker _loadData profile error: $e');

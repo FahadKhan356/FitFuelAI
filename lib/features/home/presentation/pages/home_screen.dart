@@ -186,10 +186,11 @@ class _HomeContentState extends State<_HomeContent>
 
   // Fallback calculation methods for when goals are not available in DB
   double _calculateFallbackProtein(UserProfileEntity? profile) {
-    if (profile == null || profile.weightKg == null) {
+    final weight = profile?.currentWeightKg ?? profile?.weightKg;
+    if (weight == null) {
       return 150.0;
     }
-    return FitnessCalculator.calculateProtein(weightKg: profile.weightKg!);
+    return FitnessCalculator.calculateProtein(weightKg: weight);
   }
 
   double _calculateFallbackCarbs(

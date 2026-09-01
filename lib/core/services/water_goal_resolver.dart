@@ -29,7 +29,8 @@ class WaterGoalResolver {
     // 2) Weight-based fallback (identical to home screen's fallback).
     try {
       final profile = await repo.getUserProfile(userId);
-      final weight = profile?.weightKg;
+      // Prefer live current weight, fall back to start weight.
+      final weight = profile?.currentWeightKg ?? profile?.weightKg;
       final activity = profile?.activityLevel;
       if (weight != null && activity != null) {
         final computed = FitnessCalculator.calculateDailyWater(

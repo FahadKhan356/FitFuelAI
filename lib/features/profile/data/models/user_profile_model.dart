@@ -7,6 +7,7 @@ class UserProfileModel {
   final String? gender;
   final double? heightCm;
   final double? weightKg;
+  final double? currentWeightKg;
   final double? goalWeightKg;
   final String? activityLevel;
   final String? goalType;
@@ -32,6 +33,7 @@ class UserProfileModel {
     this.gender,
     this.heightCm,
     this.weightKg,
+    this.currentWeightKg,
     this.goalWeightKg,
     this.activityLevel,
     this.goalType,
@@ -56,6 +58,7 @@ class UserProfileModel {
         if (gender != null) 'gender': gender,
         if (heightCm != null) 'height_cm': heightCm,
         if (weightKg != null) 'weight_kg': weightKg,
+        if (currentWeightKg != null) 'current_weight': currentWeightKg,
         if (goalWeightKg != null) 'goal_weight_kg': goalWeightKg,
         if (activityLevel != null) 'activity_level': activityLevel,
         if (goalType != null) 'goal_type': goalType,
@@ -87,6 +90,7 @@ class UserProfileModel {
     String? gender,
     double? heightCm,
     double? weightKg,
+    double? currentWeightKg,
     double? goalWeightKg,
     String? activityLevel,
     String? goalType,
@@ -110,6 +114,7 @@ class UserProfileModel {
       gender: gender ?? this.gender,
       heightCm: heightCm ?? this.heightCm,
       weightKg: weightKg ?? this.weightKg,
+      currentWeightKg: currentWeightKg ?? this.currentWeightKg,
       goalWeightKg: goalWeightKg ?? this.goalWeightKg,
       activityLevel: activityLevel ?? this.activityLevel,
       goalType: goalType ?? this.goalType,
@@ -127,10 +132,16 @@ class UserProfileModel {
     );
   }
 
-  /// Calculate BMI from height and weight
+  /// User's current weight — prefers the dedicated `current_weight` column but
+  /// falls back to the start `weight_kg` so older rows (where current_weight
+  /// is still NULL) keep working.
+  double? get effectiveWeightKg => currentWeightKg ?? weightKg;
+
+  /// Calculate BMI from height and current weight
   double? get bmi {
-    if (heightCm == null || weightKg == null || heightCm! <= 0) return null;
+    final w = effectiveWeightKg;
+    if (heightCm == null || w == null || heightCm! <= 0) return null;
     final heightM = heightCm! / 100;
-    return double.parse((weightKg! / (heightM * heightM)).toStringAsFixed(1));
+    return double.parse((w / (heightM * heightM)).toStringAsFixed(1));
   }
 }

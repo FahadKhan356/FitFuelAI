@@ -41,8 +41,10 @@ class WeightRepositoryImpl implements WeightRepository {
       if (notes != null) 'notes': notes,
     });
 
-    // Sync current weight to user_profiles table
-    await _dataSource.updateUserProfile(userId, {'weight_kg': weightKg});
+    // Sync current weight to user_profiles. `weight_kg` stays the starting
+    // weight; the live value goes in `current_weight` (falls back to setting
+    // weight_kg when the dedicated column predates this change).
+    await _dataSource.updateUserProfile(userId, {'current_weight': weightKg});
 
     // Recompute nutrition targets (calories / protein / carbs / fat / water)
     // from the newly-synced weight. The `calculate_user_goals` RPC reads

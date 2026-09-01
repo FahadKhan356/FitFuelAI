@@ -57,8 +57,10 @@ class _BmiScreenState extends State<BmiScreen> with SingleTickerProviderStateMix
       if (profile == null || !mounted) return;
 
       String? weightText;
-      if (profile.weightKg != null && profile.weightKg! > 0) {
-        weightText = profile.weightKg!.toStringAsFixed(1);
+      // Prefer live current_weight, fall back to the starting weight_kg.
+      final effectiveWeight = profile.currentWeightKg ?? profile.weightKg;
+      if (effectiveWeight != null && effectiveWeight > 0) {
+        weightText = effectiveWeight.toStringAsFixed(1);
       }
       String? heightText;
       if (profile.heightCm != null && profile.heightCm! > 0) {

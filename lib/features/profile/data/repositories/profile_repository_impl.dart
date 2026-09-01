@@ -37,21 +37,22 @@ class ProfileRepositoryImpl implements ProfileRepository {
   @override
   Future<UserProfileModel> recalculateGoals(UserProfileModel user) async {
     // Guard: need age, gender, height, weight & activity to calculate.
+    final effectiveWeight = user.effectiveWeightKg;
     if (user.age == null ||
         user.gender == null ||
         user.heightCm == null ||
-        user.weightKg == null ||
+        effectiveWeight == null ||
         user.activityLevel == null) {
       return user;
     }
 
     final goalType = user.goalType ?? 'maintain';
     final weeklyPace = user.weeklyPaceKg ?? 0.5;
-    final targetWeight = user.goalWeightKg ?? user.weightKg!;
+    final targetWeight = user.goalWeightKg ?? effectiveWeight!;
 
     // Re-run FitnessCalculator with current (possibly updated) metrics.
     final targets = FitnessCalculator.calculateAllTargets(
-      weightKg: user.weightKg!,
+      weightKg: effectiveWeight!,
       heightCm: user.heightCm!,
       age: user.age!,
       gender: user.gender!,
@@ -85,6 +86,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       gender: profile?['gender'] as String?,
       heightCm: _toDouble(profile?['height_cm']),
       weightKg: _toDouble(profile?['weight_kg']),
+      currentWeightKg: _toDouble(profile?['current_weight']),
       goalWeightKg: _toDouble(profile?['goal_weight_kg']),
       activityLevel: profile?['activity_level'] as String?,
       goalType: profile?['goal_type'] as String? ?? goals?['goal_type'] as String?,

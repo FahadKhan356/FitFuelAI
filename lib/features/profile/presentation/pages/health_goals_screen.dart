@@ -127,7 +127,11 @@ class _HealthGoalsScreenState extends State<HealthGoalsScreen> {
             _rowItem(Icons.height_rounded, 'Height',
                 p?.heightCm != null ? '${_fmtNum(p!.heightCm)} cm' : '-'),
             _rowItem(Icons.scale_outlined, 'Current weight',
-                p?.weightKg != null ? '${_fmtNum(p!.weightKg)} kg' : '-'),
+                p?.currentWeightKg != null
+                    ? '${_fmtNum(p!.currentWeightKg)} kg'
+                    : p?.weightKg != null
+                        ? '${_fmtNum(p!.weightKg)} kg'
+                        : '-'),
             _rowItem(Icons.speed_rounded, 'Activity level',
                 _titleCase(p?.activityLevel)),
             _rowItem(Icons.fitness_center_rounded, 'Goal type',

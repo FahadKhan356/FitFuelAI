@@ -30,14 +30,16 @@ class CalorieGoalResolver {
     // 2) Profile-based fallback (identical formula to home screen).
     try {
       final profile = await repo.getUserProfile(userId);
+      // Use live current weight when available, else fall back to start weight.
+      final weight = profile?.currentWeightKg ?? profile?.weightKg;
       if (profile != null &&
-          profile.weightKg != null &&
+          weight != null &&
           profile.heightCm != null &&
           profile.age != null &&
           profile.gender != null &&
           profile.activityLevel != null) {
         final bmr = FitnessCalculator.calculateBMR(
-          weightKg: profile.weightKg!,
+          weightKg: weight,
           heightCm: profile.heightCm!,
           age: profile.age!,
           gender: profile.gender!,
