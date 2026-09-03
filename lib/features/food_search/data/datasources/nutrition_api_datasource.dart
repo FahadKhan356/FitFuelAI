@@ -56,7 +56,12 @@ class NutritionApiDataSource {
     for (final list in settled) {
       merged.addAll(list);
     }
-    final results = _dedupe(merged);
+    var results = _dedupe(merged);
+    // Rank by how well the result matches what the user actually typed, so an
+    // English query like "eggs" leads with "Egg, whole, raw" instead of some
+    // fully-populated branded product that merely contains egg as an ingredient.
+    results.sort((a, b) =>
+        _relevanceScore(b, query).compareTo(_relevanceScore(a, query)));
 
     // Store in cache (cap size to avoid unbounded growth).
     if (results.isNotEmpty) {
@@ -326,6 +331,38 @@ class NutritionApiDataSource {
     if (f.sodiumMg > 0) s++;
     if (f.imageUrl != null && f.imageUrl!.isNotEmpty) s += 2;
     return s;
+  }
+
+  /// Ranks a food against the search query. The name matching the query is the
+  /// dominant signal; source & nutrition are tie-breakers. Whole academic foods
+  /// (USDA) beat branded packaged items when relevance is otherwise equal.
+  int _relevanceScore(NutritionFood f, String query) {
+    final q = query.trim().toLowerCase();
+    final name = f.name.toLowerCase();
+
+    var score = 0;
+    if (name == q) {
+      score += 40; // exact match wins outright.
+    } else if (name.startsWith(q)) {
+      score += 25; // "egg..." for "egg".
+    } else if (name.contains(q)) {
+      score += 18; // name contains the full query.
+    } else {
+      // Token match: every query word present in the name adds weight.
+      final tokens = q.split(RegExp(r'\s+')).where((t) => t.length > 2);
+      for (final t in tokens) {
+        if (name.contains(t)) score += 10;
+      }
+    }
+
+    // Whole-food sources are more relevant for plain ingredient queries.
+    if (f.source == 'USDA') score += 3;
+    if (f.source == 'CalorieNinjas') score += 1;
+
+    // Nutrition completeness as a mild final tie-breaker.
+    score += _score(f) ~/ 10;
+
+    return score;
   }
 
   static double? _num(dynamic value) {
