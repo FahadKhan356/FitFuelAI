@@ -455,12 +455,19 @@ class _HomeContentState extends State<_HomeContent>
               ),
             ),
             const SizedBox(height: 18),
-            _CalorieCard(
-              animation: _entryController,
-              dailyGoal: _dailyGoalKcal,
-              consumed: _consumedKcal,
-              burned: _burnedKcal,
-            ),
+            // The daily targets (calories/macros/water) only render once real
+            // data has arrived — either from cache or the DB. Rendering them
+            // with the 2000/150/2500 defaults while loading caused a visible
+            // 2000 → actual (e.g. 2507) flash on every cold open.
+            if (_loading)
+              const _DashboardLoading()
+            else ...[
+              _CalorieCard(
+                animation: _entryController,
+                dailyGoal: _dailyGoalKcal,
+                consumed: _consumedKcal,
+                burned: _burnedKcal,
+              ),
             const SizedBox(height: 16),
             _MacroRow(
               animation: _entryController,
@@ -487,7 +494,8 @@ class _HomeContentState extends State<_HomeContent>
                 Expanded(child: _AICoachCard(animation: _entryController)),
               ],
             ),
-AnimatedBuilder(
+            ],
+            AnimatedBuilder(
               animation: _entryController,
               builder: (context, child) {
                 final t = _clamp01(CurvedAnimation(
@@ -840,6 +848,31 @@ class _TopBar extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+//  Dashboard Loading Placeholder
+// ─────────────────────────────────────────────
+/// Shown in place of the calorie/macro/water cards until real dashboard data
+/// has loaded (from cache or DB). Prevents the 2000 -> actual flash on open.
+class _DashboardLoading extends StatelessWidget {
+  const _DashboardLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: kWhite,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: kBorder, width: 1),
+      ),
+      child: const Center(
+        child: CircularProgressIndicator(color: kPurple),
+      ),
     );
   }
 }
