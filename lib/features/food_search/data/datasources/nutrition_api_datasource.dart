@@ -161,7 +161,12 @@ class NutritionApiDataSource {
       'action': 'process',
       'json': '1',
       'page_size': '25',
-      'fields': 'product_name,brands,image_url,nutriments',
+      // Ask the API to fill the English product name & language tag so results
+      // are relevant for an English user instead of surfacing arbitrary
+      // foreign-language products (e.g. "Mayonnaise Classique ...").
+      'lang': 'en',
+      'fields':
+          'product_name,product_name_en,lang,brands,image_url,nutriments',
     });
 
     final res = await http.get(uri, headers: {
@@ -183,7 +188,30 @@ class NutritionApiDataSource {
         results.add(parsed);
       }
     }
+    // Rank the most English-relevant matches first so an English query doesn't
+    // lead with a random foreign-branded food.
+    results.sort((a, b) {
+      final aScore = _languageScore(a);
+      final bScore = _languageScore(b);
+      return bScore.compareTo(aScore);
+    });
     return results;
+  }
+
+  /// Small heuristic: prefer products whose stored name looks English over ones
+  /// that are clearly a foreign language (heavy diacritics) or non-Latin.
+  int _languageScore(NutritionFood f) {
+    final nonLatin = RegExp(r'[\u0600-\u06FF\u0400-\u04FF\u0900-\u097F'
+        r'\u4E00-\u9FFF\u3040-\u30FF\uAC00-\uD7AF\u0370-\u03FF]');
+    final diacritics = RegExp(r'[àáâãäåçèéêëìíîïñòóôõöùúûüýÿœæ]');
+    var score = 0;
+    if (nonLatin.hasMatch(f.name)) {
+      score -= 10; // Hindi/Chinese/Arabic/Cyrillic/Greek names are never English.
+    }
+    if (diacritics.hasMatch(f.name)) {
+      score -= 3; // accented words are usually French/Spanish/Portuguese etc.
+    }
+    return score;
   }
 
   NutritionFood _fromOpenFoodFactsProduct(
@@ -192,9 +220,13 @@ class NutritionApiDataSource {
     return NutritionFood(
       source: 'OpenFoodFacts',
       externalId: barcode,
-      name: (product['product_name'] as String?)?.isNotEmpty == true
-          ? product['product_name'] as String
-          : 'Packaged Food',
+      // Prefer the English product name when the API provided one, else fall
+      // back to the default name.
+      name: (product['product_name_en'] as String?)?.isNotEmpty == true
+          ? product['product_name_en'] as String
+          : (product['product_name'] as String?)?.isNotEmpty == true
+              ? product['product_name'] as String
+              : 'Packaged Food',
       brand: product['brands'] as String?,
       imageUrl: product['image_url'] as String?,
       energyKcal: _num(nutrients['energy-kcal_100g']) ?? 0,
