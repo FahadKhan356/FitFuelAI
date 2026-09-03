@@ -63,6 +63,13 @@ class NutritionApiDataSource {
     results.sort((a, b) =>
         _relevanceScore(b, query).compareTo(_relevanceScore(a, query)));
 
+    // Drop results whose names share nothing with the query at all. Without
+    // this, loose multi-API matches (e.g. a Spanish "Queso Blanco" show up for
+    // "eggs") can still slip into the list. Only the name-relevance bonus
+    // sources (USDA/CalorieNinjas) survive when there is no query match, since
+    // they are true whole-food matches from the search call.
+    results = results.where((f) => _relevanceScore(f, query) > 0).toList();
+
     // Store in cache (cap size to avoid unbounded growth).
     if (results.isNotEmpty) {
       _cache[key] = results;
