@@ -27,6 +27,20 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
   late final AnalyticsBloc _analyticsBloc;
   bool isWeekly = true;
 
+  /// The dates shown by the charts/stats — always matches the active mode:
+  /// - Weekly  → the last 7 days (today back 6).
+  /// - Monthly → every day of the current calendar month up to today.
+  List<DateTime> get _rangeDays {
+    final today = DateTime.now();
+    if (isWeekly) {
+      return List.generate(7, (i) => today.subtract(Duration(days: 6 - i)));
+    }
+    return List.generate(
+      today.day,
+      (i) => DateTime(today.year, today.month, i + 1),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -216,19 +230,28 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
   }
 
   Widget _buildStatsCards(CalendarTracking? calendarData) {
-    final avgCal = calendarData != null && calendarData.caloriesByDate.isNotEmpty
-        ? (calendarData.caloriesByDate.values.reduce((a, b) => a + b) / calendarData.caloriesByDate.length).toInt()
-        : 0;
-    final avgWater = calendarData != null && calendarData.waterByDate.isNotEmpty
-        ? (calendarData.waterByDate.values.reduce((a, b) => a + b) / calendarData.waterByDate.length / 1000).toStringAsFixed(1)
-        : '0.0';
-    final hitDays = calendarData != null
-        ? List.generate(7, (i) {
-            final d = DateTime.now().subtract(Duration(days: 6 - i));
-            return calendarData.anyHitOn(d) ? 1 : 0;
-          }).reduce((a, b) => a + b)
-        : 0;
-    final activityPercent = calendarData != null ? ((hitDays / 7) * 100).toInt() : 0;
+    final range = _rangeDays;
+    final daysInRange = range.length;
+
+    final totalCal = range.fold<int>(
+      0,
+      (sum, d) => sum + (calendarData?.caloriesOn(d) ?? 0),
+    );
+    final avgCal = daysInRange == 0 ? 0 : totalCal ~/ daysInRange;
+
+    final totalWater = range.fold<int>(
+      0,
+      (sum, d) => sum + (calendarData?.waterOn(d) ?? 0),
+    );
+    final avgWater = daysInRange == 0
+        ? '0.0'
+        : (totalWater / 1000 / daysInRange).toStringAsFixed(1);
+
+    final hitDays = range
+        .where((d) => calendarData?.anyHitOn(d) ?? false)
+        .length;
+    final activityPercent =
+        daysInRange == 0 ? 0 : ((hitDays / daysInRange) * 100).round();
 
     return Row(
       children: [
@@ -242,12 +265,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
   }
 
   Widget _buildCalorieActivityChart(CalendarTracking? calendarData) {
-    final days = List.generate(7, (i) {
-      final d = DateTime.now().subtract(Duration(days: 6 - i));
-      final label = DateFormat('E').format(d);
+    final days = _rangeDays.map((d) {
+      // Weekly → weekday initial (Mon); Monthly → day-of-month number.
+      final label = isWeekly ? DateFormat('E').format(d) : '${d.day}';
       final cal = calendarData?.caloriesOn(d) ?? 0;
       return {'label': label, 'value': cal.toDouble()};
-    });
+    }).toList();
 
     final maxCal = calendarData != null && calendarData.targetCalories > 0
         ? calendarData.targetCalories.toDouble()
@@ -351,12 +374,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
   }
 
   Widget _buildOnTrackToGoal(CalendarTracking? calendarData) {
-    final hitCount = calendarData != null
-        ? List.generate(7, (i) {
-            final d = DateTime.now().subtract(Duration(days: 6 - i));
-            return calendarData.anyHitOn(d) ? 1 : 0;
-          }).reduce((a, b) => a + b)
-        : 0;
+    final hitCount = _rangeDays
+        .where((d) => calendarData?.anyHitOn(d) ?? false)
+        .length;
 
     return Container(
       padding: const EdgeInsets.all(16),

@@ -64,7 +64,11 @@ class AnalyticsBloc extends Bloc<AnalyticsEvent, AnalyticsState> {
     try {
       final startDate = event.isWeekly
           ? event.date.subtract(const Duration(days: 6))
-          : DateTime(event.date.year, event.date.month - 1, 1);
+          // Monthly = the current calendar month (1st → today). The "month - 1"
+          // used before pointed at the PREVIOUS month's 1st, so the range was
+          // wrong (and broke around January). Month is 1-based in DateTime, so
+          // month stays as-is and day is 1.
+          : DateTime(event.date.year, event.date.month, 1);
       
       final calendarData = await _fetchCalendarTrackingUseCase(
         userId: event.userId,
