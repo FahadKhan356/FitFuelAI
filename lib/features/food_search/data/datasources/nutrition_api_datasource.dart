@@ -72,12 +72,10 @@ class NutritionApiDataSource {
     results.sort((a, b) =>
         _relevanceScore(b, query).compareTo(_relevanceScore(a, query)));
 
-    // Drop results whose names share nothing with the query at all. Without
-    // this, loose multi-API matches (e.g. a Spanish "Queso Blanco" show up for
-    // "eggs") can still slip into the list. Only the name-relevance bonus
-    // sources (USDA/CalorieNinjas) survive when there is no query match, since
-    // they are true whole-food matches from the search call.
-    results = results.where((f) => _relevanceScore(f, query) > 0).toList();
+    // Never show an unrelated product just because it came from a provider
+    // that has a source bonus. This matters most for Open Food Facts, whose
+    // broad product search can otherwise return weak matches.
+    results = results.where((f) => _matchesQuery(f, query)).toList();
 
     // Store in cache (cap size to avoid unbounded growth).
     if (results.isNotEmpty) {
@@ -166,7 +164,12 @@ class NutritionApiDataSource {
     for (final item in list) {
       final typed = item as Map<String, dynamic>;
       final nutrient = typed['nutrient'];
-      final idValue = nutrient is Map ? nutrient['id'] : typed['nutrientId'];
+      // USDA search responses expose the food nutrient database id (1003),
+      // while the API nutrient filter uses the nutrient number (203).
+      // Detailed responses may instead expose a nested nutrient.id.
+      final idValue = nutrient is Map
+          ? (nutrient['number'] ?? nutrient['id'])
+          : (typed['nutrientNumber'] ?? typed['nutrientId']);
       final id = idValue is num ? idValue.toInt() : int.tryParse('$idValue');
       // Search results use `value`; detailed food responses use `amount`.
       final rawAmount = typed['amount'] ?? typed['value'];
@@ -182,44 +185,66 @@ class NutritionApiDataSource {
 // ---- 2. OpenFoodFacts (packaged foods + real images) ------------
 
   Future<List<NutritionFood>> _searchOpenFoodFacts(String query) async {
-    final uri = Uri.parse(AppConstants.openFoodFactsSearchBase)
-        .replace(queryParameters: {
+    final queryParameters = {
       'search_terms': query,
       'search_simple': '1',
-      'action': 'process',
-      'json': '1',
-      'page_size': '25',
-      // Ask the API to fill the English product name & language tag so results
-      // are relevant for an English user instead of surfacing arbitrary
-      // foreign-language products (e.g. "Mayonnaise Classique ...").
+      'page_size': '50',
+      'sort_by': 'unique_scans_n',
       'lang': 'en',
-      'fields': 'product_name,product_name_en,lang,brands,image_url,nutriments',
-    });
+      'fields': [
+        'code',
+        'product_name',
+        'product_name_en',
+        'generic_name',
+        'generic_name_en',
+        'lang',
+        'brands',
+        'image_url',
+        'image_front_small_url',
+        'nutriments',
+        'serving_size',
+        'quantity',
+      ].join(','),
+    };
 
-    final res = await http.get(uri, headers: {
-      'User-Agent': 'FitFuelAI/1.0 (nutrition tracking)',
-    }).timeout(const Duration(seconds: _timeout));
-    if (res.statusCode != 200) {
-      return const [];
+    Map<String, dynamic>? json;
+    for (final baseUrl in [
+      AppConstants.openFoodFactsSearchBase,
+      AppConstants.openFoodFactsFallbackSearchBase,
+    ]) {
+      try {
+        final res = await http.get(
+          Uri.parse(baseUrl).replace(queryParameters: queryParameters),
+          headers: {'User-Agent': 'FitFuelAI/1.0 (nutrition tracking)'},
+        ).timeout(const Duration(seconds: _timeout));
+        if (res.statusCode != 200) continue;
+        final decoded = jsonDecode(res.body);
+        if (decoded is Map<String, dynamic> && decoded['products'] is List) {
+          json = decoded;
+          break;
+        }
+      } catch (_) {
+        // Try the global host if the regional host is unavailable.
+      }
     }
+    if (json == null) return const [];
 
-    final json = jsonDecode(res.body) as Map<String, dynamic>;
     final products = (json['products'] as List? ?? const [])
         .whereType<Map<String, dynamic>>();
     final results = <NutritionFood>[];
-    for (final product in products.take(25)) {
-      final barcode = (product['_id'] ?? '').toString();
+    for (final product in products.take(50)) {
+      final barcode = (product['code'] ?? product['_id'] ?? '').toString();
       final parsed = _fromOpenFoodFactsProduct(barcode, product);
       // Skip products that carry no nutrition data at all.
       if (parsed.energyKcal > 0 || parsed.protein > 0 || parsed.carbs > 0) {
         results.add(parsed);
       }
     }
-    // Rank the most English-relevant matches first so an English query doesn't
-    // lead with a random foreign-branded food.
+    // Rank popular, complete English products first. Popularity is supplied by
+    // Open Food Facts; the global ranking below also considers query fit.
     results.sort((a, b) {
-      final aScore = _languageScore(a);
-      final bScore = _languageScore(b);
+      final aScore = _languageScore(a) + _score(a);
+      final bScore = _languageScore(b) + _score(b);
       return bScore.compareTo(aScore);
     });
     return results;
@@ -249,15 +274,20 @@ class NutritionApiDataSource {
     return NutritionFood(
       source: 'OpenFoodFacts',
       externalId: barcode,
-      // Prefer the English product name when the API provided one, else fall
-      // back to the default name.
-      name: (product['product_name_en'] as String?)?.isNotEmpty == true
-          ? product['product_name_en'] as String
-          : (product['product_name'] as String?)?.isNotEmpty == true
-              ? product['product_name'] as String
-              : 'Packaged Food',
+      // Prefer the English product/generic name so branded products remain
+      // useful for queries such as "greek yogurt" or "protein bar".
+      name: _firstNonEmpty([
+            product['product_name_en'],
+            product['product_name'],
+            product['generic_name_en'],
+            product['generic_name'],
+          ]) ??
+          'Packaged Food',
       brand: product['brands'] as String?,
-      imageUrl: product['image_url'] as String?,
+      imageUrl: _firstNonEmpty([
+        product['image_front_small_url'],
+        product['image_url'],
+      ]),
       energyKcal: _num(nutrients['energy-kcal_100g']) ?? 0,
       protein: _num(nutrients['proteins_100g']) ?? 0,
       carbs: _num(nutrients['carbohydrates_100g']) ?? 0,
@@ -362,8 +392,8 @@ class NutritionApiDataSource {
   /// dominant signal; source & nutrition are tie-breakers. Whole academic foods
   /// (USDA) beat branded packaged items when relevance is otherwise equal.
   int _relevanceScore(NutritionFood f, String query) {
-    final q = query.trim().toLowerCase();
-    final name = f.name.toLowerCase();
+    final q = _normalize(query);
+    final name = _normalize(f.name);
 
     var score = 0;
     if (name == q) {
@@ -388,6 +418,29 @@ class NutritionApiDataSource {
     score += _score(f) ~/ 10;
 
     return score;
+  }
+
+  bool _matchesQuery(NutritionFood food, String query) {
+    final queryTokens = _normalize(query)
+        .split(RegExp(r'\s+'))
+        .where((token) => token.length > 1);
+    final nameTokens = _normalize(food.name).split(RegExp(r'\s+'));
+    // Match complete words or word prefixes. Substring matching made "ric"
+    // match the middle of "abricot", which produced unrelated French foods.
+    return queryTokens.every(
+      (queryToken) => nameTokens.any((nameToken) =>
+          nameToken == queryToken || nameToken.startsWith(queryToken)),
+    );
+  }
+
+  String _normalize(String value) =>
+      value.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), ' ').trim();
+
+  String? _firstNonEmpty(List<dynamic> values) {
+    for (final value in values) {
+      if (value is String && value.trim().isNotEmpty) return value.trim();
+    }
+    return null;
   }
 
   static double? _num(dynamic value) {

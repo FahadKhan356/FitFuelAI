@@ -6,19 +6,29 @@ class AppConstants {
   static const String appVersion = '1.0.0';
 
   // Supabase Configuration (from .env file)
-  static String get supabaseUrl => dotenv.env['SUPABASE_URL'] ?? 'YOUR_SUPABASE_URL_HERE';
-  static String get supabaseAnonKey => dotenv.env['SUPABASE_ANON_KEY'] ?? 'YOUR_SUPABASE_ANON_KEY_HERE';
+  static String get supabaseUrl =>
+      dotenv.env['SUPABASE_URL'] ?? 'YOUR_SUPABASE_URL_HERE';
+  static String get supabaseAnonKey =>
+      dotenv.env['SUPABASE_ANON_KEY'] ?? 'YOUR_SUPABASE_ANON_KEY_HERE';
 
   // Nutrition APIs (from .env file)
   // USDA FoodData Central — free API key from https://fdc.nal.usda.gov/api-key-signup.html
   static String get usdaApiKey => dotenv.env['USDA_API_KEY'] ?? '';
-  static String get usdaApiBase => dotenv.env['USDA_API_BASE'] ?? 'https://api.nal.usda.gov/fdc/v1';
+  static String get usdaApiBase =>
+      dotenv.env['USDA_API_BASE'] ?? 'https://api.nal.usda.gov/fdc/v1';
   // OpenFoodFacts — free, no key required
-  static const String openFoodFactsSearchBase = 'https://world.openfoodfacts.org/cgi/search.pl';
-  static const String openFoodFactsProductBase = 'https://world.openfoodfacts.org/api/v0/product';
+  static const String openFoodFactsSearchBase =
+      'https://us.openfoodfacts.org/api/v2/search';
+  static const String openFoodFactsFallbackSearchBase =
+      'https://world.openfoodfacts.org/api/v2/search';
+  static const String openFoodFactsProductBase =
+      'https://us.openfoodfacts.org/api/v0/product';
   // CalorieNinjas — free natural-language API, key from https://calorieninjas.com/api
-  static String get calorieNinjasApiKey => dotenv.env['CALORIE_NINJAS_API_KEY'] ?? '';
-  static String get calorieNinjasApiBase => dotenv.env['CALORIE_NINJAS_API_BASE'] ?? 'https://api.calorieninjas.com/v1/nutrition';
+  static String get calorieNinjasApiKey =>
+      dotenv.env['CALORIE_NINJAS_API_KEY'] ?? '';
+  static String get calorieNinjasApiBase =>
+      dotenv.env['CALORIE_NINJAS_API_BASE'] ??
+      'https://api.calorieninjas.com/v1/nutrition';
 
   // Timeouts
   static const int apiTimeoutSeconds = 30;
