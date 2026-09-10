@@ -1,11 +1,13 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/data/models/nutrition_food.dart';
 
-/// Remote food data source backed by three real, free nutrition APIs:
+/// Remote food data source backed by four nutrition providers:
+/// - FatSecret -> broad branded/restaurant food search through a secure proxy.
 /// - USDA FoodData Central  -> complete macros + micronutrients
 ///   (KEY FIX: we now pass `dataType=Foundation,SR Legacy` AND the explicit
 ///   `nutrients=` id list so raw foods return full nutrition, not the sparse
@@ -43,12 +45,20 @@ class NutritionApiDataSource {
     final cached = _cache[key];
     if (cached != null) return cached;
 
+    // Search a small set of semantic variants as well as the exact query.
+    // Nutrition databases commonly call "chai" tea, and use regional names
+    // such as "Pakistani tea" rather than the phrase typed by the user.
+    final queries = _queryVariants(query);
+
     // Run all configured providers concurrently and merge.
     final futures = <Future<List<NutritionFood>>>[];
-    futures.add(_searchUsda(query));
-    futures.add(_searchOpenFoodFacts(query));
-    if (AppConstants.calorieNinjasApiKey.isNotEmpty) {
-      futures.add(_searchCalorieNinjas(query));
+    for (final searchQuery in queries) {
+      futures.add(_searchFatSecret(searchQuery));
+      futures.add(_searchUsda(searchQuery));
+      futures.add(_searchOpenFoodFacts(searchQuery));
+      if (AppConstants.calorieNinjasApiKey.isNotEmpty) {
+        futures.add(_searchCalorieNinjas(searchQuery));
+      }
     }
 
     // A failure from one provider must not hide valid results from the others.
@@ -85,6 +95,42 @@ class NutritionApiDataSource {
       }
     }
     return results;
+  }
+
+  Future<List<NutritionFood>> _searchFatSecret(String query) async {
+    try {
+      final response = await Supabase.instance.client.functions.invoke(
+        'fatsecret-search',
+        body: {'query': query},
+      );
+      final data = response.data;
+      if (data is! Map || data['results'] is! List) return const [];
+      return (data['results'] as List)
+          .whereType<Map>()
+          .map((item) => NutritionFood(
+                source: 'FatSecret',
+                externalId: '${item['externalId'] ?? ''}',
+                name: '${item['name'] ?? query}',
+                brand: item['brand'] is String ? item['brand'] as String : null,
+                energyKcal: _number(item['energyKcal']),
+                protein: _number(item['protein']),
+                carbs: _number(item['carbs']),
+                fat: _number(item['fat']),
+                saturatedFatG: _number(item['saturatedFatG']),
+                fiber: _number(item['fiber']),
+                sugar: _number(item['sugar']),
+                sodiumMg: _number(item['sodiumMg']),
+                potassiumMg: _number(item['potassiumMg']),
+                calciumMg: _number(item['calciumMg']),
+                ironMg: _number(item['ironMg']),
+                vitaminCMg: _number(item['vitaminCMg']),
+              ))
+          .where((food) => food.energyKcal > 0)
+          .toList();
+    } catch (_) {
+      // FatSecret is optional until its Edge Function is deployed/configured.
+      return const [];
+    }
   }
 
   /// Looks up a single packaged product by barcode via OpenFoodFacts.
@@ -348,6 +394,11 @@ class NutritionApiDataSource {
     return n == null ? 0 : n * factor;
   }
 
+  static double _number(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse('$value') ?? 0;
+  }
+
   // ---- Helpers -------------------------------------------------------
 
   /// Merges results, dropping entries with no nutrition at all and
@@ -427,10 +478,25 @@ class NutritionApiDataSource {
     final nameTokens = _normalize(food.name).split(RegExp(r'\s+'));
     // Match complete words or word prefixes. Substring matching made "ric"
     // match the middle of "abricot", which produced unrelated French foods.
-    return queryTokens.every(
+    return queryTokens.any(
       (queryToken) => nameTokens.any((nameToken) =>
           nameToken == queryToken || nameToken.startsWith(queryToken)),
     );
+  }
+
+  List<String> _queryVariants(String query) {
+    final normalized = _normalize(query);
+    final variants = <String>[query.trim()];
+    final words = normalized.split(RegExp(r'\s+'));
+    if (words.contains('chai')) {
+      variants.add(normalized.replaceFirst(RegExp(r'\bchai\b'), 'tea'));
+      variants.add('tea');
+    }
+    if (words.contains('roti') || words.contains('chapati')) {
+      variants.add('flatbread');
+      variants.add('bread');
+    }
+    return variants.toSet().toList();
   }
 
   String _normalize(String value) =>

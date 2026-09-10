@@ -30,6 +30,7 @@ class FoodItem {
   final int sodiumMgPer100g;
   final String category;
   final String servingLabel;
+  final String source;
 
   FoodItem({
     required this.id,
@@ -46,6 +47,7 @@ class FoodItem {
     required this.sodiumMgPer100g,
     required this.category,
     required this.servingLabel,
+    required this.source,
   });
 }
 
@@ -69,6 +71,7 @@ FoodItem _fromNutritionFood(NutritionFood n) {
     sodiumMgPer100g: n.sodiumMg.round(),
     category: 'All',
     servingLabel: '100 g',
+    source: n.source,
   );
 }
 
@@ -310,13 +313,30 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    food.name,
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                      color: _textPrimary,
-                                    ),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          food.name,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w700,
+                                            color: _textPrimary,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        food.source,
+                                        style: const TextStyle(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w700,
+                                          color: _purple,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   const SizedBox(height: 6),
                                   Row(
