@@ -90,6 +90,7 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
   List<FoodItem> filteredFoods = [];
   bool _isSearching = false;
   Timer? _debounce;
+  int _searchRequestId = 0;
   final categories = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Snack'];
   NutritionApiDataSource get _api => sl<NutritionApiDataSource>();
 
@@ -112,6 +113,7 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
 
     // Empty query → clear results; show search prompt state.
     if (query.trim().isEmpty) {
+      _searchRequestId++;
       setState(() {
         _isSearching = false;
         filteredFoods = const [];
@@ -119,6 +121,7 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
       return;
     }
 
+    final requestId = ++_searchRequestId;
     _debounce = Timer(const Duration(milliseconds: 350), () async {
       setState(() => _isSearching = true);
       List<NutritionFood> results;
@@ -127,7 +130,7 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
       } catch (_) {
         results = const [];
       }
-      if (!mounted) return;
+      if (!mounted || requestId != _searchRequestId) return;
       final mapped = results.map(_fromNutritionFood).toList();
       setState(() {
         _isSearching = false;
@@ -166,7 +169,8 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
   Widget build(BuildContext context) {
     return AnimatedPadding(
       duration: const Duration(milliseconds: 200),
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         decoration: const BoxDecoration(
           color: _surface,
@@ -191,7 +195,8 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: const Icon(Icons.close_rounded, color: _textSecondary),
+                    child:
+                        const Icon(Icons.close_rounded, color: _textSecondary),
                   ),
                 ],
               ),
@@ -227,13 +232,15 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
                     borderRadius: BorderRadius.circular(14),
                     borderSide: const BorderSide(color: _purple, width: 2),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                   hintText: 'Search for foods, e.g. chicken, oats',
                   hintStyle: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFFB0ADB9),
                   ),
-                  prefixIcon: const Icon(Icons.search_rounded, color: _textSecondary, size: 22),
+                  prefixIcon: const Icon(Icons.search_rounded,
+                      color: _textSecondary, size: 22),
                 ),
               ),
               const SizedBox(height: 16),
@@ -295,7 +302,8 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
                                 color: _purpleSoft,
                                 borderRadius: BorderRadius.circular(14),
                               ),
-                              child: const Icon(Icons.fastfood_rounded, color: _purple),
+                              child: const Icon(Icons.fastfood_rounded,
+                                  color: _purple),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -336,7 +344,8 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF5F5FA),
                                 borderRadius: BorderRadius.circular(12),
@@ -423,10 +432,12 @@ class FoodNutritionDetailSheet extends StatefulWidget {
   final void Function(String foodName, int calories, double protein,
       double carbs, double fat, String mealType) onMealAdded;
 
-  const FoodNutritionDetailSheet({required this.food, required this.onMealAdded});
+  const FoodNutritionDetailSheet(
+      {required this.food, required this.onMealAdded});
 
   @override
-  State<FoodNutritionDetailSheet> createState() => _FoodNutritionDetailSheetState();
+  State<FoodNutritionDetailSheet> createState() =>
+      _FoodNutritionDetailSheetState();
 }
 
 class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
@@ -439,15 +450,19 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
     selectedMealType = 'breakfast';
   }
 
-  int get calories => (widget.food.caloriesPer100g * servingGrams / 100).round();
+  int get calories =>
+      (widget.food.caloriesPer100g * servingGrams / 100).round();
   int get protein => (widget.food.proteinPer100g * servingGrams / 100).round();
   int get carbs => (widget.food.carbsPer100g * servingGrams / 100).round();
   int get fat => (widget.food.fatPer100g * servingGrams / 100).round();
   int get fiber => (widget.food.fiberPer100g * servingGrams / 100).round();
-  int get potassium => (widget.food.potassiumMgPer100g * servingGrams / 100).round();
-  int get calcium => (widget.food.calciumMgPer100g * servingGrams / 100).round();
+  int get potassium =>
+      (widget.food.potassiumMgPer100g * servingGrams / 100).round();
+  int get calcium =>
+      (widget.food.calciumMgPer100g * servingGrams / 100).round();
   int get iron => (widget.food.ironMgPer100g * servingGrams / 100).round();
-  int get vitaminC => (widget.food.vitaminCMgPer100g * servingGrams / 100).round();
+  int get vitaminC =>
+      (widget.food.vitaminCMgPer100g * servingGrams / 100).round();
   int get sodium => (widget.food.sodiumMgPer100g * servingGrams / 100).round();
 
   void _handleLogMeal() {
@@ -466,7 +481,8 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
   Widget build(BuildContext context) {
     return AnimatedPadding(
       duration: const Duration(milliseconds: 200),
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         decoration: const BoxDecoration(
           color: _surface,
@@ -491,7 +507,8 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: const Icon(Icons.close_rounded, color: _textSecondary),
+                    child:
+                        const Icon(Icons.close_rounded, color: _textSecondary),
                   ),
                 ],
               ),
@@ -550,9 +567,18 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
                             spacing: 10,
                             runSpacing: 10,
                             children: [
-                              _MacroBadge(label: 'Protein', value: '$protein g', color: const Color(0xFF8F5BFF)),
-                              _MacroBadge(label: 'Carbs', value: '$carbs g', color: const Color(0xFF3461FF)),
-                              _MacroBadge(label: 'Fat', value: '$fat g', color: const Color(0xFFFF8E3A)),
+                              _MacroBadge(
+                                  label: 'Protein',
+                                  value: '$protein g',
+                                  color: const Color(0xFF8F5BFF)),
+                              _MacroBadge(
+                                  label: 'Carbs',
+                                  value: '$carbs g',
+                                  color: const Color(0xFF3461FF)),
+                              _MacroBadge(
+                                  label: 'Fat',
+                                  value: '$fat g',
+                                  color: const Color(0xFFFF8E3A)),
                             ],
                           ),
                         ],
@@ -688,13 +714,15 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
               Column(
                 children: [
                   if (vitaminC > 0)
-                    _MicronutrientRow(label: 'Vitamin C', value: '$vitaminC mg'),
+                    _MicronutrientRow(
+                        label: 'Vitamin C', value: '$vitaminC mg'),
                   if (iron > 0)
                     _MicronutrientRow(label: 'Iron', value: '$iron mg'),
                   if (calcium > 0)
                     _MicronutrientRow(label: 'Calcium', value: '$calcium mg'),
                   if (potassium > 0)
-                    _MicronutrientRow(label: 'Potassium', value: '$potassium mg'),
+                    _MicronutrientRow(
+                        label: 'Potassium', value: '$potassium mg'),
                   if (fiber > 0)
                     _MicronutrientRow(label: 'Fiber', value: '$fiber g'),
                   if (sodium > 0)
@@ -760,7 +788,8 @@ class _MacroBadge extends StatelessWidget {
   final String value;
   final Color color;
 
-  const _MacroBadge({required this.label, required this.value, required this.color});
+  const _MacroBadge(
+      {required this.label, required this.value, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -787,7 +816,8 @@ class _FoodCategoryChip extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _FoodCategoryChip({required this.label, required this.isSelected, required this.onTap});
+  const _FoodCategoryChip(
+      {required this.label, required this.isSelected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {

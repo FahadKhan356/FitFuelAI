@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fitfuel_ai/core/di/service_locator.dart';
 import 'package:fitfuel_ai/core/domain/entities/food_item_entity.dart';
@@ -6,7 +7,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/food_search_bloc.dart';
 
 class FoodSearchScreen extends StatefulWidget {
-  final Function(String foodName, int calories, double protein, double carbs, double fat)? onFoodSelected;
+  final Function(String foodName, int calories, double protein, double carbs,
+      double fat)? onFoodSelected;
 
   const FoodSearchScreen({Key? key, this.onFoodSelected}) : super(key: key);
 
@@ -17,6 +19,7 @@ class FoodSearchScreen extends StatefulWidget {
 class _FoodSearchScreenState extends State<FoodSearchScreen> {
   late final FoodSearchBloc _bloc;
   final TextEditingController _searchController = TextEditingController();
+  Timer? _searchDebounce;
 
   @override
   void initState() {
@@ -27,11 +30,19 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchDebounce?.cancel();
     super.dispose();
   }
 
   void _onSearchChanged(String query) {
-    _bloc.add(SearchFood(query));
+    _searchDebounce?.cancel();
+    if (query.trim().isEmpty) {
+      _bloc.add(ClearSearch());
+      return;
+    }
+    _searchDebounce = Timer(const Duration(milliseconds: 400), () {
+      if (mounted) _bloc.add(SearchFood(query));
+    });
   }
 
   @override
@@ -74,17 +85,21 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                           fillColor: Colors.white,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFFE8E6F5)),
+                            borderSide:
+                                const BorderSide(color: Color(0xFFE8E6F5)),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFFE8E6F5)),
+                            borderSide:
+                                const BorderSide(color: Color(0xFFE8E6F5)),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFF5B4EE8), width: 2),
+                            borderSide: const BorderSide(
+                                color: Color(0xFF5B4EE8), width: 2),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
                         ),
                         onChanged: _onSearchChanged,
                       ),
@@ -97,7 +112,9 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                 child: BlocBuilder<FoodSearchBloc, FoodSearchState>(
                   builder: (context, state) {
                     if (state is FoodSearchLoading) {
-                      return const Center(child: CircularProgressIndicator(color: Color(0xFF5B4EE8)));
+                      return const Center(
+                          child: CircularProgressIndicator(
+                              color: Color(0xFF5B4EE8)));
                     } else if (state is FoodSearchResults) {
                       if (state.results.isEmpty) {
                         return const Center(
@@ -108,7 +125,8 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                         );
                       }
                       return ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
                         itemCount: state.results.length,
                         itemBuilder: (context, index) {
                           final food = state.results[index];
@@ -129,16 +147,30 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
                           );
                         },
                       );
+                    } else if (state is FoodSearchError) {
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text(
+                            'Food search failed. Check your connection and try again.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                color: Colors.grey[600], fontSize: 14),
+                          ),
+                        ),
+                      );
                     }
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.search_rounded, size: 48, color: Colors.grey[300]),
+                          Icon(Icons.search_rounded,
+                              size: 48, color: Colors.grey[300]),
                           const SizedBox(height: 12),
                           Text(
                             'Search for a food to add to your meal',
-                            style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                            style: TextStyle(
+                                color: Colors.grey[600], fontSize: 14),
                           ),
                         ],
                       ),
@@ -230,7 +262,9 @@ class _FoodTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    food.brand != null ? food.brand! : '${food.servingSize}${food.servingUnit}',
+                    food.brand != null
+                        ? food.brand!
+                        : '${food.servingSize}${food.servingUnit}',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[600],

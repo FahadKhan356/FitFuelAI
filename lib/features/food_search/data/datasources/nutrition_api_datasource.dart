@@ -51,7 +51,16 @@ class NutritionApiDataSource {
       futures.add(_searchCalorieNinjas(query));
     }
 
-    final settled = await Future.wait(futures);
+    // A failure from one provider must not hide valid results from the others.
+    final settled = await Future.wait(
+      futures.map((future) async {
+        try {
+          return await future;
+        } catch (_) {
+          return const <NutritionFood>[];
+        }
+      }),
+    );
     final merged = <NutritionFood>[];
     for (final list in settled) {
       merged.addAll(list);
@@ -83,8 +92,8 @@ class NutritionApiDataSource {
   /// Looks up a single packaged product by barcode via OpenFoodFacts.
   Future<NutritionFood?> getProductByBarcode(String barcode) async {
     if (barcode.trim().isEmpty) return null;
-    final uri = Uri.parse(
-        '${AppConstants.openFoodFactsProductBase}/$barcode.json');
+    final uri =
+        Uri.parse('${AppConstants.openFoodFactsProductBase}/$barcode.json');
     try {
       final res =
           await http.get(uri).timeout(const Duration(seconds: _timeout));
@@ -96,7 +105,7 @@ class NutritionApiDataSource {
     } catch (_) {
       return null;
     }
-}
+  }
 // ---- 1. USDA FoodData Central (Foundation + SR Legacy) -----------
 
   Future<List<NutritionFood>> _searchUsda(String query) async {
@@ -119,12 +128,13 @@ class NutritionApiDataSource {
     }
 
     final json = jsonDecode(res.body) as Map<String, dynamic>;
-    final foods = (json['foods'] as List? ?? const [])
-        .whereType<Map<String, dynamic>>();
+    final foods =
+        (json['foods'] as List? ?? const []).whereType<Map<String, dynamic>>();
     final results = <NutritionFood>[];
     for (final food in foods) {
       final nutrients = _usdaNutrientMap(food['foodNutrients']);
       final id = (food['fdcId'] ?? '').toString();
+      if (id.isEmpty) continue;
       results.add(NutritionFood(
         source: 'USDA',
         externalId: id,
@@ -155,8 +165,14 @@ class NutritionApiDataSource {
     final list = (raw as List? ?? const []);
     for (final item in list) {
       final typed = item as Map<String, dynamic>;
-      final id = (typed['nutrient']?['id'] ?? typed['nutrientId']) as int?;
-      final amount = (typed['amount'] as num?)?.toDouble();
+      final nutrient = typed['nutrient'];
+      final idValue = nutrient is Map ? nutrient['id'] : typed['nutrientId'];
+      final id = idValue is num ? idValue.toInt() : int.tryParse('$idValue');
+      // Search results use `value`; detailed food responses use `amount`.
+      final rawAmount = typed['amount'] ?? typed['value'];
+      final amount = rawAmount is num
+          ? rawAmount.toDouble()
+          : double.tryParse('$rawAmount');
       if (id != null && amount != null) {
         map[id] = amount;
       }
@@ -166,8 +182,8 @@ class NutritionApiDataSource {
 // ---- 2. OpenFoodFacts (packaged foods + real images) ------------
 
   Future<List<NutritionFood>> _searchOpenFoodFacts(String query) async {
-    final uri =
-        Uri.parse(AppConstants.openFoodFactsSearchBase).replace(queryParameters: {
+    final uri = Uri.parse(AppConstants.openFoodFactsSearchBase)
+        .replace(queryParameters: {
       'search_terms': query,
       'search_simple': '1',
       'action': 'process',
@@ -177,8 +193,7 @@ class NutritionApiDataSource {
       // are relevant for an English user instead of surfacing arbitrary
       // foreign-language products (e.g. "Mayonnaise Classique ...").
       'lang': 'en',
-      'fields':
-          'product_name,product_name_en,lang,brands,image_url,nutriments',
+      'fields': 'product_name,product_name_en,lang,brands,image_url,nutriments',
     });
 
     final res = await http.get(uri, headers: {
@@ -218,7 +233,8 @@ class NutritionApiDataSource {
     final diacritics = RegExp(r'[àáâãäåçèéêëìíîïñòóôõöùúûüýÿœæ]');
     var score = 0;
     if (nonLatin.hasMatch(f.name)) {
-      score -= 10; // Hindi/Chinese/Arabic/Cyrillic/Greek names are never English.
+      score -=
+          10; // Hindi/Chinese/Arabic/Cyrillic/Greek names are never English.
     }
     if (diacritics.hasMatch(f.name)) {
       score -= 3; // accented words are usually French/Spanish/Portuguese etc.
@@ -228,7 +244,8 @@ class NutritionApiDataSource {
 
   NutritionFood _fromOpenFoodFactsProduct(
       String barcode, Map<String, dynamic> product) {
-    final nutrients = product['nutriments'] as Map<String, dynamic>? ?? const {};
+    final nutrients =
+        product['nutriments'] as Map<String, dynamic>? ?? const {};
     return NutritionFood(
       source: 'OpenFoodFacts',
       externalId: barcode,
@@ -267,8 +284,8 @@ class NutritionApiDataSource {
     if (res.statusCode != 200) return const [];
 
     final data = jsonDecode(res.body) as Map<String, dynamic>;
-    final items = (data['items'] as List? ?? const [])
-        .whereType<Map<String, dynamic>>();
+    final items =
+        (data['items'] as List? ?? const []).whereType<Map<String, dynamic>>();
     final results = <NutritionFood>[];
     for (final item in items) {
       final serving = (item['serving_size_g'] as num?)?.toDouble() ?? 100;
@@ -296,7 +313,8 @@ class NutritionApiDataSource {
 
   double _scale(dynamic value, double factor) {
     if (value == null) return 0;
-    final n = value is num ? value.toDouble() : double.tryParse(value.toString());
+    final n =
+        value is num ? value.toDouble() : double.tryParse(value.toString());
     return n == null ? 0 : n * factor;
   }
 
