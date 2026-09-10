@@ -57,6 +57,7 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
   int calorieGoal = 0;
   double totalProtein = 0, totalCarbs = 0, totalFat = 0;
   List<MealLog> todaysMeals = [];
+  bool _hasLoaded = false;
 
   @override
   void initState() {
@@ -110,9 +111,13 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
         totalCarbs = carbs;
         totalFat = fat;
         todaysMeals = meals;
+        _hasLoaded = true;
       });
     } catch (e) {
       debugPrint('MealTracking _loadData error: $e');
+      if (mounted) {
+        setState(() => _hasLoaded = true);
+      }
     }
   }
 
@@ -316,53 +321,64 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: '$totalCalories',
-                              style: const TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.w800,
-                                color: _textPrimary,
-                                height: 1.0,
-                              ),
-                            ),
-                            TextSpan(
-                              text: ' / ${calorieGoal} kcal',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: _textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
+                  if (!_hasLoaded)
+                    const SizedBox(
+                      height: 64,
+                      child: Center(
+                        child: CircularProgressIndicator(color: _purple),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${calorieGoal - totalCalories} kcal remaining',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: _textSecondary,
+                    )
+                  else ...[
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: '$totalCalories',
+                                style: const TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w800,
+                                  color: _textPrimary,
+                                  height: 1.0,
+                                ),
+                              ),
+                              TextSpan(
+                                text: ' / ${calorieGoal} kcal',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: _textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(999),
-                    child: LinearProgressIndicator(
-                      minHeight: 8,
-                      value: (totalCalories / calorieGoal).clamp(0.0, 1.0),
-                      backgroundColor: const Color(0xFFE7E3EF),
-                      valueColor: const AlwaysStoppedAnimation<Color>(_purple),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${calorieGoal - totalCalories} kcal remaining',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: _textSecondary,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: LinearProgressIndicator(
+                        minHeight: 8,
+                        value: calorieGoal > 0
+                            ? (totalCalories / calorieGoal).clamp(0.0, 1.0)
+                            : 0,
+                        backgroundColor: const Color(0xFFE7E3EF),
+                        valueColor: const AlwaysStoppedAnimation<Color>(_purple),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

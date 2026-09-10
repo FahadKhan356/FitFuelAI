@@ -2,7 +2,7 @@ platform :ios, '14.0' # Humne isko 14.0 kar diya taake naye plugins support kare
 
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
-project 'Runner', {
+project 'K', {
   'Debug' => :debug,
   'Profile' => :release,
   'Release' => :release,
