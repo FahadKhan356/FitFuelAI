@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fitfuel_ai/core/di/service_locator.dart';
 import 'package:fitfuel_ai/core/domain/entities/food_item_entity.dart';
 import 'package:flutter/material.dart';
@@ -213,41 +212,6 @@ class _FoodTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Container(
-              width: 44,
-              height: 44,
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF5F5FA),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: food.imageUrl != null && food.imageUrl!.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: food.imageUrl!,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) => const Center(
-                        child: SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Color(0xFF5B4EE8),
-                          ),
-                        ),
-                      ),
-                      errorWidget: (_, __, ___) => Icon(
-                        Icons.restaurant_rounded,
-                        color: const Color(0xFF5B4EE8),
-                        size: 22,
-                      ),
-                    )
-                  : Icon(
-                      Icons.restaurant_rounded,
-                      color: const Color(0xFF5B4EE8),
-                      size: 22,
-                    ),
-            ),
-            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
