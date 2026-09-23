@@ -15,7 +15,7 @@ class AppConstants {
   // subscription flow; set it when the store products are ready.
   static String get revenueCatApiKey => dotenv.env['REVENUECAT_API_KEY'] ?? '';
   static bool get subscriptionDevelopmentMode =>
-      (dotenv.env['SUBSCRIPTION_DEVELOPMENT_MODE'] ?? 'true').toLowerCase() ==
+      (dotenv.env['SUBSCRIPTION_DEVELOPMENT_MODE'] ?? 'false').toLowerCase() ==
       'true';
 
   // Nutrition APIs (from .env file)

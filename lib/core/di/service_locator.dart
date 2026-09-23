@@ -48,7 +48,6 @@ import '../domain/repositories/water_repository.dart';
 import '../domain/repositories/weight_repository.dart';
 import '../domain/usecases/all_usecases.dart';
 
-
 final sl = GetIt.instance;
 
 Future<void> initDependencies() async {
@@ -67,89 +66,110 @@ Future<void> initDependencies() async {
   // Repositories
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(sl()));
   sl.registerLazySingleton<UserRepository>(() => UserRepositoryImpl(sl()));
-  sl.registerLazySingleton<ProfileRepository>(() => ProfileRepositoryImpl(sl()));
-  sl.registerLazySingleton<OnboardingRepository>(() => OnboardingRepositoryImpl(sl()));
+  sl.registerLazySingleton<ProfileRepository>(
+      () => ProfileRepositoryImpl(sl()));
+  sl.registerLazySingleton<OnboardingRepository>(
+      () => OnboardingRepositoryImpl(sl()));
   sl.registerLazySingleton<MealRepository>(() => MealRepositoryImpl(sl()));
-  sl.registerLazySingleton<FoodSearchRepository>(() => FoodSearchRepositoryImpl(sl<SupabaseRemoteDataSource>(), sl<NutritionApiDataSource>()));
-  sl.registerLazySingleton<FoodScanRepository>(() => FoodScanRepositoryImpl(sl()));
-  sl.registerLazySingleton<BarcodeRepository>(() => BarcodeRepositoryImpl(sl<SupabaseRemoteDataSource>(), sl<NutritionApiDataSource>()));
+  sl.registerLazySingleton<FoodSearchRepository>(() => FoodSearchRepositoryImpl(
+      sl<SupabaseRemoteDataSource>(), sl<NutritionApiDataSource>()));
+  sl.registerLazySingleton<FoodScanRepository>(
+      () => FoodScanRepositoryImpl(sl()));
+  sl.registerLazySingleton<BarcodeRepository>(() => BarcodeRepositoryImpl(
+      sl<SupabaseRemoteDataSource>(), sl<NutritionApiDataSource>()));
   sl.registerLazySingleton<WaterRepository>(() => WaterRepositoryImpl(sl()));
   sl.registerLazySingleton<WeightRepository>(() => WeightRepositoryImpl(sl()));
-  sl.registerLazySingleton<AnalyticsRepository>(() => AnalyticsRepositoryImpl(sl()));
-  sl.registerLazySingleton<AiCoachRepository>(() => AiCoachRepositoryImpl(sl()));
-  sl.registerLazySingleton<SubscriptionRepository>(() => SubscriptionRepositoryImpl(sl()));
-  sl.registerLazySingleton<NotificationRepository>(() => NotificationRepositoryImpl(sl<SupabaseRemoteDataSource>()));
+  sl.registerLazySingleton<AnalyticsRepository>(
+      () => AnalyticsRepositoryImpl(sl()));
+  sl.registerLazySingleton<AiCoachRepository>(
+      () => AiCoachRepositoryImpl(sl()));
+  sl.registerLazySingleton<SubscriptionRepository>(
+      () => SubscriptionRepositoryImpl(sl()));
+  sl.registerLazySingleton<NotificationRepository>(
+      () => NotificationRepositoryImpl(sl<SupabaseRemoteDataSource>()));
 
   // Use Cases
-  sl.registerLazySingleton<SignInWithEmailUseCase>(() => SignInWithEmailUseCase(sl()));
-  sl.registerLazySingleton<SignUpWithEmailUseCase>(() => SignUpWithEmailUseCase(sl()));
-  sl.registerLazySingleton<LoadUserProfileUseCase>(() => LoadUserProfileUseCase(sl()));
-  sl.registerLazySingleton<UpdateUserProfileUseCase>(() => UpdateUserProfileUseCase(sl()));
-  sl.registerLazySingleton<FetchHomeDashboardUseCase>(() => FetchHomeDashboardUseCase(sl(), sl(), sl()));
+  sl.registerLazySingleton<SignInWithEmailUseCase>(
+      () => SignInWithEmailUseCase(sl()));
+  sl.registerLazySingleton<SignUpWithEmailUseCase>(
+      () => SignUpWithEmailUseCase(sl()));
+  sl.registerLazySingleton<LoadUserProfileUseCase>(
+      () => LoadUserProfileUseCase(sl()));
+  sl.registerLazySingleton<UpdateUserProfileUseCase>(
+      () => UpdateUserProfileUseCase(sl()));
+  sl.registerLazySingleton<FetchHomeDashboardUseCase>(
+      () => FetchHomeDashboardUseCase(sl(), sl(), sl()));
   sl.registerLazySingleton<SearchFoodUseCase>(() => SearchFoodUseCase(sl()));
-  sl.registerLazySingleton<ScanFoodImageUseCase>(() => ScanFoodImageUseCase(sl()));
-  sl.registerLazySingleton<SaveScanResultUseCase>(() => SaveScanResultUseCase(sl()));
-  sl.registerLazySingleton<SearchBarcodeUseCase>(() => SearchBarcodeUseCase(sl()));
+  sl.registerLazySingleton<ScanFoodImageUseCase>(
+      () => ScanFoodImageUseCase(sl()));
+  sl.registerLazySingleton<SaveScanResultUseCase>(
+      () => SaveScanResultUseCase(sl()));
+  sl.registerLazySingleton<SearchBarcodeUseCase>(
+      () => SearchBarcodeUseCase(sl()));
   sl.registerLazySingleton<AddMealUseCase>(() => AddMealUseCase(sl()));
   sl.registerLazySingleton<UpdateMealUseCase>(() => UpdateMealUseCase(sl()));
   sl.registerLazySingleton<DeleteMealUseCase>(() => DeleteMealUseCase(sl()));
   sl.registerLazySingleton<TrackWaterUseCase>(() => TrackWaterUseCase(sl()));
   sl.registerLazySingleton<TrackWeightUseCase>(() => TrackWeightUseCase(sl()));
-  sl.registerLazySingleton<FetchAnalyticsUseCase>(() => FetchAnalyticsUseCase(sl()));
-  sl.registerLazySingleton<FetchCalendarTrackingUseCase>(() => FetchCalendarTrackingUseCase(sl(), sl()));
-  sl.registerLazySingleton<SendAiCoachMessageUseCase>(() => SendAiCoachMessageUseCase(sl()));
-  sl.registerLazySingleton<SubscribePremiumUseCase>(() => SubscribePremiumUseCase(sl()));
+  sl.registerLazySingleton<FetchAnalyticsUseCase>(
+      () => FetchAnalyticsUseCase(sl()));
+  sl.registerLazySingleton<FetchCalendarTrackingUseCase>(
+      () => FetchCalendarTrackingUseCase(sl(), sl()));
+  sl.registerLazySingleton<SendAiCoachMessageUseCase>(
+      () => SendAiCoachMessageUseCase(sl()));
+  sl.registerLazySingleton<SubscribePremiumUseCase>(
+      () => SubscribePremiumUseCase(sl()));
 
   // BLoCs (lazy as they'll be created when needed)
   sl.registerFactory<AuthBloc>(() => AuthBloc(
-    signIn: sl(),
-    signUp: sl(),
-    authRepository: sl(),
-  ));
+        signIn: sl(),
+        signUp: sl(),
+        authRepository: sl(),
+      ));
   sl.registerFactory<ProfileBloc>(() => ProfileBloc(
-    profileRepository: sl(),
-  ));
+        profileRepository: sl(),
+      ));
   sl.registerFactory<OnboardingBloc>(() => OnboardingBloc(
-    onboardingRepository: sl(),
-    dataSource: sl(),
-  ));
+        onboardingRepository: sl(),
+        dataSource: sl(),
+      ));
   sl.registerFactory<MealTrackingBloc>(() => MealTrackingBloc(
-    mealRepository: sl(),
-  ));
+        mealRepository: sl(),
+      ));
   sl.registerFactory<WaterTrackerBloc>(() => WaterTrackerBloc(
-    waterRepository: sl(),
-  ));
+        waterRepository: sl(),
+      ));
   sl.registerFactory<WeightTrackerBloc>(() => WeightTrackerBloc(
-    weightRepository: sl(),
-  ));
+        weightRepository: sl(),
+      ));
   sl.registerFactory<BarcodeBloc>(() => BarcodeBloc(
-    barcodeRepository: sl(),
-  ));
+        barcodeRepository: sl(),
+      ));
   sl.registerFactory<FoodScanBloc>(() => FoodScanBloc(
-    foodScanRepository: sl(),
-  ));
+        foodScanRepository: sl(),
+      ));
   sl.registerFactory<NotificationsBloc>(() => NotificationsBloc(
-    notificationRepository: sl<NotificationRepository>(),
-  ));
+        notificationRepository: sl<NotificationRepository>(),
+      ));
   sl.registerFactory<SubscriptionBloc>(() => SubscriptionBloc(
-    subscriptionRepository: sl(),
-  ));
+        subscriptionRepository: sl(),
+      ));
   sl.registerFactory<AnalyticsBloc>(() => AnalyticsBloc(
-    fetchCalendarTrackingUseCase: sl(),
-  ));
+        fetchCalendarTrackingUseCase: sl(),
+      ));
   sl.registerFactory<AchievementsBloc>(() => AchievementsBloc(
-    dataSource: sl<SupabaseRemoteDataSource>(),
-  ));
+        dataSource: sl<SupabaseRemoteDataSource>(),
+      ));
   sl.registerFactory<AiCoachBloc>(() => AiCoachBloc(
-    aiCoachRepository: sl(),
-  ));
+        aiCoachRepository: sl(),
+      ));
   sl.registerFactory<FoodSearchBloc>(() => FoodSearchBloc(
-    searchFoodUseCase: sl(),
-  ));
+        searchFoodUseCase: sl(),
+      ));
 }
 
 // Helper to get all providers for MaterialApp
 List<BlocProvider> get blocProviders => [
-    BlocProvider<AuthBloc>(create: (_) => sl<AuthBloc>()),
-    BlocProvider<SubscriptionBloc>(create: (_) => sl<SubscriptionBloc>()),
-  ];
+      BlocProvider<AuthBloc>(create: (_) => sl<AuthBloc>()),
+      BlocProvider<SubscriptionBloc>(create: (_) => sl<SubscriptionBloc>()),
+    ];

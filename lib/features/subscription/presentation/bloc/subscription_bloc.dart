@@ -69,31 +69,39 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     on<RestorePurchasesRequested>(_onRestorePurchasesRequested);
   }
 
-  Future<void> _onCheckSubscriptionStatus(CheckSubscriptionStatus event, Emitter<SubscriptionState> emit) async {
+  Future<void> _onCheckSubscriptionStatus(
+      CheckSubscriptionStatus event, Emitter<SubscriptionState> emit) async {
     emit(SubscriptionLoading());
     try {
-      final isPremium = await _subscriptionRepository.isSubscribed(event.userId);
+      final isPremium =
+          await _subscriptionRepository.isSubscribed(event.userId);
       emit(SubscriptionStatusLoaded(isPremium));
     } catch (e) {
       emit(SubscriptionError(e.toString()));
     }
   }
 
-  Future<void> _onPurchasePlanRequested(PurchasePlanRequested event, Emitter<SubscriptionState> emit) async {
+  Future<void> _onPurchasePlanRequested(
+      PurchasePlanRequested event, Emitter<SubscriptionState> emit) async {
     emit(SubscriptionLoading());
     try {
-      final subscription = await _subscriptionRepository.purchasePackage(userId: event.userId, plan: event.plan);
-      emit(SubscriptionStatusLoaded(subscription.isActive, plan: subscription.plan));
+      final subscription = await _subscriptionRepository.purchasePackage(
+          userId: event.userId, plan: event.plan);
+      emit(SubscriptionStatusLoaded(subscription.isActive,
+          plan: subscription.plan));
     } catch (e) {
       emit(SubscriptionError(e.toString()));
     }
   }
 
-  Future<void> _onRestorePurchasesRequested(RestorePurchasesRequested event, Emitter<SubscriptionState> emit) async {
+  Future<void> _onRestorePurchasesRequested(
+      RestorePurchasesRequested event, Emitter<SubscriptionState> emit) async {
     emit(SubscriptionLoading());
     try {
-      final subscription = await _subscriptionRepository.restorePurchases(event.userId);
-      emit(SubscriptionStatusLoaded(subscription?.isActive ?? false, plan: subscription?.plan));
+      final subscription =
+          await _subscriptionRepository.restorePurchases(event.userId);
+      emit(SubscriptionStatusLoaded(subscription?.isActive ?? false,
+          plan: subscription?.plan));
     } catch (e) {
       emit(SubscriptionError(e.toString()));
     }

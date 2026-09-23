@@ -3,6 +3,7 @@ import 'package:fitfuel_ai/features/subscription/presentation/bloc/subscription_
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 // Subscription screen
 const _bg = Color(0xFFF7F6FB);
 const _surface = Colors.white;
@@ -96,7 +97,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                           const SizedBox(width: 10),
                           Text(
                             'Upgrade to Pro',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w700,
                                   color: _textPrimary,
@@ -131,7 +135,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                           Text(
                             'Master Your Nutrition',
                             textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineMedium
+                                ?.copyWith(
                                   fontSize: 31,
                                   fontWeight: FontWeight.w800,
                                   color: _textPrimary,
@@ -142,12 +149,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                           Text(
                             'Unlock the full power of AI-driven\nwellness and reach your goals 2x faster.',
                             textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  fontSize: 16,
-                                  height: 1.35,
-                                  fontWeight: FontWeight.w500,
-                                  color: _textSecondary,
-                                ),
+                            style:
+                                Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      fontSize: 16,
+                                      height: 1.35,
+                                      fontWeight: FontWeight.w500,
+                                      color: _textSecondary,
+                                    ),
                           ),
                         ],
                       ),
@@ -161,7 +169,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                         children: [
                           Text(
                             'Premium Benefits',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,
                                   color: _textPrimary,
@@ -169,15 +180,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                           ),
                           const Spacer(),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 6),
                             decoration: BoxDecoration(
                               color: _purpleSoft,
                               borderRadius: BorderRadius.circular(999),
-                              border: Border.all(color: const Color(0xFFD7D0F7)),
+                              border:
+                                  Border.all(color: const Color(0xFFD7D0F7)),
                             ),
                             child: Text(
                               'ALL FEATURES UNLOCKED',
-                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(
                                     fontSize: 10.5,
                                     fontWeight: FontWeight.w800,
                                     color: _purple,
@@ -232,7 +248,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                             child: _BenefitCard(
                               icon: Icons.smartphone_outlined,
                               title: 'Offline Mode',
-                              subtitle: 'Scan meals without an internet connection',
+                              subtitle:
+                                  'Scan meals without an internet connection',
                             ),
                           ),
                         ],
@@ -262,7 +279,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                         price: r'$9.99',
                         period: '/mo',
                         selected: _selectedPlan == 'premium_monthly',
-                        onTap: () => setState(() => _selectedPlan = 'premium_monthly'),
+                        onTap: () =>
+                            setState(() => _selectedPlan = 'premium_monthly'),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -277,7 +295,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                         selected: _selectedPlan == 'premium_yearly',
                         tag: 'BEST VALUE',
                         subline: 'SAVE 50%',
-                        onTap: () => setState(() => _selectedPlan = 'premium_yearly'),
+                        onTap: () =>
+                            setState(() => _selectedPlan = 'premium_yearly'),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -291,7 +310,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                         period: 'once',
                         selected: _selectedPlan == 'premium_lifetime',
                         subline: 'ONE TIME',
-                        onTap: () => setState(() => _selectedPlan = 'premium_lifetime'),
+                        onTap: () =>
+                            setState(() => _selectedPlan = 'premium_lifetime'),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -314,45 +334,79 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                 offsetY: 20,
                 child: SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: subscriptionState is SubscriptionLoading || (subscriptionState is SubscriptionStatusLoaded && subscriptionState.isPremium)
-                        ? null
-                        : () {
-                            final userId = Supabase.instance.client.auth.currentUser?.id;
-                            if (userId == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please sign in before starting a trial.')));
-                              return;
-                            }
-                            context.read<SubscriptionBloc>().add(PurchasePlanRequested(userId: userId, plan: _selectedPlan));
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _purple,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      minimumSize: const Size.fromHeight(58),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          subscriptionState is SubscriptionLoading
-                              ? 'Activating Premium...'
-                              : subscriptionState is SubscriptionStatusLoaded && subscriptionState.isPremium
-                                  ? 'Premium Active'
-                                  : 'Start 7-Day Free Trial',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ElevatedButton(
+                        onPressed: subscriptionState is SubscriptionLoading ||
+                                (subscriptionState
+                                        is SubscriptionStatusLoaded &&
+                                    subscriptionState.isPremium)
+                            ? null
+                            : () {
+                                final userId = Supabase
+                                    .instance.client.auth.currentUser?.id;
+                                if (userId == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content: Text(
+                                              'Please sign in before starting a trial.')));
+                                  return;
+                                }
+                                context.read<SubscriptionBloc>().add(
+                                    PurchasePlanRequested(
+                                        userId: userId, plan: _selectedPlan));
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _purple,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          minimumSize: const Size.fromHeight(58),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        const SizedBox(width: 10),
-                        Icon(subscriptionState is SubscriptionStatusLoaded && subscriptionState.isPremium ? Icons.check_circle_rounded : Icons.arrow_forward_rounded, size: 22),
-                      ],
-                    ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              subscriptionState is SubscriptionLoading
+                                  ? 'Activating Premium...'
+                                  : subscriptionState
+                                              is SubscriptionStatusLoaded &&
+                                          subscriptionState.isPremium
+                                      ? 'Premium Active'
+                                      : 'Start 7-Day Free Trial',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Icon(
+                                subscriptionState is SubscriptionStatusLoaded &&
+                                        subscriptionState.isPremium
+                                    ? Icons.check_circle_rounded
+                                    : Icons.arrow_forward_rounded,
+                                size: 22),
+                          ],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: subscriptionState is SubscriptionLoading
+                            ? null
+                            : () {
+                                final userId = Supabase
+                                    .instance.client.auth.currentUser?.id;
+                                if (userId == null) return;
+                                context
+                                    .read<SubscriptionBloc>()
+                                    .add(RestorePurchasesRequested(userId));
+                              },
+                        child: const Text('Restore purchases'),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -494,122 +548,123 @@ class _PlanCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor, width: selected ? 2 : 1),
-        boxShadow: [
-          BoxShadow(
-            color: selected
-                ? const Color(0xFF5B4EE8).withValues(alpha: 0.08)
-                : Colors.black.withValues(alpha: 0.05),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
-            child: Row(
-              children: [
-                Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: selected ? _purple : Colors.transparent,
-                    border: Border.all(
-                      color: selected ? _purple : const Color(0xFFC8C4D6),
-                      width: 2,
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor, width: selected ? 2 : 1),
+          boxShadow: [
+            BoxShadow(
+              color: selected
+                  ? const Color(0xFF5B4EE8).withValues(alpha: 0.08)
+                  : Colors.black.withValues(alpha: 0.05),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: selected ? _purple : Colors.transparent,
+                      border: Border.all(
+                        color: selected ? _purple : const Color(0xFFC8C4D6),
+                        width: 2,
+                      ),
+                    ),
+                    child: selected
+                        ? const Icon(Icons.check, size: 18, color: Colors.white)
+                        : null,
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: _textPrimary,
+                          ),
+                        ),
+                        if (subline != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            subline!,
+                            style: const TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                              color: _textSecondary,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                  child: selected
-                      ? const Icon(Icons.check, size: 18, color: Colors.white)
-                      : null,
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: _textPrimary,
-                        ),
-                      ),
-                      if (subline != null) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          subline!,
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: price,
                           style: const TextStyle(
-                            fontSize: 10.5,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: _textPrimary,
+                          ),
+                        ),
+                        TextSpan(
+                          text: period == 'once' ? ' once' : period,
+                          style: const TextStyle(
+                            fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: _textSecondary,
-                            letterSpacing: 0.3,
                           ),
                         ),
                       ],
-                    ],
+                    ),
                   ),
-                ),
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                        text: price,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: _textPrimary,
-                        ),
-                      ),
-                      TextSpan(
-                        text: period == 'once' ? ' once' : period,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: _textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          if (tag != null)
-            Positioned(
-              right: 0,
-              top: -1,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                decoration: const BoxDecoration(
-                  color: _purple,
-                  borderRadius: BorderRadius.only(
-                    topRight: Radius.circular(14),
-                    bottomLeft: Radius.circular(14),
+            if (tag != null)
+              Positioned(
+                right: 0,
+                top: -1,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  decoration: const BoxDecoration(
+                    color: _purple,
+                    borderRadius: BorderRadius.only(
+                      topRight: Radius.circular(14),
+                      bottomLeft: Radius.circular(14),
+                    ),
                   ),
-                ),
-                child: Text(
-                  tag!,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.3,
+                  child: Text(
+                    tag!,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.3,
+                    ),
                   ),
                 ),
               ),
-            ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
