@@ -1,51 +1,21 @@
+/// Mirrors the public.subscriptions Supabase table.
 class SubscriptionModel {
   final String id;
   final String userId;
-  final String planType;
-  final bool isActive;
-  final DateTime? startDate;
-  final DateTime? endDate;
-  final String? paymentProvider;
-  final String? paymentId;
+  final String plan;
+  final String status;
+  final DateTime? expiresAt;
+  final DateTime? startedAt;
   final DateTime? createdAt;
 
-  const SubscriptionModel({
-    required this.id,
-    required this.userId,
-    required this.planType,
-    this.isActive = false,
-    this.startDate,
-    this.endDate,
-    this.paymentProvider,
-    this.paymentId,
-    this.createdAt,
-  });
+  const SubscriptionModel({required this.id, required this.userId, required this.plan, required this.status, this.expiresAt, this.startedAt, this.createdAt});
+
+  bool get isActive => status == 'active' && (expiresAt == null || expiresAt!.isAfter(DateTime.now()));
 
   factory SubscriptionModel.fromJson(Map<String, dynamic> json) {
-    return SubscriptionModel(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
-      planType: json['plan_type'] as String,
-      isActive: json['is_active'] as bool? ?? false,
-      startDate: json['start_date'] != null ? DateTime.parse(json['start_date'] as String) : null,
-      endDate: json['end_date'] != null ? DateTime.parse(json['end_date'] as String) : null,
-      paymentProvider: json['payment_provider'] as String?,
-      paymentId: json['payment_id'] as String?,
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : null,
-    );
+    DateTime? date(String key) => json[key] == null ? null : DateTime.parse(json[key] as String);
+    return SubscriptionModel(id: json['id'] as String, userId: json['user_id'] as String, plan: json['plan'] as String? ?? 'free', status: json['status'] as String? ?? 'expired', expiresAt: date('expires_at'), startedAt: date('started_at'), createdAt: date('created_at'));
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'user_id': userId,
-      'plan_type': planType,
-      'is_active': isActive,
-      if (startDate != null) 'start_date': startDate!.toIso8601String(),
-      if (endDate != null) 'end_date': endDate!.toIso8601String(),
-      if (paymentProvider != null) 'payment_provider': paymentProvider,
-      if (paymentId != null) 'payment_id': paymentId,
-      if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
-    };
-  }
+  Map<String, dynamic> toJson() => {'id': id, 'user_id': userId, 'plan': plan, 'status': status, if (expiresAt != null) 'expires_at': expiresAt!.toIso8601String(), if (startedAt != null) 'started_at': startedAt!.toIso8601String(), if (createdAt != null) 'created_at': createdAt!.toIso8601String()};
 }

@@ -1,5 +1,8 @@
 import 'package:fitfuel_ai/core/constants/app_colors.dart';
+import 'package:fitfuel_ai/features/subscription/presentation/bloc/subscription_bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 // Subscription screen
 const _bg = Color(0xFFF7F6FB);
 const _surface = Colors.white;
@@ -20,6 +23,7 @@ class SubscriptionScreen extends StatefulWidget {
 class _SubscriptionScreenState extends State<SubscriptionScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _animController;
+  String _selectedPlan = 'premium_yearly';
 
   @override
   void initState() {
@@ -28,6 +32,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
       duration: const Duration(milliseconds: 1800),
       vsync: this,
     )..forward();
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId != null) {
+      context.read<SubscriptionBloc>().add(CheckSubscriptionStatus(userId));
+    }
   }
 
   @override
@@ -62,6 +70,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 
   @override
   Widget build(BuildContext context) {
+    final subscriptionState = context.watch<SubscriptionBloc>().state;
     return Scaffold(
       backgroundColor: _bg,
       body: SafeArea(
@@ -248,11 +257,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                       start: 0.46,
                       end: 0.62,
                       offsetY: 20,
-                      child: const _PlanCard(
+                      child: _PlanCard(
                         title: 'Monthly Access',
                         price: r'$9.99',
                         period: '/mo',
-                        selected: false,
+                        selected: _selectedPlan == 'premium_monthly',
+                        onTap: () => setState(() => _selectedPlan = 'premium_monthly'),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -260,13 +270,14 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                       start: 0.50,
                       end: 0.66,
                       offsetY: 20,
-                      child: const _PlanCard(
+                      child: _PlanCard(
                         title: 'Annual Premium',
                         price: r'$4.99',
                         period: '/mo',
-                        selected: true,
+                        selected: _selectedPlan == 'premium_yearly',
                         tag: 'BEST VALUE',
                         subline: 'SAVE 50%',
+                        onTap: () => setState(() => _selectedPlan = 'premium_yearly'),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -274,12 +285,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                       start: 0.54,
                       end: 0.70,
                       offsetY: 20,
-                      child: const _PlanCard(
+                      child: _PlanCard(
                         title: 'Lifetime Legend',
                         price: r'$99.99',
                         period: 'once',
-                        selected: false,
+                        selected: _selectedPlan == 'premium_lifetime',
                         subline: 'ONE TIME',
+                        onTap: () => setState(() => _selectedPlan = 'premium_lifetime'),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -303,7 +315,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: subscriptionState is SubscriptionLoading || (subscriptionState is SubscriptionStatusLoaded && subscriptionState.isPremium)
+                        ? null
+                        : () {
+                            final userId = Supabase.instance.client.auth.currentUser?.id;
+                            if (userId == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please sign in before starting a trial.')));
+                              return;
+                            }
+                            context.read<SubscriptionBloc>().add(PurchasePlanRequested(userId: userId, plan: _selectedPlan));
+                          },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _purple,
                       foregroundColor: Colors.white,
@@ -316,16 +337,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
+                      children: [
                         Text(
-                          'Start 7-Day Free Trial',
+                          subscriptionState is SubscriptionLoading
+                              ? 'Activating Premium...'
+                              : subscriptionState is SubscriptionStatusLoaded && subscriptionState.isPremium
+                                  ? 'Premium Active'
+                                  : 'Start 7-Day Free Trial',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
-                        SizedBox(width: 10),
-                        Icon(Icons.arrow_forward_rounded, size: 22),
+                        const SizedBox(width: 10),
+                        Icon(subscriptionState is SubscriptionStatusLoaded && subscriptionState.isPremium ? Icons.check_circle_rounded : Icons.arrow_forward_rounded, size: 22),
                       ],
                     ),
                   ),
@@ -447,6 +472,7 @@ class _PlanCard extends StatelessWidget {
     required this.price,
     required this.period,
     required this.selected,
+    required this.onTap,
     this.tag,
     this.subline,
   });
@@ -455,6 +481,7 @@ class _PlanCard extends StatelessWidget {
   final String price;
   final String period;
   final bool selected;
+  final VoidCallback onTap;
   final String? tag;
   final String? subline;
 
@@ -463,7 +490,10 @@ class _PlanCard extends StatelessWidget {
     final borderColor = selected ? _borderStrong : _border;
     final backgroundColor = selected ? const Color(0xFFFDFCFF) : _surface;
 
-    return Container(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(16),
@@ -579,6 +609,7 @@ class _PlanCard extends StatelessWidget {
               ),
             ),
         ],
+      ),
       ),
     );
   }

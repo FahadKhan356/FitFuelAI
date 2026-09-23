@@ -211,7 +211,7 @@ CREATE INDEX IF NOT EXISTS idx_achievements_user_id ON public.achievements(user_
 CREATE TABLE IF NOT EXISTS public.subscriptions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID UNIQUE NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  plan TEXT DEFAULT 'free' CHECK (plan IN ('free', 'premium_monthly', 'premium_yearly')),
+  plan TEXT DEFAULT 'free' CHECK (plan IN ('free', 'premium_monthly', 'premium_yearly', 'premium_lifetime')),
   status TEXT DEFAULT 'active' CHECK (status IN ('active', 'canceled', 'expired', 'past_due')),
   started_at TIMESTAMPTZ DEFAULT NOW(),
   expires_at TIMESTAMPTZ,

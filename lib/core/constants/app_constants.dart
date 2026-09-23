@@ -11,6 +11,13 @@ class AppConstants {
   static String get supabaseAnonKey =>
       dotenv.env['SUPABASE_ANON_KEY'] ?? 'YOUR_SUPABASE_ANON_KEY_HERE';
 
+  // RevenueCat. Leave this empty during local development to use the mock
+  // subscription flow; set it when the store products are ready.
+  static String get revenueCatApiKey => dotenv.env['REVENUECAT_API_KEY'] ?? '';
+  static bool get subscriptionDevelopmentMode =>
+      (dotenv.env['SUBSCRIPTION_DEVELOPMENT_MODE'] ?? 'true').toLowerCase() ==
+      'true';
+
   // Nutrition APIs (from .env file)
   // USDA FoodData Central — free API key from https://fdc.nal.usda.gov/api-key-signup.html
   static String get usdaApiKey => dotenv.env['USDA_API_KEY'] ?? '';

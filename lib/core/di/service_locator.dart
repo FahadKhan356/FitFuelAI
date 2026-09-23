@@ -151,4 +151,5 @@ Future<void> initDependencies() async {
 // Helper to get all providers for MaterialApp
 List<BlocProvider> get blocProviders => [
     BlocProvider<AuthBloc>(create: (_) => sl<AuthBloc>()),
+    BlocProvider<SubscriptionBloc>(create: (_) => sl<SubscriptionBloc>()),
   ];
