@@ -355,6 +355,68 @@ class AiUserContextModel {
     return buffer.toString().trim();
   }
 
+  AiUserContextModel copyWith({
+    String? userId,
+    String? name,
+    int? age,
+    String? gender,
+    double? heightCm,
+    double? currentWeightKg,
+    double? goalWeightKg,
+    String? activityLevel,
+    String? goalType,
+    String? dietPreference,
+    int? workoutFrequency,
+    int? targetCalories,
+    double? targetProtein,
+    double? targetCarbs,
+    double? targetFat,
+    int? dailyWaterMl,
+    double? weeklyPaceKg,
+    DateTime? today,
+    int? caloriesConsumedToday,
+    double? proteinToday,
+    double? carbsToday,
+    double? fatToday,
+    int? waterTodayMl,
+    Map<String, int>? calorieTotalsByDate,
+    Map<String, int>? waterTotalsByDate,
+    List<AiMealSummary>? recentMeals,
+    List<AiWeightPoint>? weightHistory,
+    DateTime? generatedAt,
+  }) {
+    return AiUserContextModel(
+      userId: userId ?? this.userId,
+      name: name ?? this.name,
+      age: age ?? this.age,
+      gender: gender ?? this.gender,
+      heightCm: heightCm ?? this.heightCm,
+      currentWeightKg: currentWeightKg ?? this.currentWeightKg,
+      goalWeightKg: goalWeightKg ?? this.goalWeightKg,
+      activityLevel: activityLevel ?? this.activityLevel,
+      goalType: goalType ?? this.goalType,
+      dietPreference: dietPreference ?? this.dietPreference,
+      workoutFrequency: workoutFrequency ?? this.workoutFrequency,
+      targetCalories: targetCalories ?? this.targetCalories,
+      targetProtein: targetProtein ?? this.targetProtein,
+      targetCarbs: targetCarbs ?? this.targetCarbs,
+      targetFat: targetFat ?? this.targetFat,
+      dailyWaterMl: dailyWaterMl ?? this.dailyWaterMl,
+      weeklyPaceKg: weeklyPaceKg ?? this.weeklyPaceKg,
+      today: today ?? this.today,
+      caloriesConsumedToday: caloriesConsumedToday ?? this.caloriesConsumedToday,
+      proteinToday: proteinToday ?? this.proteinToday,
+      carbsToday: carbsToday ?? this.carbsToday,
+      fatToday: fatToday ?? this.fatToday,
+      waterTodayMl: waterTodayMl ?? this.waterTodayMl,
+      calorieTotalsByDate: calorieTotalsByDate ?? this.calorieTotalsByDate,
+      waterTotalsByDate: waterTotalsByDate ?? this.waterTotalsByDate,
+      recentMeals: recentMeals ?? this.recentMeals,
+      weightHistory: weightHistory ?? this.weightHistory,
+      generatedAt: generatedAt ?? this.generatedAt,
+    );
+  }
+
   /// Structured payload of the scalar context (used for logging/debugging the
   /// context layer). History collections are intentionally not serialized -
   /// they are rebuilt from Supabase on every fetch.
