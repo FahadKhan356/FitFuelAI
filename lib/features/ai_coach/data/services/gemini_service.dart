@@ -124,4 +124,56 @@ class GeminiService {
 
   /// Closes the underlying HTTP client.
   void dispose() => _client.close();
+
+  static Map<String, dynamic> _decode(String body) {
+    if (body.trim().isEmpty) return const {};
+    try {
+      final decoded = jsonDecode(body);
+      return decoded is Map<String, dynamic> ? decoded : const {};
+    } catch (_) {
+      return const {};
+    }
+  }
+
+  /// Pulls the answer text out of a `generateContent` response.
+  static String? _extractText(Map<String, dynamic> decoded) {
+    final candidates = decoded['candidates'];
+    if (candidates is! List || candidates.isEmpty) return null;
+    final content = (candidates.first as Map)['content'];
+    if (content is! Map) return null;
+    final parts = content['parts'];
+    if (parts is! List) return null;
+    final text = parts
+        .whereType<Map>()
+        .map((part) => part['text']?.toString() ?? '')
+        .where((value) => value.isNotEmpty)
+        .join('\n');
+    return text.isEmpty ? null : text;
+  }
+
+  static String? _errorMessage(Map<String, dynamic> decoded) {
+    final error = decoded['error'];
+    if (error is Map) {
+      final message = error['message']?.toString();
+      if (message != null && message.isNotEmpty) return message;
+    }
+    return null;
+  }
+
+  /// Explains an empty candidate list (safety block, recitation, token cap).
+  static String? _blockReason(Map<String, dynamic> decoded) {
+    final feedback = decoded['promptFeedback'];
+    if (feedback is Map && feedback['blockReason'] != null) {
+      return 'The AI coach could not answer that request '
+          '(${feedback['blockReason']}).';
+    }
+    final candidates = decoded['candidates'];
+    if (candidates is List && candidates.isNotEmpty) {
+      final reason = (candidates.first as Map)['finishReason']?.toString();
+      if (reason != null && reason.isNotEmpty) {
+        return 'The AI coach stopped early ($reason).';
+      }
+    }
+    return null;
+  }
 }
