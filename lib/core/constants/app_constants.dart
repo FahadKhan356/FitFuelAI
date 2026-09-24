@@ -37,6 +37,24 @@ class AppConstants {
       dotenv.env['CALORIE_NINJAS_API_BASE'] ??
       'https://api.calorieninjas.com/v1/nutrition';
 
+  // Google Gemini — powers the AI Health Coach. Free key from
+  // https://aistudio.google.com/app/apikey. When the key is empty the coach
+  // falls back to locally-generated, context-aware answers.
+  static String get geminiApiKey => dotenv.env['GEMINI_API_KEY'] ?? '';
+  static String get geminiModel =>
+      dotenv.env['GEMINI_MODEL'] ?? 'gemini-1.5-flash';
+  static String get geminiApiBase =>
+      dotenv.env['GEMINI_API_BASE'] ??
+      'https://generativelanguage.googleapis.com/v1beta';
+
+  // AI Coach context layer
+  static const int aiContextHistoryDays = 7;
+  static const int aiContextWeightDays = 30;
+  static const int aiContextMaxRecentMeals = 40;
+  static const int aiCoachMaxOutputTokens = 900;
+  static const Duration aiContextCacheTtl = Duration(minutes: 3);
+  static const int aiCoachTimeoutSeconds = 30;
+
   // Timeouts
   static const int apiTimeoutSeconds = 30;
   static const int connectionTimeoutSeconds = 15;
