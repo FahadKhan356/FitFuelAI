@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../../core/domain/entities/ai_chat_message_entity.dart';
+import '../../../../core/domain/entities/coach_insight.dart';
 import '../../../../core/domain/repositories/ai_coach_repository.dart';
 
 // Events
@@ -23,6 +24,16 @@ class LoadChatHistory extends AiCoachEvent {
   const LoadChatHistory(this.userId);
   @override
   List<Object?> get props => [userId];
+}
+
+/// Fired by a quick-insight chip: asks the coach for one focused answer built
+/// from the user's own tracking data.
+class FetchInsight extends AiCoachEvent {
+  final String userId;
+  final CoachInsight insight;
+  const FetchInsight(this.userId, this.insight);
+  @override
+  List<Object?> get props => [userId, insight];
 }
 
 // States
@@ -49,6 +60,24 @@ class AiCoachHistoryLoaded extends AiCoachState {
   const AiCoachHistoryLoaded(this.messages);
   @override
   List<Object?> get props => [messages];
+}
+
+/// A quick-insight request is in flight (used to spin on the tapped chip).
+class AiCoachInsightLoading extends AiCoachState {
+  final CoachInsight insight;
+  const AiCoachInsightLoading(this.insight);
+  @override
+  List<Object?> get props => [insight];
+}
+
+/// A quick-insight answer grounded in the user's tracked data.
+class AiCoachInsightLoaded extends AiCoachState {
+  final CoachInsight insight;
+  final String prompt;
+  final String response;
+  const AiCoachInsightLoaded(this.insight, this.prompt, this.response);
+  @override
+  List<Object?> get props => [insight, prompt, response];
 }
 
 class AiCoachError extends AiCoachState {

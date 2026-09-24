@@ -120,7 +120,7 @@ class GeminiService {
 
   /// Optional override used when the key is supplied at runtime (e.g. a
   /// premium setting) rather than through `.env`.
-  void overrideApiKey(String? apiKey) => _apiKeyOverride = apiKey;
+  set apiKeyOverride(String? apiKey) => _apiKeyOverride = apiKey;
 
   /// Closes the underlying HTTP client.
   void dispose() => _client.close();

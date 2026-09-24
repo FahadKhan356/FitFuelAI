@@ -58,6 +58,8 @@ double _toDouble(dynamic value) {
   if (value == null) return 0;
   if (value is num) return value.toDouble();
   if (value is String) return double.tryParse(value) ?? 0;
+  return 0;
+}
 
 /// Immutable, read-only snapshot of everything the AI Health Coach is allowed
 /// to know about a user: profile, goals, today's intake, the last 7 days of
@@ -500,9 +502,6 @@ class AiUserContextModel {
     if (ratio.isNaN || ratio.isInfinite) return 0;
     return ratio;
   }
-}
-
-  return 0;
 }
 
 int _toInt(dynamic value) {

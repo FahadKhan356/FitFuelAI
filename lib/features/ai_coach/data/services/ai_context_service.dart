@@ -58,10 +58,12 @@ class AiContextService {
       }
     }
 
-    final historyStart =
-        today.subtract(Duration(days: AppConstants.aiContextHistoryDays - 1));
-    final weightStart =
-        today.subtract(Duration(days: AppConstants.aiContextWeightDays - 1));
+    final historyStart = today.subtract(
+      const Duration(days: AppConstants.aiContextHistoryDays - 1),
+    );
+    final weightStart = today.subtract(
+      const Duration(days: AppConstants.aiContextWeightDays - 1),
+    );
 
     // Start every query together, then await them one by one. Each future is
     // individually guarded, so a failure only blanks its own section.
@@ -259,15 +261,19 @@ class AiContextService {
         .gte('date', AiUserContextModel.dateKey(start))
         .order('date', ascending: false);
 
-    return (response as List)
-        .map((row) => row as Map<String, dynamic>)
-        .map((map) => AiWeightPoint(
-              date: DateTime.tryParse(map['date']?.toString() ?? ''),
-              weightKg: _asDouble(map['weight_kg']) ?? 0,
-              bmi: _asDouble(map['bmi']),
-            ))
-        .where((point) => point.date != null && point.weightKg > 0)
-        .toList();
+    final points = <AiWeightPoint>[];
+    for (final row in response as List) {
+      final map = row as Map<String, dynamic>;
+      final date = DateTime.tryParse(map['date']?.toString() ?? '');
+      final weightKg = _asDouble(map['weight_kg']) ?? 0;
+      if (date == null || weightKg <= 0) continue;
+      points.add(AiWeightPoint(
+        date: date,
+        weightKg: weightKg,
+        bmi: _asDouble(map['bmi']),
+      ));
+    }
+    return points;
   }
 
   /// Runs [query], falling back to [fallback] so one bad table (offline, RLS,

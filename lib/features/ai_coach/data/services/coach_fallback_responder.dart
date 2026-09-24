@@ -68,6 +68,10 @@ class CoachFallbackResponder {
   static bool _containsAny(String haystack, List<String> needles) =>
       needles.any(haystack.contains);
 
+  /// `42/120` style progress pair for the macro gaps list.
+  static String _pair(double actual, double target) =>
+      '${actual.toStringAsFixed(0)}/${target.toStringAsFixed(0)}';
+
   // ==================== Insight-specific answers ====================
 
   static String _dailyBalance(AiUserContextModel context) {
@@ -101,14 +105,11 @@ class CoachFallbackResponder {
     }
     final gaps = <String>[
       if (context.targetProtein > 0 && context.proteinToday < context.targetProtein)
-        'protein ${context.proteinToday.toStringAsFixed(0)}/'
-            '${context.targetProtein.toStringAsFixed(0)} g',
+        'protein ${_pair(context.proteinToday, context.targetProtein)} g',
       if (context.targetCarbs > 0 && context.carbsToday < context.targetCarbs)
-        'carbs ${context.carbsToday.toStringAsFixed(0)}/'
-            '${context.targetCarbs.toStringAsFixed(0)} g',
+        'carbs ${_pair(context.carbsToday, context.targetCarbs)} g',
       if (context.targetFat > 0 && context.fatToday < context.targetFat)
-        'fat ${context.fatToday.toStringAsFixed(0)}/'
-            '${context.targetFat.toStringAsFixed(0)} g',
+        'fat ${_pair(context.fatToday, context.targetFat)} g',
     ];
     if (gaps.isEmpty) {
       return 'Good work - protein, carbs and fat are all at or above target for '
