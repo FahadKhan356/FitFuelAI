@@ -12,9 +12,14 @@ import '../../../../core/di/service_locator.dart';
 import '../../../../core/services/avatar_uploader.dart';
 import '../../../../core/services/streak_service.dart';
 import '../../../../core/services/water_goal_resolver.dart';
+import '../../../../core/data/datasources/supabase_remote_datasource.dart';
+import '../../../../core/domain/repositories/subscription_repository.dart';
 import '../../../../core/domain/repositories/user_repository.dart';
 import '../../../../core/domain/repositories/water_repository.dart';
 import '../../../../core/domain/repositories/meal_repository.dart';
+import '../../../../core/domain/repositories/weight_repository.dart';
+import '../../../../core/utils/weight_progress_calculator.dart';
+import '../../data/models/user_profile_model.dart';
 
 const _bg = Color(0xFFF5F5FA);
 const _surface = Colors.white;
@@ -55,6 +60,19 @@ class _ProfileScreenState extends State<ProfileScreen>
   bool _streakTodayActive = false;
   String? _profileName;
 
+  // Live account data — these tiles/lines used to show hardcoded mock values
+  // ("Active", "Weight Loss", "Level 14").
+  final GlobalKey _settingsKey = GlobalKey();
+  bool _isPremium = false;
+  String? _goalTypeTitle;
+  int? _gamificationLevel;
+  String? _gamificationTier;
+
+  // Weight-lost metric card: real delta from `weight_entries`.
+  String _weightLabel = 'WEIGHT\nLOST';
+  String _weightValue = '0.0';
+  String _weightSubtitle = 'No weight logs yet';
+
   @override
   void initState() {
     super.initState();
@@ -81,6 +99,9 @@ class _ProfileScreenState extends State<ProfileScreen>
     )..repeat();
     _loadTodayGoals();
     _loadProfileAvatar();
+    _loadMembership();
+    _loadWeightMetric();
+    _loadGamification();
   }
 
   /// Fetches today's targets and totals so the "Today's Goals" card shows real
@@ -125,19 +146,31 @@ class _ProfileScreenState extends State<ProfileScreen>
     });
   }
 
-  /// Populates calorie/protein goals from the goals table.
+  /// Populates calorie/protein goals and the health-goal label from the goals
+  /// table (the "Health Goals" tile used to hardcode "Weight Loss").
   Future<void> _resolveGoalTargets(String userId) async {
     try {
       final goals = await sl<UserRepository>().getUserGoals(userId);
       final cal = goals?.targetCalories ?? 0;
       final prot = goals?.targetProtein ?? 0;
+      final goalType = goals?.goalType;
       if (!mounted) return;
       setState(() {
         if (cal > 0) _calorieGoal = cal;
         if (prot > 0) _proteinGoal = prot;
+        if (goalType != null && goalType.isNotEmpty) {
+          _goalTypeTitle = _titleCase(goalType);
+        }
       });
     } catch (_) {}
   }
+
+  /// `weight_loss` → `Weight Loss` (same casing as the Health Goals screen).
+  String _titleCase(String value) => value
+      .split('_')
+      .map((word) =>
+          word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1)}')
+      .join(' ');
 
   /// Loads the user's profile photo URL so the avatar shows the real image
   /// from `user_profiles.avatar_url` (falls back to the default illustration).
@@ -151,6 +184,13 @@ class _ProfileScreenState extends State<ProfileScreen>
       setState(() {
         _avatarUrl = profile?.avatarUrl;
         _profileName = profile?.name;
+        // Profile table owns `goal_type` too — use it when goals has none.
+        final profileGoalType = profile?.goalType;
+        if (_goalTypeTitle == null &&
+            profileGoalType != null &&
+            profileGoalType.isNotEmpty) {
+          _goalTypeTitle = _titleCase(profileGoalType);
+        }
       });
     } catch (_) {}
     // Streak is computed from meal history (independent of profile fetch).
@@ -162,6 +202,162 @@ class _ProfileScreenState extends State<ProfileScreen>
         _streakTodayActive = info.todayActive;
       });
     } catch (_) {}
+  }
+
+  /// Membership state for the pill + "Premium Subscription" tile (the tile
+  /// always said "Active" and had no tap target).
+  Future<void> _loadMembership() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+    try {
+      final active = await sl<SubscriptionRepository>().isSubscribed(user.id);
+      if (!mounted) return;
+      setState(() => _isPremium = active);
+    } catch (_) {}
+  }
+
+  /// Real level / tier from the `gamification` table behind the name.
+  Future<void> _loadGamification() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+    try {
+      final data = await sl<SupabaseRemoteDataSource>().getGamification(user.id);
+      if (!mounted || data == null) return;
+      setState(() {
+        _gamificationLevel = (data['level'] as num?)?.toInt();
+        _gamificationTier = data['tier'] as String?;
+      });
+    } catch (_) {}
+  }
+
+  /// Replaces the mocked "4.2 kg lost since Jan 2024" card with the real
+  /// difference between the user's first and latest weight log.
+  Future<void> _loadWeightMetric() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) return;
+    try {
+      final history = await sl<WeightRepository>().getWeightHistory(user.id);
+      if (!mounted) return;
+      final progress = WeightProgressCalculator.fromEntries(history);
+
+      setState(() {
+        if (progress == null) {
+          _weightLabel = 'WEIGHT\nLOST';
+          _weightValue = '0.0';
+          _weightSubtitle = 'No weight logs yet';
+        } else if (!progress.hasBaseline) {
+          _weightLabel = 'WEIGHT\nLOST';
+          _weightValue = '0.0';
+          _weightSubtitle = 'First log ${_monthYear(progress.since)}';
+        } else {
+          _weightLabel =
+              progress.gained ? 'WEIGHT\nGAINED' : 'WEIGHT\nLOST';
+          _weightValue = progress.changeKg.abs().toStringAsFixed(1);
+          _weightSubtitle = progress.hasChange
+              ? 'Since ${_monthYear(progress.since)}'
+              : 'Holding steady since ${_monthYear(progress.since)}';
+        }
+      });
+    } catch (_) {}
+  }
+
+  static const List<String> _months = <String>[
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+
+  String _monthYear(DateTime? date) =>
+      date == null ? 'your first log' : '${_months[date.month - 1]} ${date.year}';
+
+  /// Display name: saved profile name → auth metadata → email prefix → a
+  /// friendly default (the screen used to show the mock name "Alex Johnson").
+  String get _displayName {
+    final saved = _profileName?.trim();
+    if (saved != null && saved.isNotEmpty) return saved;
+
+    final user = Supabase.instance.client.auth.currentUser;
+    final meta = user?.userMetadata;
+    final fromMeta = meta?['full_name'] ?? meta?['name'];
+    if (fromMeta is String && fromMeta.trim().isNotEmpty) {
+      return fromMeta.trim();
+    }
+
+    final email = user?.email ?? '';
+    if (email.contains('@')) return email.split('@').first;
+    return 'Athlete';
+  }
+
+  /// Level line under the name, from real gamification data when present.
+  String get _levelLine {
+    final level = _gamificationLevel;
+    if (level == null) return 'Fitness Enthusiast';
+    final tier = _gamificationTier;
+    return tier == null || tier.isEmpty
+        ? 'Level $level Fitness Enthusiast'
+        : 'Level $level • $tier Tier';
+  }
+
+  /// The gear icon scrolls to ACCOUNT SETTINGS (settings live on this page —
+  /// the button used to be `onTap: () {}`).
+  void _scrollToSettings() {
+    final ctx = _settingsKey.currentContext;
+    if (ctx == null) return;
+    Scrollable.ensureVisible(
+      ctx,
+      duration: const Duration(milliseconds: 420),
+      curve: Curves.easeInOutCubic,
+      alignment: 0.0,
+    );
+  }
+
+  /// Red destructive button gets a confirm step so a stray tap can't sign the
+  /// user out instantly.
+  Future<void> _confirmLogout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: _surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text(
+          'Logout Account?',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+            color: _textPrimary,
+          ),
+        ),
+        content: const Text(
+          'You will need to sign in again to access your tracked meals, '
+          'water and weight history.',
+          style: TextStyle(fontSize: 14, color: _textSecondary, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: _textSecondary,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text(
+              'Logout',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                color: Color(0xFFCB6670),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    // AuthBloc -> Unauthenticated -> _listenToAuthState redirects to splash.
+    context.read<AuthBloc>().add(SignOutRequested());
   }
 
   /// Tap avatar -> pick a photo, upload to storage, save the URL to the
@@ -273,7 +469,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     const SizedBox(width: 6),
                     _TopIconButton(
                       icon: Icons.settings_outlined,
-                      onTap: () {},
+                      onTap: _scrollToSettings,
                     ),
                   ],
                 ),
@@ -294,7 +490,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     ),
                     const SizedBox(height: 18),
                     Text(
-                      _profileName?.isNotEmpty == true ? _profileName! : 'Alex Johnson',
+                      _displayName,
                       style: TextStyle(
                         fontSize: 30,
                         height: 1.0,
@@ -304,9 +500,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 6),
-                    const Text(
-                      'Level 14 Fitness Enthusiast',
-                      style: TextStyle(
+                    Text(
+                      _levelLine,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                         color: _textSecondary,
@@ -314,7 +510,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 14),
-                    _PremiumPill(mainCtrl: _mainCtrl, shimmerCtrl: _shimmerCtrl),
+                    _PremiumPill(
+                      mainCtrl: _mainCtrl,
+                      shimmerCtrl: _shimmerCtrl,
+                      isPremium: _isPremium,
+                      onTap: () => context.push(AppRoutes.subscription),
+                    ),
                   ],
                 ),
               ),
@@ -347,10 +548,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                         icon: Icons.trending_down_rounded,
                         iconBackground: const Color(0xFFE1F8E9),
                         iconColor: const Color(0xFF44B97A),
-                        label: 'WEIGHT\nLOST',
-                        targetValue: '4.2',
+                        label: _weightLabel,
+                        targetValue: _weightValue,
                         suffix: ' kg',
-                        subtitle: 'Since Jan 2024',
+                        subtitle: _weightSubtitle,
                         index: 1,
                       ),
                     ),
@@ -443,6 +644,7 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
               const SizedBox(height: 22),
               Padding(
+                key: _settingsKey,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
                   'ACCOUNT SETTINGS',
@@ -467,12 +669,29 @@ class _ProfileScreenState extends State<ProfileScreen>
                       title: 'Personal Information',
                       trailingText: 'View & edit',
                       onTap: () async {
-                        final updated = await context.push<dynamic>(
-                            AppRoutes.personalInfo);
-                        if (updated != null && mounted) {
-                          // Refresh greeting/goals if needed after edit.
-                          setState(() {});
+                        final updated =
+                            await context.push<dynamic>(AppRoutes.personalInfo);
+                        if (!mounted) return;
+                        if (updated is UserProfileModel) {
+                          // Apply the recalculated profile the editor popped so
+                          // the greeting, avatar and targets refresh instantly.
+                          setState(() {
+                            _profileName = updated.name;
+                            _avatarUrl = updated.avatarUrl ?? _avatarUrl;
+                            if (updated.targetCalories > 0) {
+                              _calorieGoal = updated.targetCalories;
+                            }
+                            if (updated.targetProtein > 0) {
+                              _proteinGoal = updated.targetProtein;
+                            }
+                            if (updated.dailyWaterMl > 0) {
+                              _waterGoalMl = updated.dailyWaterMl;
+                            }
+                          });
                         }
+                        // Re-read today's totals so the card reflects the new
+                        // targets (and anything logged while we were away).
+                        await _loadTodayGoals();
                       },
                     ),
                     const SizedBox(height: 10),
@@ -481,7 +700,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                       index: 1,
                       icon: Icons.credit_card_outlined,
                       title: 'Premium Subscription',
-                      trailingText: 'Active',
+                      trailingText: _isPremium ? 'Active' : 'Upgrade',
+                      onTap: () => context.push(AppRoutes.subscription),
                     ),
                     const SizedBox(height: 10),
                     _SettingTile(
@@ -490,6 +710,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       icon: Icons.notifications_none_outlined,
                       title: 'Notifications',
                       trailingText: 'Daily Reminders',
+                      onTap: () => context.push(AppRoutes.notifications),
                     ),
                     const SizedBox(height: 10),
                     _SettingTile(
@@ -497,8 +718,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                       index: 3,
                       icon: Icons.adjust_outlined,
                       title: 'Health Goals',
-                      trailingText: 'Weight Loss',
-                      onTap: () => context.push(AppRoutes.weightTracker),
+                      trailingText: _goalTypeTitle ?? 'Not set',
+                      onTap: () => context.push(AppRoutes.healthGoals),
                     ),
                     const SizedBox(height: 10),
                     _SettingTile(
@@ -517,19 +738,17 @@ class _ProfileScreenState extends State<ProfileScreen>
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: _SettingTile(
                   mainCtrl: _mainCtrl,
-                  index: 4,
+                  index: 5,
                   icon: Icons.logout_rounded,
                   title: 'Logout Account',
                   isLogout: true,
-                  onTap: () {
-                    context.read<AuthBloc>().add(SignOutRequested());
-                  },
+                  onTap: _confirmLogout,
                 ),
               ),
               const SizedBox(height: 10),
               Center(
                 child: Text(
-                  'NutriLens AI v2.4.0 • Crafted for Health',
+                  'FitFuel AI v2.4.0 • Crafted for Health',
                   style: textTheme.bodySmall?.copyWith(
                     color: const Color(0xFF8B8797),
                     fontSize: 11,
@@ -792,12 +1011,21 @@ class _DottedBorderPainter extends CustomPainter {
 class _PremiumPill extends StatelessWidget {
   final Animation<double> mainCtrl;
   final Animation<double> shimmerCtrl;
+  final bool isPremium;
+  final VoidCallback? onTap;
 
-  const _PremiumPill({required this.mainCtrl, required this.shimmerCtrl});
+  const _PremiumPill({
+    required this.mainCtrl,
+    required this.shimmerCtrl,
+    this.isPremium = false,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedBuilder(
       animation: mainCtrl,
       builder: (context, child) {
         final t = _clamp01(CurvedAnimation(
@@ -813,20 +1041,25 @@ class _PremiumPill extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 7),
                   decoration: BoxDecoration(
-                    color: _purpleLight,
+                    color: isPremium ? _purpleLight : const Color(0xFFF0EFF5),
                     borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: const Color(0xFFD8D3F7)),
+                    border: Border.all(
+                      color: isPremium
+                          ? const Color(0xFFD8D3F7)
+                          : const Color(0xFFE2E1EA),
+                    ),
                   ),
-                  child: const Text(
-                    'Premium Member',
+                  child: Text(
+                    isPremium ? 'Premium Member' : 'Free Plan',
                     style: TextStyle(
-                      color: _purple,
+                      color: isPremium ? _purple : _textSecondary,
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
-                // Shimmer sweep
+                // Shimmer sweep (premium only)
+                if (isPremium)
                 AnimatedBuilder(
                   animation: shimmerCtrl,
                   builder: (context, child) {
@@ -866,6 +1099,7 @@ class _PremiumPill extends StatelessWidget {
           ),
         );
       },
+    ),
     );
   }
 }
@@ -1180,6 +1414,7 @@ class _GoalsCard extends StatelessWidget {
               label: 'Calories',
               progress: _goalProgress(calorieConsumed, calorieGoal),
               value: '$calorieConsumed / $calorieGoal',
+              onTap: () => context.push(AppRoutes.mealTracking),
             ),
             const SizedBox(height: 12),
             _GoalRow(
@@ -1202,6 +1437,7 @@ class _GoalsCard extends StatelessWidget {
               progress: _goalProgress(proteinConsumed.toInt(), proteinGoal.toInt()),
               value:
                   '${proteinConsumed.toStringAsFixed(0)} / ${proteinGoal.toStringAsFixed(0)}',
+              onTap: () => context.push(AppRoutes.mealTracking),
             ),
           ],
         ),
