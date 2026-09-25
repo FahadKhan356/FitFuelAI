@@ -447,6 +447,13 @@ DECLARE
   v_breakfast_today BOOLEAN := FALSE;
   v_perfect_today BOOLEAN := FALSE;
   v_protein_today BOOLEAN := FALSE;
+
+  -- Ledger rollup. `xp_total` is read from the ledger rather than from
+  -- `gamification` so a stale cached rollup can never surface here.
+  v_xp_total INT := 0;
+  v_xp_this_week INT := 0;
+  v_granted_sources JSONB := '[]'::jsonb;
+  v_granted_sources_today JSONB := '[]'::jsonb;
 BEGIN
   IF v_uid IS NULL THEN
     RETURN jsonb_build_object('authenticated', FALSE);
@@ -620,6 +627,27 @@ BEGIN
     ), FALSE) INTO v_protein_today;
   END IF;
 
+  -- Ledger rollup
+  SELECT COALESCE(sum(e.xp), 0)::INT INTO v_xp_total
+  FROM public.xp_events e
+  WHERE e.user_id = v_uid;
+
+  SELECT COALESCE(sum(e.xp), 0)::INT INTO v_xp_this_week
+  FROM public.xp_events e
+  WHERE e.user_id = v_uid
+    AND e.event_date >= date_trunc('week', now())::DATE;
+
+  -- Sources already recorded, so the app never grants the same award twice.
+  -- `today` keeps per-day awards idempotent; the all-time list covers
+  -- one-off awards such as streak milestones and badge unlocks.
+  SELECT COALESCE(jsonb_agg(DISTINCT e.source), '[]'::jsonb) INTO v_granted_sources
+  FROM public.xp_events e
+  WHERE e.user_id = v_uid;
+
+  SELECT COALESCE(jsonb_agg(DISTINCT e.source), '[]'::jsonb) INTO v_granted_sources_today
+  FROM public.xp_events e
+  WHERE e.user_id = v_uid AND e.event_date = CURRENT_DATE;
+
   RETURN jsonb_build_object(
     'authenticated', TRUE,
     'current_streak_days', v_current_streak,
@@ -647,6 +675,10 @@ BEGIN
     'coach_today', v_coach_today,
     'perfect_day_today', v_perfect_today,
     'protein_goal_today', v_protein_today,
+    'xp_total', v_xp_total,
+    'xp_this_week', v_xp_this_week,
+    'granted_sources', v_granted_sources,
+    'granted_sources_today', v_granted_sources_today,
     'target_calories', v_target_calories,
     'target_protein', v_target_protein,
     'target_water_ml', v_target_water
