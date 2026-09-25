@@ -184,12 +184,32 @@ assets/
    flutter pub get
    ```
 
-2. **Run the App**
+2. **Configure `.env`** (create it in the project root — it is git-ignored)
+   ```env
+   SUPABASE_URL=your-project-url
+   SUPABASE_ANON_KEY=your-anon-key
+
+   # Nutrition APIs (optional — search falls back to the remaining providers)
+   USDA_API_KEY=
+   CALORIE_NINJAS_API_KEY=
+
+   # AI Health Coach (optional — without a key the coach answers locally from
+   # the user's tracked data instead of calling Gemini)
+   GEMINI_API_KEY=your-gemini-api-key
+   GEMINI_MODEL=gemini-2.5-flash
+   GEMINI_API_BASE=https://generativelanguage.googleapis.com/v1beta
+   ```
+   Get a free Gemini key at https://aistudio.google.com/app/apikey.
+   Use a model your key can access (e.g. `gemini-2.5-flash`,
+   `gemini-flash-latest`); retired models such as `gemini-1.5-flash` return
+   HTTP 404 and the coach then answers from its local fallback.
+
+3. **Run the App**
    ```bash
    flutter run
    ```
 
-3. **Build for Release**
+4. **Build for Release**
    ```bash
    flutter build ios
    flutter build apk

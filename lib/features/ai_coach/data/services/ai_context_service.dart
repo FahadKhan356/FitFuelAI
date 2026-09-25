@@ -192,7 +192,10 @@ class AiContextService {
     return null;
   }
 
-  /// Meals (with their items) between [start] and [end], oldest first.
+  /// Meals (with their items) between [start] and [end].
+  ///
+  /// Fetched newest-first so the cap keeps the most recent entries, then
+  /// re-sorted oldest-first for the prompt.
   Future<List<AiMealSummary>> _fetchMeals(
     String userId,
     DateTime start,
@@ -207,7 +210,7 @@ class AiContextService {
         .eq('user_id', userId)
         .gte('date', AiUserContextModel.dateKey(start))
         .lte('date', AiUserContextModel.dateKey(end))
-        .order('date');
+        .order('date', ascending: false);
 
     final meals = <AiMealSummary>[];
     for (final row in response as List) {
@@ -223,7 +226,10 @@ class AiContextService {
         items: items,
       ));
     }
-    return meals.take(AppConstants.aiContextMaxRecentMeals).toList();
+
+    final capped = meals.take(AppConstants.aiContextMaxRecentMeals).toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
+    return capped;
   }
 
   /// `yyyy-MM-dd` -> total ml for the window.

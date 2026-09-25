@@ -23,7 +23,9 @@ class GeminiException implements Exception {
 class GeminiService {
   final http.Client _client;
   final Duration _timeout;
-  final bool _isConfigured;
+  final String _model;
+  final String _apiBase;
+  String _apiKey;
 
   GeminiService({
     http.Client? client,
@@ -34,16 +36,12 @@ class GeminiService {
   })  : _client = client ?? http.Client(),
         _timeout = timeout ??
             const Duration(seconds: AppConstants.aiCoachTimeoutSeconds),
-        _isConfigured = (apiKey ?? AppConstants.geminiApiKey).trim().isNotEmpty,
+        _apiKey = (apiKey ?? AppConstants.geminiApiKey).trim(),
         _model = model ?? AppConstants.geminiModel,
         _apiBase = apiBase ?? AppConstants.geminiApiBase;
 
-  final String _model;
-  final String _apiBase;
-  String? _apiKeyOverride;
-
   /// True when `GEMINI_API_KEY` is present, i.e. real model calls are enabled.
-  bool get isConfigured => _isConfigured;
+  bool get isConfigured => _apiKey.isNotEmpty;
 
   /// Asks the model for a grounded coach reply.
   ///
@@ -54,15 +52,14 @@ class GeminiService {
     required String userPrompt,
     double temperature = 0.6,
   }) async {
-    final apiKey = (_apiKeyOverride ?? AppConstants.geminiApiKey).trim();
-    if (apiKey.isEmpty) {
+    if (!isConfigured) {
       throw const GeminiException(
         'GEMINI_API_KEY is not configured - using offline coach answers.',
       );
     }
 
     final uri = Uri.parse(
-      '$_apiBase/models/$_model:generateContent?key=$apiKey',
+      '$_apiBase/models/$_model:generateContent?key=$_apiKey',
     );
 
     final payload = jsonEncode({
@@ -118,9 +115,8 @@ class GeminiService {
     return text.trim();
   }
 
-  /// Optional override used when the key is supplied at runtime (e.g. a
-  /// premium setting) rather than through `.env`.
-  set apiKeyOverride(String? apiKey) => _apiKeyOverride = apiKey;
+  /// Replaces the key at runtime (e.g. a premium setting) instead of `.env`.
+  set apiKeyOverride(String? apiKey) => _apiKey = (apiKey ?? '').trim();
 
   /// Closes the underlying HTTP client.
   void dispose() => _client.close();

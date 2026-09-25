@@ -11,6 +11,7 @@ import '../entities/weight_entry_entity.dart';
 import '../entities/user_profile_entity.dart';
 import '../entities/goal_entity.dart';
 import '../entities/calendar_tracking.dart';
+import '../entities/coach_insight.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/user_repository.dart';
 import '../repositories/meal_repository.dart';
@@ -176,6 +177,17 @@ class FetchAnalyticsUseCase {
 class SendAiCoachMessageUseCase {
   final AiCoachRepository _repo; SendAiCoachMessageUseCase(this._repo);
   Future<void> call(String userId, String message, String response) => _repo.sendMessage(userId, message, response);
+}
+
+/// Generates a coach reply grounded in the user's tracked history.
+///
+/// The repository injects the read-only context (profile, goals, meals, water,
+/// weight) into the Gemini prompt and falls back to a locally composed answer
+/// when the model is unavailable.
+class GenerateAiCoachReplyUseCase {
+  final AiCoachRepository _repo; GenerateAiCoachReplyUseCase(this._repo);
+  Future<String> call(String userId, String message, {CoachInsight? insight}) =>
+      _repo.generateCoachReply(userId, message, insight: insight);
 }
 
 // ==================== SUBSCRIPTION ====================

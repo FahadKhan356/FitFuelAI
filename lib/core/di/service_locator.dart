@@ -1,4 +1,6 @@
 import 'package:fitfuel_ai/features/achievements/presentation/bloc/achievements_bloc.dart';
+import 'package:fitfuel_ai/features/ai_coach/data/services/ai_context_service.dart';
+import 'package:fitfuel_ai/features/ai_coach/data/services/gemini_service.dart';
 import 'package:fitfuel_ai/features/ai_coach/presentation/bloc/ai_coach_bloc.dart';
 import 'package:fitfuel_ai/features/analytics/presentation/bloc/analytics_bloc.dart';
 import 'package:fitfuel_ai/features/auth/presentation/bloc/auth_bloc.dart';
@@ -63,6 +65,13 @@ Future<void> initDependencies() async {
     NutritionApiDataSource.new,
   );
 
+  // AI Coach services: the read-only context layer (Supabase history) and the
+  // Gemini client that turns that context into a grounded answer.
+  sl.registerLazySingleton<AiContextService>(
+    () => AiContextService(sl<SupabaseClient>()),
+  );
+  sl.registerLazySingleton<GeminiService>(GeminiService.new);
+
   // Repositories
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(sl()));
   sl.registerLazySingleton<UserRepository>(() => UserRepositoryImpl(sl()));
@@ -81,8 +90,11 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<WeightRepository>(() => WeightRepositoryImpl(sl()));
   sl.registerLazySingleton<AnalyticsRepository>(
       () => AnalyticsRepositoryImpl(sl()));
-  sl.registerLazySingleton<AiCoachRepository>(
-      () => AiCoachRepositoryImpl(sl()));
+  sl.registerLazySingleton<AiCoachRepository>(() => AiCoachRepositoryImpl(
+        sl<SupabaseClient>(),
+        sl<AiContextService>(),
+        sl<GeminiService>(),
+      ));
   sl.registerLazySingleton<SubscriptionRepository>(
       () => SubscriptionRepositoryImpl(sl()));
   sl.registerLazySingleton<NotificationRepository>(
@@ -117,6 +129,8 @@ Future<void> initDependencies() async {
       () => FetchCalendarTrackingUseCase(sl(), sl()));
   sl.registerLazySingleton<SendAiCoachMessageUseCase>(
       () => SendAiCoachMessageUseCase(sl()));
+  sl.registerLazySingleton<GenerateAiCoachReplyUseCase>(
+      () => GenerateAiCoachReplyUseCase(sl()));
   sl.registerLazySingleton<SubscribePremiumUseCase>(
       () => SubscribePremiumUseCase(sl()));
 

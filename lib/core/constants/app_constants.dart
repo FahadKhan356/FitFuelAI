@@ -5,24 +5,37 @@ class AppConstants {
   static const String appName = 'FITFUEL AI';
   static const String appVersion = '1.0.0';
 
+  /// Reads a `.env` value without throwing.
+  ///
+  /// `flutter_dotenv` throws `NotInitializedError` if `dotenv.load()` has not
+  /// run yet (unit tests, background isolates), so every getter below falls
+  /// back to its documented default instead of crashing the caller.
+  static String envValue(String key, String fallback) {
+    try {
+      final value = dotenv.env[key];
+      return (value == null || value.isEmpty) ? fallback : value;
+    } catch (_) {
+      return fallback;
+    }
+  }
+
   // Supabase Configuration (from .env file)
   static String get supabaseUrl =>
-      dotenv.env['SUPABASE_URL'] ?? 'YOUR_SUPABASE_URL_HERE';
+      envValue('SUPABASE_URL', 'YOUR_SUPABASE_URL_HERE');
   static String get supabaseAnonKey =>
-      dotenv.env['SUPABASE_ANON_KEY'] ?? 'YOUR_SUPABASE_ANON_KEY_HERE';
+      envValue('SUPABASE_ANON_KEY', 'YOUR_SUPABASE_ANON_KEY_HERE');
 
   // RevenueCat. Leave this empty during local development to use the mock
   // subscription flow; set it when the store products are ready.
-  static String get revenueCatApiKey => dotenv.env['REVENUECAT_API_KEY'] ?? '';
+  static String get revenueCatApiKey => envValue('REVENUECAT_API_KEY', '');
   static bool get subscriptionDevelopmentMode =>
-      (dotenv.env['SUBSCRIPTION_DEVELOPMENT_MODE'] ?? 'false').toLowerCase() ==
-      'true';
+      envValue('SUBSCRIPTION_DEVELOPMENT_MODE', 'false').toLowerCase() == 'true';
 
   // Nutrition APIs (from .env file)
   // USDA FoodData Central — free API key from https://fdc.nal.usda.gov/api-key-signup.html
-  static String get usdaApiKey => dotenv.env['USDA_API_KEY'] ?? '';
+  static String get usdaApiKey => envValue('USDA_API_KEY', '');
   static String get usdaApiBase =>
-      dotenv.env['USDA_API_BASE'] ?? 'https://api.nal.usda.gov/fdc/v1';
+      envValue('USDA_API_BASE', 'https://api.nal.usda.gov/fdc/v1');
   // OpenFoodFacts — free, no key required
   static const String openFoodFactsSearchBase =
       'https://us.openfoodfacts.org/api/v2/search';
@@ -32,20 +45,19 @@ class AppConstants {
       'https://us.openfoodfacts.org/api/v0/product';
   // CalorieNinjas — free natural-language API, key from https://calorieninjas.com/api
   static String get calorieNinjasApiKey =>
-      dotenv.env['CALORIE_NINJAS_API_KEY'] ?? '';
-  static String get calorieNinjasApiBase =>
-      dotenv.env['CALORIE_NINJAS_API_BASE'] ??
-      'https://api.calorieninjas.com/v1/nutrition';
+      envValue('CALORIE_NINJAS_API_KEY', '');
+  static String get calorieNinjasApiBase => envValue(
+      'CALORIE_NINJAS_API_BASE', 'https://api.calorieninjas.com/v1/nutrition');
 
   // Google Gemini — powers the AI Health Coach. Free key from
   // https://aistudio.google.com/app/apikey. When the key is empty the coach
   // falls back to locally-generated, context-aware answers.
-  static String get geminiApiKey => dotenv.env['GEMINI_API_KEY'] ?? '';
-  static String get geminiModel =>
-      dotenv.env['GEMINI_MODEL'] ?? 'gemini-1.5-flash';
-  static String get geminiApiBase =>
-      dotenv.env['GEMINI_API_BASE'] ??
-      'https://generativelanguage.googleapis.com/v1beta';
+  static String get geminiApiKey => envValue('GEMINI_API_KEY', '');
+  // gemini-1.5-flash has been retired by the API (404), so 2.5 Flash is the
+  // working default; override with GEMINI_MODEL in .env if needed.
+  static String get geminiModel => envValue('GEMINI_MODEL', 'gemini-2.5-flash');
+  static String get geminiApiBase => envValue(
+      'GEMINI_API_BASE', 'https://generativelanguage.googleapis.com/v1beta');
 
   // AI Coach context layer
   static const int aiContextHistoryDays = 7;
