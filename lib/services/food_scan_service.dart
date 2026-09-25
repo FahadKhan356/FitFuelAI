@@ -164,7 +164,14 @@ Rules:
                   ],
                 },
               ],
-              'generationConfig': {'temperature': 0.1, 'maxOutputTokens': 1024},
+              'generationConfig': {
+                'temperature': 0.1,
+                'maxOutputTokens': 1024,
+                // Gemini 2.5 supports structured JSON responses. This avoids
+                // otherwise valid food detections being wrapped in prose or a
+                // Markdown code block.
+                'responseMimeType': 'application/json',
+              },
             }),
           )
           .timeout(const Duration(seconds: 30));
@@ -189,10 +196,16 @@ Rules:
         lastError = 'The AI could not analyze this image. Please try again.';
         return [];
       }
-      final cleaned = text
+      var cleaned = text
           .replaceAll(RegExp(r'^\s*```(?:json)?\s*', multiLine: true), '')
           .replaceAll(RegExp(r'\s*```\s*$', multiLine: true), '')
           .trim();
+      // Be tolerant of an occasional introductory sentence despite JSON mode.
+      final firstBracket = cleaned.indexOf('[');
+      final lastBracket = cleaned.lastIndexOf(']');
+      if (firstBracket >= 0 && lastBracket >= firstBracket) {
+        cleaned = cleaned.substring(firstBracket, lastBracket + 1);
+      }
       final decoded = jsonDecode(cleaned);
       if (decoded is! List) {
         lastError = 'The AI returned an invalid food result. Please try again.';
@@ -206,10 +219,18 @@ Rules:
           .where((item) => item.weightG >= 10 && item.weightG <= 1500)
           .toList();
     } on TimeoutException {
-      lastError = 'Scan failed. Check your connection and try again.';
+      lastError = 'Gemini took too long to respond. Please try again.';
       return [];
-    } catch (_) {
-      lastError = 'Scan failed. Check your connection and try again.';
+    } on SocketException {
+      lastError = 'Could not reach Gemini. Check your internet connection.';
+      return [];
+    } on FormatException {
+      lastError = 'Gemini returned an unreadable result. Please try again.';
+      return [];
+    } catch (error) {
+      // Keep the useful exception visible during setup instead of incorrectly
+      // telling the user that an image with visible food has no food in it.
+      lastError = 'Food scan failed: $error';
       return [];
     }
   }
