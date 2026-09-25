@@ -97,6 +97,11 @@ create policy "Users can delete own xp events"
 -- rules. XP values, the level curve and badge criteria live in the app
 -- (`lib/core/utils/xp_engine.dart`) so they stay unit testable.
 --
+-- Two families of output:
+--   * rolling counters (7/30-day windows) that feed badge progress, and
+--   * `*_today` flags, because daily XP must be awarded for what the user
+--     did today — a 30-day count of 1 cannot tell you that.
+--
 -- SECURITY INVOKER: the caller's RLS policies apply, so this can only
 -- ever read rows belonging to `auth.uid()`.
 create or replace function public.compute_gamification_stats()
@@ -130,6 +135,19 @@ declare
   v_perfect_days_30 int := 0;
   v_breakfast_days_7 int := 0;
   v_profile_complete boolean := false;
+
+  -- Per-day flags. The app awards XP for things done *today*, and the
+  -- rolling counters above cannot answer that (a 30-day count of 1 does
+  -- not mean the goal was hit today).
+  v_meal_today boolean := false;
+  v_water_today boolean := false;
+  v_water_goal_today boolean := false;
+  v_weight_today boolean := false;
+  v_scan_today boolean := false;
+  v_coach_today boolean := false;
+  v_breakfast_today boolean := false;
+  v_perfect_today boolean := false;
+  v_protein_today boolean := false;
 begin
   if v_uid is null then
     return jsonb_build_object('authenticated', false);
@@ -258,6 +276,56 @@ begin
     where p.user_id = v_uid
   ), false) into v_profile_complete;
 
+  -- ── Today's activity ──
+  select exists (
+    select 1 from public.meals m where m.user_id = v_uid and m.date = current_date
+  ) into v_meal_today;
+
+  select exists (
+    select 1 from public.meals m
+    where m.user_id = v_uid and m.date = current_date and m.meal_type = 'breakfast'
+  ) into v_breakfast_today;
+
+  select exists (
+    select 1 from public.water_intake w where w.user_id = v_uid and w.date = current_date
+  ) into v_water_today;
+
+  if v_target_water > 0 then
+    select exists (
+      select 1 from public.water_intake w
+      where w.user_id = v_uid and w.date = current_date and w.amount_ml >= v_target_water
+    ) into v_water_goal_today;
+  end if;
+
+  select exists (
+    select 1 from public.weight_entries e where e.user_id = v_uid and e.date = current_date
+  ) into v_weight_today;
+
+  select exists (
+    select 1 from public.food_scans s where s.user_id = v_uid and s.created_at::date = current_date
+  ) into v_scan_today;
+
+  select exists (
+    select 1 from public.ai_chat_sessions c where c.user_id = v_uid and c.created_at::date = current_date
+  ) into v_coach_today;
+
+  if v_target_calories > 0 then
+    select coalesce((
+      select sum(m.total_calories) between v_target_calories * 0.9 and v_target_calories * 1.1
+      from public.meals m
+      where m.user_id = v_uid and m.date = current_date
+    ), false) into v_perfect_today;
+  end if;
+
+  if v_target_protein > 0 then
+    select coalesce((
+      select sum(i.protein) >= v_target_protein * 0.9
+      from public.meals m
+      join public.meal_items i on i.meal_id = m.id
+      where m.user_id = v_uid and m.date = current_date
+    ), false) into v_protein_today;
+  end if;
+
   return jsonb_build_object(
     'authenticated', true,
     'current_streak_days', v_current_streak,
@@ -276,6 +344,15 @@ begin
     'perfect_days_30', v_perfect_days_30,
     'breakfast_days_7', v_breakfast_days_7,
     'profile_complete', v_profile_complete,
+    'meal_logged_today', v_meal_today,
+    'breakfast_today', v_breakfast_today,
+    'water_logged_today', v_water_today,
+    'water_goal_hit_today', v_water_goal_today,
+    'weight_logged_today', v_weight_today,
+    'scan_today', v_scan_today,
+    'coach_today', v_coach_today,
+    'perfect_day_today', v_perfect_today,
+    'protein_goal_today', v_protein_today,
     'target_calories', v_target_calories,
     'target_protein', v_target_protein,
     'target_water_ml', v_target_water

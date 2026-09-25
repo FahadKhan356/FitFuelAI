@@ -434,6 +434,19 @@ DECLARE
   v_perfect_days_30 INT := 0;
   v_breakfast_days_7 INT := 0;
   v_profile_complete BOOLEAN := FALSE;
+
+  -- Per-day flags. The app awards XP for things done *today*, and the
+  -- rolling counters above cannot answer that (a 30-day count of 1 does
+  -- not mean the goal was hit today).
+  v_meal_today BOOLEAN := FALSE;
+  v_water_today BOOLEAN := FALSE;
+  v_water_goal_today BOOLEAN := FALSE;
+  v_weight_today BOOLEAN := FALSE;
+  v_scan_today BOOLEAN := FALSE;
+  v_coach_today BOOLEAN := FALSE;
+  v_breakfast_today BOOLEAN := FALSE;
+  v_perfect_today BOOLEAN := FALSE;
+  v_protein_today BOOLEAN := FALSE;
 BEGIN
   IF v_uid IS NULL THEN
     RETURN jsonb_build_object('authenticated', FALSE);
@@ -557,6 +570,56 @@ BEGIN
     WHERE p.user_id = v_uid
   ), FALSE) INTO v_profile_complete;
 
+  -- Today's activity
+  SELECT EXISTS (
+    SELECT 1 FROM public.meals m WHERE m.user_id = v_uid AND m.date = CURRENT_DATE
+  ) INTO v_meal_today;
+
+  SELECT EXISTS (
+    SELECT 1 FROM public.meals m
+    WHERE m.user_id = v_uid AND m.date = CURRENT_DATE AND m.meal_type = 'breakfast'
+  ) INTO v_breakfast_today;
+
+  SELECT EXISTS (
+    SELECT 1 FROM public.water_intake w WHERE w.user_id = v_uid AND w.date = CURRENT_DATE
+  ) INTO v_water_today;
+
+  IF v_target_water > 0 THEN
+    SELECT EXISTS (
+      SELECT 1 FROM public.water_intake w
+      WHERE w.user_id = v_uid AND w.date = CURRENT_DATE AND w.amount_ml >= v_target_water
+    ) INTO v_water_goal_today;
+  END IF;
+
+  SELECT EXISTS (
+    SELECT 1 FROM public.weight_entries e WHERE e.user_id = v_uid AND e.date = CURRENT_DATE
+  ) INTO v_weight_today;
+
+  SELECT EXISTS (
+    SELECT 1 FROM public.food_scans s WHERE s.user_id = v_uid AND s.created_at::DATE = CURRENT_DATE
+  ) INTO v_scan_today;
+
+  SELECT EXISTS (
+    SELECT 1 FROM public.ai_chat_sessions c WHERE c.user_id = v_uid AND c.created_at::DATE = CURRENT_DATE
+  ) INTO v_coach_today;
+
+  IF v_target_calories > 0 THEN
+    SELECT COALESCE((
+      SELECT sum(m.total_calories) BETWEEN v_target_calories * 0.9 AND v_target_calories * 1.1
+      FROM public.meals m
+      WHERE m.user_id = v_uid AND m.date = CURRENT_DATE
+    ), FALSE) INTO v_perfect_today;
+  END IF;
+
+  IF v_target_protein > 0 THEN
+    SELECT COALESCE((
+      SELECT sum(i.protein) >= v_target_protein * 0.9
+      FROM public.meals m
+      JOIN public.meal_items i ON i.meal_id = m.id
+      WHERE m.user_id = v_uid AND m.date = CURRENT_DATE
+    ), FALSE) INTO v_protein_today;
+  END IF;
+
   RETURN jsonb_build_object(
     'authenticated', TRUE,
     'current_streak_days', v_current_streak,
@@ -575,6 +638,15 @@ BEGIN
     'perfect_days_30', v_perfect_days_30,
     'breakfast_days_7', v_breakfast_days_7,
     'profile_complete', v_profile_complete,
+    'meal_logged_today', v_meal_today,
+    'breakfast_today', v_breakfast_today,
+    'water_logged_today', v_water_today,
+    'water_goal_hit_today', v_water_goal_today,
+    'weight_logged_today', v_weight_today,
+    'scan_today', v_scan_today,
+    'coach_today', v_coach_today,
+    'perfect_day_today', v_perfect_today,
+    'protein_goal_today', v_protein_today,
     'target_calories', v_target_calories,
     'target_protein', v_target_protein,
     'target_water_ml', v_target_water
