@@ -32,6 +32,7 @@ import '../data/repositories/auth_repository_impl.dart';
 import '../data/repositories/barcode_repository_impl.dart';
 import '../data/repositories/food_scan_repository_impl.dart';
 import '../data/repositories/food_search_repository_impl.dart';
+import '../data/repositories/gamification_repository_impl.dart';
 import '../data/repositories/meal_repository_impl.dart';
 import '../data/repositories/subscription_repository_impl.dart';
 import '../data/repositories/user_repository_impl.dart';
@@ -43,6 +44,7 @@ import '../domain/repositories/auth_repository.dart';
 import '../domain/repositories/barcode_repository.dart';
 import '../domain/repositories/food_scan_repository.dart';
 import '../domain/repositories/food_search_repository.dart';
+import '../domain/repositories/gamification_repository.dart';
 import '../domain/repositories/meal_repository.dart';
 import '../domain/repositories/subscription_repository.dart';
 import '../domain/repositories/user_repository.dart';
@@ -99,6 +101,10 @@ Future<void> initDependencies() async {
       () => SubscriptionRepositoryImpl(sl()));
   sl.registerLazySingleton<NotificationRepository>(
       () => NotificationRepositoryImpl(sl<SupabaseRemoteDataSource>()));
+  // Gamification: the XP/badge/level rules live in the pure XpEngine, so this
+  // repository only reads counters and persists what the engine decided.
+  sl.registerLazySingleton<GamificationRepository>(
+      () => GamificationRepositoryImpl(sl<SupabaseRemoteDataSource>()));
 
   // Use Cases
   sl.registerLazySingleton<SignInWithEmailUseCase>(
@@ -172,7 +178,7 @@ Future<void> initDependencies() async {
         fetchCalendarTrackingUseCase: sl(),
       ));
   sl.registerFactory<AchievementsBloc>(() => AchievementsBloc(
-        dataSource: sl<SupabaseRemoteDataSource>(),
+        gamificationRepository: sl<GamificationRepository>(),
       ));
   sl.registerFactory<AiCoachBloc>(() => AiCoachBloc(
         aiCoachRepository: sl(),

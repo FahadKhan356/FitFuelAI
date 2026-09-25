@@ -317,6 +317,60 @@ class SupabaseRemoteDataSource {
     return (response as List).cast<Map<String, dynamic>>();
   }
 
+  /// Reads the aggregated counters for the signed-in user.
+  ///
+  /// The RPC is `SECURITY INVOKER`, so it can only ever see the caller's own
+  /// rows, and it does all the counting in one round trip.
+  Future<Map<String, dynamic>> computeGamificationStats() async {
+    final response = await _client.rpc('compute_gamification_stats');
+    if (response is Map) return Map<String, dynamic>.from(response);
+    return const <String, dynamic>{};
+  }
+
+  /// Appends XP awards to the ledger.
+  ///
+  /// `ignoreDuplicates` turns the unique key on
+  /// `(user_id, source, event_date)` into a no-op instead of an error, so
+  /// re-running the evaluator on the same day is safe.
+  Future<void> insertXpEvents(List<Map<String, dynamic>> rows) async {
+    if (rows.isEmpty) return;
+    await _client.from('xp_events').upsert(
+          rows,
+          onConflict: 'user_id,source,event_date',
+          ignoreDuplicates: true,
+        );
+  }
+
+  /// Upserts badge progress, keyed by the badge slug.
+  Future<void> upsertAchievements(List<Map<String, dynamic>> rows) async {
+    if (rows.isEmpty) return;
+    await _client.from('achievements').upsert(rows, onConflict: 'user_id,badge');
+  }
+
+  Future<void> upsertGamification(Map<String, dynamic> data) async {
+    await _client.from('gamification').upsert(data, onConflict: 'user_id');
+  }
+
+  /// Ranks players through the `get_leaderboard` RPC.
+  ///
+  /// The function is `SECURITY DEFINER` because `gamification` is readable only
+  /// by its owner; it projects just rank, display name, avatar, XP, level, tier
+  /// and streak.
+  Future<List<Map<String, dynamic>>> getLeaderboard({
+    String scope = 'global',
+    int limit = 50,
+  }) async {
+    final response = await _client.rpc(
+      'get_leaderboard',
+      params: {'p_scope': scope, 'p_limit': limit},
+    );
+    if (response is! List) return const <Map<String, dynamic>>[];
+    return response
+        .whereType<Map>()
+        .map((row) => Map<String, dynamic>.from(row))
+        .toList();
+  }
+
   // ==================== AI CHAT ====================
   Future<List<Map<String, dynamic>>> getChatHistory(String userId) async {
     final response = await _client

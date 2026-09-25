@@ -224,12 +224,3 @@ class FetchCalendarTrackingUseCase {
     );
   }
 }
-
-// ==================== ACHIEVEMENTS ====================
-class FetchAchievementsUseCase {
-  final UserRepository _repo; FetchAchievementsUseCase(this._repo);
-  Future<List<Map<String, dynamic>>> call(String userId) async {
-    // Through UserRepository or separate datasource
-    throw UnimplementedError('Use SupabaseRemoteDataSource directly for now');
-  }
-}

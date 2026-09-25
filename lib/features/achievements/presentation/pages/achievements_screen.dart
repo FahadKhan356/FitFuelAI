@@ -1,8 +1,12 @@
 import 'package:fitfuel_ai/core/constants/app_colors.dart';
 import 'package:fitfuel_ai/core/di/service_locator.dart';
+import 'package:fitfuel_ai/core/domain/entities/leaderboard_entry.dart';
+import 'package:fitfuel_ai/core/utils/xp_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../bloc/achievements_bloc.dart';
 
 const _bg = Color(0xFFF7F6FB);
@@ -27,14 +31,64 @@ class AchievementsScreen extends StatefulWidget {
 class _AchievementsScreenState extends State<AchievementsScreen> {
   late final AchievementsBloc _bloc;
 
+  /// Anchors the header's "Leaderboard" affordance to the ranking block further
+  /// down the same page: one sync feeds both halves.
+  final GlobalKey _leaderboardKey = GlobalKey();
+
+  /// How many badges the gallery shows before "VIEW ALL" expands it.
+  static const int _badgePreviewCount = 9;
+
+  /// The gallery previews the top rows and expands on request.
+  bool _showAllBadges = false;
+
   @override
   void initState() {
     super.initState();
     _bloc = sl<AchievementsBloc>();
+    _load();
+  }
+
+  /// `sync` is idempotent — the ledger dedupes per day and one-off awards are
+  /// filtered against what is already stored — so re-running it on retry is
+  /// safe and never double-credits.
+  void _load() {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId != null) {
       _bloc.add(LoadGamification(userId));
     }
+  }
+
+  void _scrollToLeaderboard() {
+    final target = _leaderboardKey.currentContext;
+    if (target == null) return;
+    Scrollable.ensureVisible(
+      target,
+      duration: const Duration(milliseconds: 420),
+      curve: Curves.easeOutCubic,
+      alignment: 0.05,
+    );
+  }
+
+  /// Unlocked badges first (most recent first), then the locked ones closest to
+  /// unlocking, so the preview grid always shows the rows that matter.
+  List<BadgeProgress> _visibleBadges(GamificationSummary summary) {
+    final badges = List<BadgeProgress>.of(summary.badges);
+    badges.sort((a, b) {
+      if (a.unlocked != b.unlocked) return a.unlocked ? -1 : 1;
+      if (a.unlocked) {
+        final aAt = a.unlockedAt;
+        final bAt = b.unlockedAt;
+        if (aAt == null && bAt == null) return 0;
+        // A null timestamp means "earned by this run", i.e. the newest.
+        if (aAt == null) return -1;
+        if (bAt == null) return 1;
+        return bAt.compareTo(aAt);
+      }
+      return b.ratio.compareTo(a.ratio);
+    });
+    return _showAllBadges
+        ? badges
+        : badges.take(_badgePreviewCount).toList(growable: false);
   }
 
   @override
@@ -43,16 +97,29 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
       value: _bloc,
       child: BlocBuilder<AchievementsBloc, AchievementsState>(
         builder: (context, state) {
-          int xp = 12450;
-          int level = 14;
-          int streak = 12;
-          int weeklyXp = 840;
-
-          if (state is AchievementsLoaded && state.gamification != null) {
-            xp = state.gamification!.xpTotal;
-            level = state.gamification!.level;
-            streak = state.gamification!.streakDays;
+          if (state is AchievementsLoading) {
+            return const Scaffold(
+              backgroundColor: _bg,
+              body: SafeArea(
+                child: Center(child: CircularProgressIndicator(color: _purple)),
+              ),
+            );
           }
+
+          if (state is AchievementsError) {
+            return Scaffold(
+              backgroundColor: _bg,
+              body: SafeArea(
+                child: _ErrorView(message: state.message, onRetry: _load),
+              ),
+            );
+          }
+
+          // Anything not loaded yet renders from the empty summary, so the page
+          // explains how badges are earned instead of showing invented numbers.
+          final loaded = state is AchievementsLoaded ? state : null;
+          final summary = loaded?.summary ?? GamificationSummary.empty;
+          final badges = _visibleBadges(summary);
 
           return Scaffold(
             backgroundColor: _bg,
@@ -81,7 +148,14 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    _RecentAchievementCard(),
+                    if (loaded != null && loaded.hasRewards) ...[
+                      _RewardBanner(
+                        xpAwarded: loaded.xpAwarded,
+                        badges: loaded.newlyUnlocked,
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    _RecentAchievementCard(badge: summary.mostRecentUnlocked),
                     const SizedBox(height: 18),
                     Row(
                       children: [
@@ -100,13 +174,40 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                           ],
                         ),
                         const Spacer(),
-                        Text(
-                          'Leaderboard',
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w700,
-                                color: _purple,
+                        // Scrolls to the ranking block instead of pushing a
+                        // route: both halves come from the same sync.
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: _scrollToLeaderboard,
+                            borderRadius: BorderRadius.circular(999),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
                               ),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    'Leaderboard',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(
+                                          fontSize: 13.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: _purple,
+                                        ),
+                                  ),
+                                  const Icon(
+                                    Icons.arrow_downward_rounded,
+                                    size: 15,
+                                    color: _purple,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -133,8 +234,10 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                         children: [
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
-                            children: const [
-                              _EliteBadge(),
+                            children: [
+                              _EliteBadge(
+                                label: '${summary.tier.toUpperCase()} RANK',
+                              ),
                             ],
                           ),
                           const SizedBox(height: 6),
@@ -169,7 +272,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
-                                      '$level',
+                                      '${summary.level}',
                                       style: Theme.of(context).textTheme.displayLarge?.copyWith(
                                             fontSize: 36,
                                             fontWeight: FontWeight.w800,
@@ -217,7 +320,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                '$xp',
+                                _formatXp(summary.xpTotal),
                                 style: const TextStyle(
                                   fontSize: 26,
                                   fontWeight: FontWeight.w800,
@@ -229,7 +332,9 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 4),
                                 child: Text(
-                                  '/ ${(xp + 2550).toStringAsFixed(0)}',
+                                  summary.isMaxLevel
+                                      ? '• MAX LEVEL'
+                                      : '/ ${_formatXp(summary.xpTotal + summary.xpToNextLevel)}',
                                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                         fontSize: 15,
                                         color: _textSecondary,
@@ -239,7 +344,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                               ),
                               const Spacer(),
                               Text(
-                                '${((xp / (xp + 2550)) * 100).toInt()}%',
+                                '${(summary.levelProgress * 100).round()}%',
                                 style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w800,
@@ -253,14 +358,16 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                             borderRadius: BorderRadius.circular(999),
                             child: LinearProgressIndicator(
                               minHeight: 8,
-                              value: (xp / (xp + 2550)).clamp(0.0, 1.0),
+                              value: summary.levelProgress,
                               backgroundColor: const Color(0xFFE9E4F6),
                               valueColor: const AlwaysStoppedAnimation<Color>(_purple),
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '${(xp + 2550 - xp).toStringAsFixed(0)} XP to Level ${level + 1} • Keep scanning meals!',
+                            summary.isMaxLevel
+                                ? 'Top level reached • ${summary.tier} tier'
+                                : '${summary.xpToNextLevel} XP to Level ${summary.level + 1} • Keep logging meals!',
                             style: const TextStyle(
                               fontSize: 11.5,
                               fontWeight: FontWeight.w700,
@@ -278,7 +385,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                             icon: Icons.local_fire_department_outlined,
                             iconColor: _orange,
                             iconBg: const Color(0xFFFFF0E4),
-                            value: '$streak',
+                            value: '${summary.streakDays}',
                             label: 'Day Streak',
                           ),
                         ),
@@ -288,9 +395,13 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                             icon: Icons.trending_up_rounded,
                             iconColor: _cyan,
                             iconBg: const Color(0xFFE8F8FD),
-                            value: '$weeklyXp',
+                            value: _formatXp(summary.weeklyXp),
                             label: 'Weekly XP',
-                            badge: '+240',
+                            // Only shown when this sync actually wrote XP, so
+                            // the chip always matches the ledger.
+                            badge: (loaded?.xpAwarded ?? 0) > 0
+                                ? '+${loaded!.xpAwarded}'
+                                : null,
                           ),
                         ),
                       ],
@@ -313,9 +424,9 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                           ],
                         ),
                         const Spacer(),
-                        const Text(
-                          '12 / 48 Unlocked',
-                          style: TextStyle(
+                        Text(
+                          '${summary.unlockedCount} / ${summary.totalBadgeCount} Unlocked',
+                          style: const TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w700,
                             color: _textSecondary,
@@ -330,22 +441,16 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                       physics: const NeverScrollableScrollPhysics(),
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
-                      childAspectRatio: 1.05,
-                      children: const [
-                        _BadgeCard(icon: Icons.bolt_rounded, label: 'Early Bird', color: _gold, unlocked: true),
-                        _BadgeCard(icon: Icons.center_focus_strong, label: 'Perfect Macro', color: _purple, unlocked: true),
-                        _BadgeCard(icon: Icons.workspace_premium_outlined, label: 'Weight Master', color: _orange, unlocked: true),
-                        _BadgeCard(icon: Icons.shield_outlined, label: 'Consistent', color: Color(0xFF4A90FF), unlocked: true),
-                        _BadgeCard(icon: Icons.fastfood_outlined, label: 'First Scan', color: Color(0xFF16C89A), unlocked: true),
-                        _BadgeCard(icon: Icons.star_border_rounded, label: 'AI Expert', color: Color(0xFFFF5B7E), unlocked: true),
-                        _BadgeCard(icon: Icons.emoji_events_outlined, label: 'Centurion', color: Color(0xFFB6B6C1), unlocked: false),
-                        _BadgeCard(icon: Icons.local_fire_department_outlined, label: 'Month Streak', color: Color(0xFFB6B6C1), unlocked: false),
-                        _BadgeCard(icon: Icons.verified_outlined, label: 'Super Coach', color: Color(0xFFB6B6C1), unlocked: false),
-                      ],
+                      childAspectRatio: 0.88,
+                      children: badges
+                          .map((badge) => _BadgeCard(badge: badge))
+                          .toList(growable: false),
                     ),
                     const SizedBox(height: 16),
                     OutlinedButton(
-                      onPressed: () {},
+                      onPressed: summary.totalBadgeCount > _badgePreviewCount
+                          ? () => setState(() => _showAllBadges = !_showAllBadges)
+                          : null,
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size.fromHeight(54),
                         side: const BorderSide(color: Color(0xFF1F1F2E)),
@@ -353,9 +458,11 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      child: const Text(
-                        'VIEW ALL 48 ACHIEVEMENTS',
-                        style: TextStyle(
+                      child: Text(
+                        _showAllBadges
+                            ? 'SHOW LESS'
+                            : 'VIEW ALL ${summary.totalBadgeCount} ACHIEVEMENTS',
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
                           color: _textPrimary,
@@ -364,7 +471,25 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _MilestoneCard(),
+                    _MilestoneCard(badge: summary.nextMilestone),
+                    const SizedBox(height: 24),
+                    // The same sync that resolved the badges above also
+                    // delivered the ranking, so it renders on this page.
+                    _LeaderboardSection(
+                      key: _leaderboardKey,
+                      entries: loaded?.leaderboard ?? const <LeaderboardEntry>[],
+                      scope: loaded?.leaderboardScope ?? LeaderboardScope.global,
+                      loading: loaded?.leaderboardLoading ?? false,
+                      error: loaded?.leaderboardError,
+                      onScopeChanged: (scope) =>
+                          _bloc.add(LoadLeaderboard(scope: scope)),
+                      onRetry: () => _bloc.add(
+                        LoadLeaderboard(
+                          scope: loaded?.leaderboardScope ??
+                              LeaderboardScope.global,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -402,9 +527,16 @@ class _IconButton extends StatelessWidget {
   }
 }
 
+/// The newest badge the user actually owns, or a prompt to start earning one.
 class _RecentAchievementCard extends StatelessWidget {
+  const _RecentAchievementCard({required this.badge});
+
+  final BadgeProgress? badge;
+
   @override
   Widget build(BuildContext context) {
+    final definition = badge?.badge;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -425,7 +557,9 @@ class _RecentAchievementCard extends StatelessWidget {
             width: 52,
             height: 52,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: definition == null
+                  ? Colors.white
+                  : definition.color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(26),
               boxShadow: [
                 BoxShadow(
@@ -435,14 +569,18 @@ class _RecentAchievementCard extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(Icons.workspace_premium_outlined, color: Color(0xFF8E8A95), size: 28),
+            child: Icon(
+              definition?.icon ?? Icons.workspace_premium_outlined,
+              color: definition?.color ?? const Color(0xFF8E8A95),
+              size: 28,
+            ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'RECENT ACHIEVEMENT',
                   style: TextStyle(
                     fontSize: 10.5,
@@ -451,19 +589,20 @@ class _RecentAchievementCard extends StatelessWidget {
                     letterSpacing: 0.4,
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
-                  'Hydration Hero',
-                  style: TextStyle(
+                  definition?.title ?? 'No badges yet',
+                  style: const TextStyle(
                     fontSize: 15.5,
                     fontWeight: FontWeight.w800,
                     color: _textPrimary,
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
-                  'Hit water goals 7 days in a row!',
-                  style: TextStyle(
+                  definition?.description ??
+                      'Log a meal, hit your water goal or chat with your coach to start earning badges.',
+                  style: const TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w500,
                     color: _textSecondary,
@@ -472,16 +611,6 @@ class _RecentAchievementCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF3F3F8),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Color(0xFF8C8893)),
-          ),
         ],
       ),
     );
@@ -489,7 +618,10 @@ class _RecentAchievementCard extends StatelessWidget {
 }
 
 class _EliteBadge extends StatelessWidget {
-  const _EliteBadge();
+  const _EliteBadge({required this.label});
+
+  /// Tier label straight from the level system, e.g. "GOLD RANK".
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -500,9 +632,9 @@ class _EliteBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: const Color(0xFFCABFFF)),
       ),
-      child: const Text(
-        'ELITE RANK',
-        style: TextStyle(
+      child: Text(
+        label,
+        style: const TextStyle(
           fontSize: 10.5,
           fontWeight: FontWeight.w800,
           color: _purple,

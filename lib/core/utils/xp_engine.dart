@@ -223,6 +223,32 @@ class GamificationSummary {
   }
 }
 
+/// The outcome of one synchronisation.
+///
+/// Carries the resolved summary plus whatever was newly written, so the UI can
+/// celebrate a level-up or a fresh badge on the same pass that it renders.
+class GamificationSnapshot {
+  const GamificationSnapshot({
+    required this.summary,
+    this.xpAwarded = 0,
+    this.newlyUnlocked = const <BadgeProgress>[],
+  });
+
+  /// Nothing earned, nothing stored - used before the first sync lands.
+  static const GamificationSnapshot empty =
+      GamificationSnapshot(summary: GamificationSummary.empty);
+
+  final GamificationSummary summary;
+
+  /// XP added to the ledger by this sync (0 when the evaluator found nothing new).
+  final int xpAwarded;
+
+  /// Badges that crossed their threshold during this sync.
+  final List<BadgeProgress> newlyUnlocked;
+
+  bool get hasRewards => xpAwarded > 0 || newlyUnlocked.isNotEmpty;
+}
+
 /// Turns raw counters into XP awards, badge progress, levels and tiers.
 ///
 /// Deliberately pure and synchronous: no Supabase, no `DateTime.now()` unless

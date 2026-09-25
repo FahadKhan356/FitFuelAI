@@ -1,33 +1,49 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import '../../../../core/domain/entities/achievement_entity.dart';
-import '../../../../core/domain/entities/gamification_entity.dart';
-import '../../../../core/data/datasources/supabase_remote_datasource.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-// Events
+import '../../../../core/domain/entities/leaderboard_entry.dart';
+import '../../../../core/domain/repositories/gamification_repository.dart';
+import '../../../../core/utils/xp_engine.dart';
+
+// ==================== EVENTS ====================
+
 abstract class AchievementsEvent extends Equatable {
   const AchievementsEvent();
+
   @override
   List<Object?> get props => [];
 }
 
-class LoadAchievements extends AchievementsEvent {
-  final String userId;
-  const LoadAchievements(this.userId);
-  @override
-  List<Object?> get props => [userId];
-}
-
+/// Re-evaluates the user's real activity, persists anything new, and loads the
+/// all-time leaderboard in the same pass.
 class LoadGamification extends AchievementsEvent {
-  final String userId;
   const LoadGamification(this.userId);
+
+  final String userId;
+
   @override
   List<Object?> get props => [userId];
 }
 
-// States
+/// Switches the leaderboard window.
+///
+/// Only meaningful once [LoadGamification] has produced a
+/// [AchievementsLoaded] state, which is why the leaderboard screen dispatches
+/// both; the handler ignores the event otherwise.
+class LoadLeaderboard extends AchievementsEvent {
+  const LoadLeaderboard({this.scope = LeaderboardScope.global});
+
+  final LeaderboardScope scope;
+
+  @override
+  List<Object?> get props => [scope];
+}
+
+// ==================== STATES ====================
+
 abstract class AchievementsState extends Equatable {
   const AchievementsState();
+
   @override
   List<Object?> get props => [];
 }
@@ -36,53 +52,98 @@ class AchievementsInitial extends AchievementsState {}
 
 class AchievementsLoading extends AchievementsState {}
 
+/// Everything the achievements and leaderboard screens render.
+///
+/// The summary always comes from a completed [GamificationRepository.sync], so
+/// XP totals, levels, streaks and badge progress are real values rather than
+/// placeholders.
 class AchievementsLoaded extends AchievementsState {
-  final List<AchievementEntity> achievements;
-  final GamificationEntity? gamification;
-  const AchievementsLoaded({required this.achievements, this.gamification});
+  const AchievementsLoaded({
+    required this.summary,
+    this.newlyUnlocked = const <BadgeProgress>[],
+    this.xpAwarded = 0,
+    this.leaderboard = const <LeaderboardEntry>[],
+    this.leaderboardScope = LeaderboardScope.global,
+    this.leaderboardLoading = false,
+    this.leaderboardError,
+  });
+
+  final GamificationSummary summary;
+
+  /// Badges that crossed their threshold during this load.
+  final List<BadgeProgress> newlyUnlocked;
+
+  /// XP added by this load, used for the "+N XP" celebration chip.
+  final int xpAwarded;
+
+  final List<LeaderboardEntry> leaderboard;
+  final LeaderboardScope leaderboardScope;
+  final bool leaderboardLoading;
+
+  /// Set when the ranking failed but the user's own progress loaded fine, so
+  /// the page still renders instead of showing a full-screen error.
+  final String? leaderboardError;
+
+  bool get hasRewards => xpAwarded > 0 || newlyUnlocked.isNotEmpty;
+
+  AchievementsLoaded copyWith({
+    GamificationSummary? summary,
+    List<BadgeProgress>? newlyUnlocked,
+    int? xpAwarded,
+    List<LeaderboardEntry>? leaderboard,
+    LeaderboardScope? leaderboardScope,
+    bool? leaderboardLoading,
+    String? leaderboardError,
+    bool clearLeaderboardError = false,
+  }) {
+    return AchievementsLoaded(
+      summary: summary ?? this.summary,
+      newlyUnlocked: newlyUnlocked ?? this.newlyUnlocked,
+      xpAwarded: xpAwarded ?? this.xpAwarded,
+      leaderboard: leaderboard ?? this.leaderboard,
+      leaderboardScope: leaderboardScope ?? this.leaderboardScope,
+      leaderboardLoading: leaderboardLoading ?? this.leaderboardLoading,
+      leaderboardError:
+          clearLeaderboardError ? null : (leaderboardError ?? this.leaderboardError),
+    );
+  }
+
   @override
-  List<Object?> get props => [achievements, gamification ?? 'null'];
+  List<Object?> get props => [
+        summary,
+        newlyUnlocked,
+        xpAwarded,
+        leaderboard,
+        leaderboardScope,
+        leaderboardLoading,
+        leaderboardError,
+      ];
 }
 
 class AchievementsError extends AchievementsState {
-  final String message;
   const AchievementsError(this.message);
+
+  final String message;
+
   @override
   List<Object?> get props => [message];
 }
 
-// BLoC
+// ==================== BLOC ====================
+
+/// Drives the achievements gallery and the leaderboard from one synced state.
+///
+/// All the rule evaluation happens in [GamificationRepository.sync]; this bloc
+/// only sequences the calls and shapes the result for the UI.
 class AchievementsBloc extends Bloc<AchievementsEvent, AchievementsState> {
-  final SupabaseRemoteDataSource _dataSource;
-
-  AchievementsBloc({required SupabaseRemoteDataSource dataSource})
-      : _dataSource = dataSource,
+  AchievementsBloc({required GamificationRepository gamificationRepository})
+      : _repository = gamificationRepository,
         super(AchievementsInitial()) {
-    on<LoadAchievements>(_onLoadAchievements);
     on<LoadGamification>(_onLoadGamification);
+    on<LoadLeaderboard>(_onLoadLeaderboard);
   }
 
-  Future<void> _onLoadAchievements(
-    LoadAchievements event,
-    Emitter<AchievementsState> emit,
-  ) async {
-    emit(AchievementsLoading());
-    try {
-      final achievements = await _dataSource.getAchievements(event.userId);
-      emit(AchievementsLoaded(
-        achievements: achievements.map((e) => AchievementEntity(
-          id: e['id']?.toString() ?? '',
-          userId: event.userId,
-          badge: e['badge'] as String? ?? '',
-          progress: (e['progress'] as int?) ?? 0,
-          completed: (e['completed'] as bool?) ?? false,
-          completedAt: e['completed_at'] != null ? DateTime.tryParse(e['completed_at'].toString()) : null,
-        )).toList(),
-      ));
-    } catch (e) {
-      emit(AchievementsError(e.toString()));
-    }
-  }
+  final GamificationRepository _repository;
 
   Future<void> _onLoadGamification(
     LoadGamification event,
@@ -90,34 +151,76 @@ class AchievementsBloc extends Bloc<AchievementsEvent, AchievementsState> {
   ) async {
     emit(AchievementsLoading());
     try {
-      final gamificationData = await _dataSource.getGamification(event.userId);
-      final achievements = await _dataSource.getAchievements(event.userId);
-      
-      GamificationEntity? gamification;
-      if (gamificationData != null) {
-        gamification = GamificationEntity(
-          userId: event.userId,
-          xpTotal: (gamificationData['xp_total'] as int?) ?? 0,
-          streakDays: (gamificationData['streak_days'] as int?) ?? 0,
-          level: (gamificationData['level'] as int?) ?? 1,
-          tier: (gamificationData['tier'] as String?) ?? 'Bronze',
-          updatedAt: gamificationData['updated_at'] != null ? DateTime.tryParse(gamificationData['updated_at'].toString()) : null,
-        );
+      final snapshot = await _repository.sync(event.userId);
+
+      // The ranking is a separate, non-critical read. If it fails the user's
+      // own progress still renders, with an inline note on the leaderboard.
+      var board = const <LeaderboardEntry>[];
+      String? boardError;
+      try {
+        board = await _repository.leaderboard();
+      } catch (error) {
+        boardError = _describe(error);
       }
-      
-      emit(AchievementsLoaded(
-        achievements: achievements.map((e) => AchievementEntity(
-          id: e['id']?.toString() ?? '',
-          userId: event.userId,
-          badge: e['badge'] as String? ?? '',
-          progress: (e['progress'] as int?) ?? 0,
-          completed: (e['completed'] as bool?) ?? false,
-          completedAt: e['completed_at'] != null ? DateTime.tryParse(e['completed_at'].toString()) : null,
-        )).toList(),
-        gamification: gamification,
-      ));
-    } catch (e) {
-      emit(AchievementsError(e.toString()));
+
+      emit(
+        AchievementsLoaded(
+          summary: snapshot.summary,
+          newlyUnlocked: snapshot.newlyUnlocked,
+          xpAwarded: snapshot.xpAwarded,
+          leaderboard: board,
+          leaderboardError: boardError,
+        ),
+      );
+    } catch (error) {
+      emit(AchievementsError(_describe(error)));
     }
+  }
+
+  Future<void> _onLoadLeaderboard(
+    LoadLeaderboard event,
+    Emitter<AchievementsState> emit,
+  ) async {
+    final current = state;
+    // Nothing to re-scope until the first sync has landed.
+    if (current is! AchievementsLoaded) return;
+
+    emit(
+      current.copyWith(
+        leaderboardScope: event.scope,
+        leaderboardLoading: true,
+        clearLeaderboardError: true,
+      ),
+    );
+
+    try {
+      final board = await _repository.leaderboard(scope: event.scope);
+      emit(
+        current.copyWith(
+          leaderboard: board,
+          leaderboardScope: event.scope,
+          leaderboardLoading: false,
+          clearLeaderboardError: true,
+        ),
+      );
+    } catch (error) {
+      emit(
+        current.copyWith(
+          leaderboardScope: event.scope,
+          leaderboardLoading: false,
+          leaderboardError: _describe(error),
+        ),
+      );
+    }
+  }
+
+  /// Strips the `Exception: ` prefix that the client wraps around Supabase
+  /// errors so the UI can show something readable.
+  static String _describe(Object error) {
+    const prefix = 'Exception: ';
+    final message = error.toString();
+    final trimmed =
+        message.startsWith(prefix) ? message.substring(prefix.length) : message;
+    return trimmed.isEmpty ? 'Something went wrong.' : trimmed;
   }
 }
