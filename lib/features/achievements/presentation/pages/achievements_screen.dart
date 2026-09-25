@@ -17,7 +17,6 @@ const _purpleTint = Color(0xFFEAE2FF);
 const _textPrimary = Color(0xFF1F1F2E);
 const _textSecondary = Color(0xFF74717F);
 const _border = Color(0xFFE6E2EC);
-const _gold = Color(0xFFF2B84B);
 const _cyan = Color(0xFF5BDBF5);
 const _orange = Color(0xFFFFA24A);
 
@@ -997,6 +996,12 @@ class _RewardBanner extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 /// The ranking, fed by the same sync as the badges above.
 ///
@@ -1116,6 +1121,13 @@ class _LeaderboardSection extends StatelessWidget {
                   _LeaderboardRow(entry: entries[index]),
                 ],
               ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 
 class _ScopeChip extends StatelessWidget {
   const _ScopeChip({
@@ -1271,17 +1283,154 @@ class _RankBadge extends StatelessWidget {
   }
 }
 
+
+/// Avatar with an initials fallback, since most accounts have no photo.
+class _Avatar extends StatelessWidget {
+  const _Avatar({required this.entry});
+
+  final LeaderboardEntry entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = entry.avatarUrl;
+    final initials = Text(
+      entry.initials,
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w800,
+        color: _purple,
+      ),
+    );
+
+    return Container(
+      width: 40,
+      height: 40,
+      clipBehavior: Clip.antiAlias,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(
+        color: _purpleSoft,
+        shape: BoxShape.circle,
+      ),
+      child: url == null
+          ? initials
+          : Image.network(
+              url,
+              width: 40,
+              height: 40,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => initials,
             ),
-          ),
-      ],
     );
   }
 }
 
+/// Inline note used for the empty and failed ranking cases.
+class _LeaderboardMessage extends StatelessWidget {
+  const _LeaderboardMessage({
+    required this.icon,
+    required this.message,
+    this.onRetry,
+  });
+
+  final IconData icon;
+  final String message;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+      decoration: BoxDecoration(
+        color: _surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _border),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: _textSecondary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: _textSecondary,
+              ),
+            ),
           ),
+          if (onRetry != null)
+            TextButton(
+              onPressed: onRetry,
+              child: const Text(
+                'Retry',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w800,
+                  color: _purple,
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 }
+
+/// Shown when the sync itself failed. Retrying is always safe because the
+/// ledger dedupes per day, so re-running cannot double-credit XP.
+class _ErrorView extends StatelessWidget {
+  const _ErrorView({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.cloud_off_rounded,
+              size: 42,
+              color: Color(0xFFB8B5C0),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Could not load your progress',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: _textPrimary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: _textSecondary,
+              ),
+            ),
+            const SizedBox(height: 18),
+            FilledButton(
+              onPressed: onRetry,
+              style: FilledButton.styleFrom(backgroundColor: _purple),
+              child: const Text('Try again'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// XP reads grouped everywhere, e.g. 12450 renders as "12,450".
+String _formatXp(int value) => NumberFormat.decimalPattern().format(value);
 
