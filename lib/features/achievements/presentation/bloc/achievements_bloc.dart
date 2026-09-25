@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 
 import '../../../../core/domain/entities/leaderboard_entry.dart';
 import '../../../../core/domain/repositories/gamification_repository.dart';
@@ -103,8 +105,9 @@ class AchievementsLoaded extends AchievementsState {
       leaderboard: leaderboard ?? this.leaderboard,
       leaderboardScope: leaderboardScope ?? this.leaderboardScope,
       leaderboardLoading: leaderboardLoading ?? this.leaderboardLoading,
-      leaderboardError:
-          clearLeaderboardError ? null : (leaderboardError ?? this.leaderboardError),
+      leaderboardError: clearLeaderboardError
+          ? null
+          : (leaderboardError ?? this.leaderboardError),
     );
   }
 
@@ -214,13 +217,53 @@ class AchievementsBloc extends Bloc<AchievementsEvent, AchievementsState> {
     }
   }
 
-  /// Strips the `Exception: ` prefix that the client wraps around Supabase
-  /// errors so the UI can show something readable.
+  /// PostgREST/Postgres codes that mean "the project is missing an object the
+  /// client asked for": `PGRST202` (function absent from the schema cache),
+  /// `PGRST205` (table absent from the schema cache) and `42703` (column does
+  /// not exist).
+  ///
+  /// All three appear when `supabase/migrations/010_gamification_leaderboard.sql`
+  /// has not been applied to the project yet. That is a deployment problem, not
+  /// something a retry can fix, so it must not reach the user as raw SQL.
+  static const _missingSchemaCodes = <String>{'PGRST202', 'PGRST205', '42703'};
+
+  /// `42501` is `insufficient_privilege`. Postgres raises it as
+  /// `new row violates row-level security policy for table "gamification"`
+  /// when a table has RLS enabled but no permissive policy covering the write
+  /// the client attempted — the state an existing `gamification` or
+  /// `achievements` table is left in when migration 010 has not been applied.
+  /// Same cause as [_missingSchemaCodes], same remedy.
+  static const _permissionCodes = <String>{'42501'};
+
+  /// Keeps exception plumbing out of the UI layer.
+  ///
+  /// The raw `PostgrestException` dump is only meaningful to whoever applies
+  /// the migrations, so release builds get a plain-language message instead.
   static String _describe(Object error) {
+    if (error is PostgrestException) {
+      if (_missingSchemaCodes.contains(error.code)) {
+        return _migrationHint('Progress tracking');
+      }
+      if (_permissionCodes.contains(error.code)) {
+        return _migrationHint('Saving your progress');
+      }
+      // Anything else is surfaced at message level only: `toString()` on the
+      // exception embeds the request payload and the statement that failed.
+      final message = error.message.trim();
+      return message.isEmpty ? 'Something went wrong.' : message;
+    }
+
     const prefix = 'Exception: ';
     final message = error.toString();
     final trimmed =
         message.startsWith(prefix) ? message.substring(prefix.length) : message;
     return trimmed.isEmpty ? 'Something went wrong.' : trimmed;
   }
+
+  /// [action] is phrased as a subject so it reads naturally in both branches.
+  static String _migrationHint(String action) => kDebugMode
+      ? '$action is unavailable: this build is ahead of the database. Run '
+          'supabase/migrations/010_gamification_leaderboard.sql in the Supabase '
+          'SQL editor, then try again.'
+      : '$action is temporarily unavailable. Please try again in a moment.';
 }

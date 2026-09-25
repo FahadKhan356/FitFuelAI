@@ -19,6 +19,7 @@ import '../../../analytics/presentation/pages/analytics_screen.dart';
 import '../../../food_scanner/presentation/pages/food_scanner_screen.dart';
 import '../../../ai_coach/presentation/pages/ai_coach_screen.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
+import '../../../../screens/camera_scan_screen.dart';
 
 // ─────────────────────────────────────────────
 //  Design Tokens
@@ -52,7 +53,12 @@ class _HomeScreenState extends State<HomeScreen> {
   int _navIndex = 0;
   final Map<int, int> _tabKeys = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0};
 
-  void _openScan() => _switchTab(2);
+  void _openScan() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CameraScanScreen()),
+    );
+  }
 
   void _switchTab(int index) {
     setState(() {
@@ -169,8 +175,7 @@ class _HomeContentState extends State<_HomeContent>
     }
     // Guard against stale cached 0/negative targets (older buggy saves wrote 0
     // for the calorie goal). Default to 2000 so the card never shows a dead 0.
-    _dailyGoalKcal =
-        cached.targetCalories > 0 ? cached.targetCalories : 2000;
+    _dailyGoalKcal = cached.targetCalories > 0 ? cached.targetCalories : 2000;
     _consumedKcal = cached.consumedCalories;
     _burnedKcal = cached.burnedCalories;
     _proteinTarget = cached.targetProtein > 0 ? cached.targetProtein : 150;
@@ -248,8 +253,7 @@ class _HomeContentState extends State<_HomeContent>
           : _calculateFallbackFat(dailyKcal);
       // Use the SAME shared resolver as the water tracker so both screens always
       // show an identical target (DB goal → weight-based fallback).
-      final waterTarget =
-          await WaterGoalResolver.resolve(user.id);
+      final waterTarget = await WaterGoalResolver.resolve(user.id);
 
       final streakInfo = await StreakService.compute(user.id);
 
@@ -468,32 +472,32 @@ class _HomeContentState extends State<_HomeContent>
                 consumed: _consumedKcal,
                 burned: _burnedKcal,
               ),
-            const SizedBox(height: 16),
-            _MacroRow(
-              animation: _entryController,
-              proteinCurrent: _proteinConsumed,
-              proteinTotal: _proteinTarget,
-              carbsCurrent: _carbsConsumed,
-              carbsTotal: _carbsTarget,
-              fatCurrent: _fatConsumed,
-              fatTotal: _fatTarget,
-            ),
-            const SizedBox(height: 14),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: _WaterCard(
-                    animation: _entryController,
-                    totalMl: _waterTotalMl,
-                    targetMl: _waterTargetMl,
-                    onReload: _loadData,
+              const SizedBox(height: 16),
+              _MacroRow(
+                animation: _entryController,
+                proteinCurrent: _proteinConsumed,
+                proteinTotal: _proteinTarget,
+                carbsCurrent: _carbsConsumed,
+                carbsTotal: _carbsTarget,
+                fatCurrent: _fatConsumed,
+                fatTotal: _fatTarget,
+              ),
+              const SizedBox(height: 14),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _WaterCard(
+                      animation: _entryController,
+                      totalMl: _waterTotalMl,
+                      targetMl: _waterTargetMl,
+                      onReload: _loadData,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(child: _AICoachCard(animation: _entryController)),
-              ],
-            ),
+                  const SizedBox(width: 12),
+                  Expanded(child: _AICoachCard(animation: _entryController)),
+                ],
+              ),
             ],
             AnimatedBuilder(
               animation: _entryController,
@@ -512,8 +516,8 @@ class _HomeContentState extends State<_HomeContent>
               },
               child: _MealCard(animation: _entryController),
             ),
-             const SizedBox(height: 14),
-             AnimatedBuilder(
+            const SizedBox(height: 14),
+            AnimatedBuilder(
               animation: _entryController,
               builder: (context, child) {
                 final t = CurvedAnimation(
@@ -817,8 +821,7 @@ class _TopBar extends StatelessWidget {
                         width: 40,
                         height: 40,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stack) =>
-                            const Center(
+                        errorBuilder: (context, error, stack) => const Center(
                           child: Text('👤', style: TextStyle(fontSize: 18)),
                         ),
                       )
@@ -1303,7 +1306,8 @@ class _MealCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: kOrange,
                   borderRadius: BorderRadius.circular(100),
@@ -1331,6 +1335,7 @@ class _MealCard extends StatelessWidget {
     );
   }
 }
+
 // ─────────────────────────────────────────────
 //  Water Card
 // ─────────────────────────────────────────────

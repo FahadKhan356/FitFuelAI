@@ -10,11 +10,19 @@
 --
 -- This migration supplies the missing write model:
 --   1. `xp_events`  — append-only XP ledger (source of truth).
---   2. `achievements` gains a unique (user_id, badge) key so the app can
---      upsert progress instead of inserting duplicates.
---   3. `compute_gamification_stats()` — aggregates the user's own logs
+--   2. `achievements` is repaired: the pre-`created_at` column is added,
+--      duplicates are collapsed and a unique (user_id, badge) key plus the
+--      owner write policies let the app upsert progress instead of
+--      inserting duplicates.
+--   3. `gamification` gets the same repair: any missing column is added, the
+--      tier CHECK is widened and the owner write policies that schema.sql
+--      declares are re-created. A project whose `gamification` table was
+--      created outside schema.sql has RLS enabled with *no* policies at all,
+--      which rejects the app's XP rollup with 42501 ("new row violates
+--      row-level security policy for table gamification").
+--   4. `compute_gamification_stats()` — aggregates the user's own logs
 --      into a single JSON snapshot (still SECURITY INVOKER + RLS).
---   4. `get_leaderboard()` — SECURITY DEFINER, exposes only safe columns.
+--   5. `get_leaderboard()` — SECURITY DEFINER, exposes only safe columns.
 
 -- ============================================================
 -- 1. XP EVENTS (append-only ledger)
@@ -39,8 +47,16 @@ create index if not exists idx_xp_events_user_date
   on public.xp_events(user_id, event_date desc);
 
 -- ============================================================
--- 2. ACHIEVEMENTS — dedupe + unique key
+-- 2. ACHIEVEMENTS — missing column, dedupe, unique key, write access
 -- ============================================================
+-- Projects created before `created_at` was added to the `achievements`
+-- DDL still have the older shape: `create table if not exists` in
+-- schema.sql is a no-op once the table exists, so the column was never
+-- back-filled there. The dedupe below orders by it, so create it first
+-- (no-op on installations that already match schema.sql).
+alter table public.achievements
+  add column if not exists created_at timestamptz default now();
+
 -- Collapse any pre-existing duplicates, keeping the earliest row.
 delete from public.achievements a
 where exists (
@@ -54,9 +70,43 @@ where exists (
 create unique index if not exists idx_achievements_user_badge
   on public.achievements(user_id, badge);
 
+-- Until now `achievements` was read-only: only a SELECT policy existed, so
+-- the first `upsertAchievements` call would trip over RLS. These reuse the
+-- policy names declared in schema.sql so the two stay interchangeable.
+alter table public.achievements enable row level security;
+
+drop policy if exists "Users can view own achievements" on public.achievements;
+create policy "Users can view own achievements"
+  on public.achievements for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "Users can insert own achievements" on public.achievements;
+create policy "Users can insert own achievements"
+  on public.achievements for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "Users can update own achievements" on public.achievements;
+create policy "Users can update own achievements"
+  on public.achievements for update
+  using (auth.uid() = user_id);
+
 -- ============================================================
--- 3. GAMIFICATION — keep updated_at fresh on every rollup
+-- 3. GAMIFICATION — missing columns, rollup trigger, tier CHECK and write access
 -- ============================================================
+-- `gamification` is the other table that predates the current schema in some
+-- projects (the same ad-hoc shape that left `achievements` without
+-- `created_at`), and it can be missing any of these columns. Every statement
+-- below reads one of them - the trigger writes `updated_at`, the CHECK
+-- validates `tier` - and a missing column would abort this whole script with
+-- 42703, so create them first. No-ops on installations that already match
+-- schema.sql.
+alter table public.gamification
+  add column if not exists xp_total int default 0,
+  add column if not exists streak_days int default 0,
+  add column if not exists level int default 1,
+  add column if not exists tier text default 'Bronze',
+  add column if not exists updated_at timestamptz default now();
+
 create or replace function public.touch_gamification_updated_at()
 returns trigger as $$
 begin
@@ -69,6 +119,61 @@ drop trigger if exists trigger_touch_gamification_updated_at on public.gamificat
 create trigger trigger_touch_gamification_updated_at
   before update on public.gamification
   for each row execute function public.touch_gamification_updated_at();
+
+-- Tier is derived from the level curve in `lib/core/utils/level_system.dart`,
+-- so the CHECK has to accept every value that ladder can produce. Projects
+-- that created the table from an older schema can carry a narrower list, which
+-- would reject the app's rollup with 23514; re-declaring it keeps the two in
+-- sync (`badge_catalog_test.dart` asserts Dart and SQL agree on the set).
+-- `add constraint` validates every existing row, so a single legacy or
+-- unknown `tier` value would abort the whole migration with 23514. Re-derive
+-- it from `level` using the thresholds in `LevelSystem.tierForLevel`
+-- (`lib/core/utils/level_system.dart`) before re-declaring the CHECK. The
+-- app rewrites `tier` on the next sync anyway; this only has to be valid.
+update public.gamification
+   set tier = case
+         when level >= 50 then 'Diamond'
+         when level >= 35 then 'Platinum'
+         when level >= 20 then 'Gold'
+         when level >= 10 then 'Silver'
+         else 'Bronze'
+       end
+ where tier is null
+    or tier not in ('Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond');
+
+alter table public.gamification drop constraint if exists gamification_tier_check;
+alter table public.gamification
+  add constraint gamification_tier_check
+  check (tier in ('Bronze', 'Silver', 'Gold', 'Platinum', 'Diamond'));
+
+-- The same drift class as `achievements` above. `gamification` already
+-- existed in older projects, and the policy block that grants write access
+-- lives in schema.sql — which `create table if not exists` cannot re-apply
+-- to a table that is already there. A project left with only the SELECT
+-- policy rejects the app's XP rollup with
+--   42501: new row violates row-level security policy for table "gamification"
+-- because PostgREST's upsert is an INSERT ... ON CONFLICT DO UPDATE: the
+-- INSERT needs a `with check` policy, and the DO UPDATE branch needs the
+-- UPDATE policy to hold for the conflicting row. Re-declare all three using
+-- the policy names from schema.sql so the two files stay interchangeable,
+-- then the rollup in `GamificationRepositoryImpl.syncAchievements` succeeds
+-- for both the first write (insert) and every later one (update).
+alter table public.gamification enable row level security;
+
+drop policy if exists "Users can view own gamification" on public.gamification;
+create policy "Users can view own gamification"
+  on public.gamification for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "Users can upsert own gamification" on public.gamification;
+create policy "Users can upsert own gamification"
+  on public.gamification for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "Users can update own gamification" on public.gamification;
+create policy "Users can update own gamification"
+  on public.gamification for update
+  using (auth.uid() = user_id);
 
 -- ============================================================
 -- 4. RLS for the XP ledger
