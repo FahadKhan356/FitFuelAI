@@ -54,8 +54,11 @@ class _CameraScanScreenState extends State<CameraScanScreen> {
         _editedWeights = {for (final item in results) item.name: item.weightG};
         _isScanning = false;
       });
-      if (results.isEmpty)
-        _showMessage('No food detected. Try better lighting.');
+      if (results.isEmpty) {
+        _showMessage(
+          _service.lastError ?? 'No food detected. Try better lighting.',
+        );
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() => _isScanning = false);

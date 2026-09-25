@@ -29,7 +29,8 @@ class AppConstants {
   // subscription flow; set it when the store products are ready.
   static String get revenueCatApiKey => envValue('REVENUECAT_API_KEY', '');
   static bool get subscriptionDevelopmentMode =>
-      envValue('SUBSCRIPTION_DEVELOPMENT_MODE', 'false').toLowerCase() == 'true';
+      envValue('SUBSCRIPTION_DEVELOPMENT_MODE', 'false').toLowerCase() ==
+      'true';
 
   // Nutrition APIs (from .env file)
   // USDA FoodData Central — free API key from https://fdc.nal.usda.gov/api-key-signup.html
@@ -58,6 +59,9 @@ class AppConstants {
   static String get geminiModel => envValue('GEMINI_MODEL', 'gemini-2.5-flash');
   static String get geminiApiBase => envValue(
       'GEMINI_API_BASE', 'https://generativelanguage.googleapis.com/v1beta');
+  static String get fatSecretClientId => envValue('FATSECRET_CLIENT_ID', '');
+  static String get fatSecretClientSecret =>
+      envValue('FATSECRET_CLIENT_SECRET', '');
 
   // AI Coach context layer
   static const int aiContextHistoryDays = 7;

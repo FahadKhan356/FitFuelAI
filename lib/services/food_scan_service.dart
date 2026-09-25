@@ -2,13 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fitfuel_ai/core/constants/app_constants.dart';
 import 'package:http/http.dart' as http;
 
-// Replace these placeholders with credentials supplied through your secure build
-// configuration before releasing the application.
-const String kGeminiApiKey = 'GEMINI_KEY_HERE';
-const String kFatSecretClientId = 'FATSECRET_ID_HERE';
-const String kFatSecretClientSecret = 'FATSECRET_SECRET_HERE';
+// Credentials are read from .env instead of being embedded in the app source.
+String get kGeminiApiKey => AppConstants.geminiApiKey;
+String get kFatSecretClientId => AppConstants.fatSecretClientId;
+String get kFatSecretClientSecret => AppConstants.fatSecretClientSecret;
 
 class ScannedFoodItem {
   const ScannedFoodItem({
@@ -116,6 +116,7 @@ class VerifiedFoodItem extends ScannedFoodItem {
 class FoodScanService {
   static String? _fatSecretToken;
   static DateTime? _fatSecretTokenExpiry;
+  String? lastError;
 
   static const _prompt = '''You are a professional nutritionist AI.
 Analyze this food image carefully.
@@ -135,6 +136,12 @@ Rules:
 - Never add any text outside the JSON array''';
 
   Future<List<ScannedFoodItem>> scanImageFile(File imageFile) async {
+    lastError = null;
+    if (kGeminiApiKey.isEmpty) {
+      lastError =
+          'Food scanning is not configured. Add GEMINI_API_KEY to .env.';
+      return [];
+    }
     try {
       final extension = imageFile.path.split('.').last.toLowerCase();
       final mimeType = extension == 'png' ? 'image/png' : 'image/jpeg';
@@ -142,8 +149,8 @@ Rules:
       final response = await http
           .post(
             Uri.parse(
-              'https://generativelanguage.googleapis.com/v1beta/models/'
-              'gemini-1.5-flash:generateContent?key=$kGeminiApiKey',
+              '${AppConstants.geminiApiBase}/models/'
+              '${AppConstants.geminiModel}:generateContent?key=$kGeminiApiKey',
             ),
             headers: const {'Content-Type': 'application/json'},
             body: jsonEncode({
@@ -161,7 +168,11 @@ Rules:
             }),
           )
           .timeout(const Duration(seconds: 30));
-      if (response.statusCode < 200 || response.statusCode >= 300) return [];
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        lastError = _apiError(response.body) ??
+            'Food scan request failed (HTTP ${response.statusCode}).';
+        return [];
+      }
 
       final payload = jsonDecode(response.body) as Map<String, dynamic>;
       final candidates = payload['candidates'] as List?;
@@ -174,13 +185,19 @@ Rules:
       final text = parts?.isNotEmpty == true
           ? (parts!.first as Map<String, dynamic>)['text']?.toString()
           : null;
-      if (text == null) return [];
+      if (text == null) {
+        lastError = 'The AI could not analyze this image. Please try again.';
+        return [];
+      }
       final cleaned = text
           .replaceAll(RegExp(r'^\s*```(?:json)?\s*', multiLine: true), '')
           .replaceAll(RegExp(r'\s*```\s*$', multiLine: true), '')
           .trim();
       final decoded = jsonDecode(cleaned);
-      if (decoded is! List) return [];
+      if (decoded is! List) {
+        lastError = 'The AI returned an invalid food result. Please try again.';
+        return [];
+      }
       return decoded
           .whereType<Map>()
           .map((item) => ScannedFoodItem.fromJson(
@@ -188,9 +205,23 @@ Rules:
               ))
           .where((item) => item.weightG >= 10 && item.weightG <= 1500)
           .toList();
+    } on TimeoutException {
+      lastError = 'Scan failed. Check your connection and try again.';
+      return [];
     } catch (_) {
+      lastError = 'Scan failed. Check your connection and try again.';
       return [];
     }
+  }
+
+  String? _apiError(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map && decoded['error'] is Map) {
+        return (decoded['error'] as Map)['message']?.toString();
+      }
+    } catch (_) {}
+    return null;
   }
 
   Future<String?> _getFatSecretToken() async {
