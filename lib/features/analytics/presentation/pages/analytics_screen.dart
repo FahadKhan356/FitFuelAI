@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../bloc/analytics_bloc.dart';
 import '../../../../core/config/routes.dart';
 import '../../../../core/domain/entities/calendar_tracking.dart';
+import '../../../../core/services/home_data_refresh_notifier.dart';
 
 const _bg = Color(0xFFF7F6FB);
 const _surface = Colors.white;
@@ -45,10 +46,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
   void initState() {
     super.initState();
     _mainController = AnimationController(
-      duration: const Duration(milliseconds: 5800),
+      // 1.1s (was 5.8s): the staggered KPI-card reveal used to run for nearly
+      // six seconds, so the screen looked like it was still "loading" values
+      // long after it was opened.
+      duration: const Duration(milliseconds: 1100),
       vsync: this,
     )..forward();
     _analyticsBloc = sl<AnalyticsBloc>();
+    // Keep the charts in sync with writes made on other screens (meal logged,
+    // water logged, weight logged) instead of showing yesterday's numbers
+    // until the tab is rebuilt.
+    HomeDataRefreshNotifier.instance.addListener(_loadData);
     _loadData();
   }
 
@@ -60,6 +68,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
 
   @override
   void dispose() {
+    HomeDataRefreshNotifier.instance.removeListener(_loadData);
     _mainController.dispose();
     super.dispose();
   }

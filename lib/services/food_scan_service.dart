@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:fitfuel_ai/core/constants/app_constants.dart';
 import 'package:http/http.dart' as http;
+import 'package:image/image.dart' as image;
 
 // Credentials are read from .env instead of being embedded in the app source.
 String get kGeminiApiKey => AppConstants.geminiApiKey;
@@ -135,6 +136,31 @@ Rules:
 - If no food visible return exactly []
 - Never add any text outside the JSON array''';
 
+  static const _foodResponseSchema = {
+    'type': 'ARRAY',
+    'items': {
+      'type': 'OBJECT',
+      'properties': {
+        'name': {'type': 'STRING'},
+        'weight_g': {'type': 'NUMBER'},
+        'calories': {'type': 'NUMBER'},
+        'protein_g': {'type': 'NUMBER'},
+        'carbs_g': {'type': 'NUMBER'},
+        'fat_g': {'type': 'NUMBER'},
+        'confidence': {'type': 'NUMBER'},
+      },
+      'required': [
+        'name',
+        'weight_g',
+        'calories',
+        'protein_g',
+        'carbs_g',
+        'fat_g',
+        'confidence',
+      ],
+    },
+  };
+
   Future<List<ScannedFoodItem>> scanImageFile(File imageFile) async {
     lastError = null;
     if (kGeminiApiKey.isEmpty) {
@@ -143,89 +169,39 @@ Rules:
       return [];
     }
     try {
-      final extension = imageFile.path.split('.').last.toLowerCase();
-      final mimeType = extension == 'png' ? 'image/png' : 'image/jpeg';
-      final imageData = base64Encode(await imageFile.readAsBytes());
-      final response = await http
-          .post(
-            Uri.parse(
-              '${AppConstants.geminiApiBase}/models/'
-              '${AppConstants.geminiModel}:generateContent?key=$kGeminiApiKey',
-            ),
-            headers: const {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'contents': [
-                {
-                  'parts': [
-                    {'text': _prompt},
-                    {
-                      'inline_data': {'mime_type': mimeType, 'data': imageData}
-                    },
-                  ],
-                },
-              ],
-              'generationConfig': {
-                'temperature': 0.1,
-                'maxOutputTokens': 1024,
-                // Gemini 2.5 supports structured JSON responses. This avoids
-                // otherwise valid food detections being wrapped in prose or a
-                // Markdown code block.
-                'responseMimeType': 'application/json',
-              },
-            }),
-          )
-          .timeout(const Duration(seconds: 30));
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        lastError = _apiError(response.body) ??
-            'Food scan request failed (HTTP ${response.statusCode}).';
-        return [];
+      // Gallery images are not guaranteed to be JPEGs (iPhones often keep
+      // HEIC/PNG files).  Sending the original bytes with a guessed MIME type
+      // makes Gemini treat an otherwise good photo as corrupt.  Normalising
+      // decoded images gives Gemini a consistent, supported JPEG payload.
+      final upload = await _prepareImageForGemini(imageFile);
+      try {
+        return _parseFoodItems(await _requestScan(upload, structured: true));
+      } on FormatException {
+        // Models can occasionally return prose or a truncated structured
+        // response. Retry once without the schema; the prompt still demands
+        // JSON and the tolerant parser below handles wrapper objects too.
+        try {
+          return _parseFoodItems(
+            await _requestScan(upload, structured: false),
+          );
+        } on FormatException {
+          lastError =
+              'The AI could not read the result. Please retake the photo with the food clearly visible.';
+          return [];
+        }
       }
-
-      final payload = jsonDecode(response.body) as Map<String, dynamic>;
-      final candidates = payload['candidates'] as List?;
-      final firstCandidate =
-          candidates?.isNotEmpty == true && candidates!.first is Map
-              ? Map<String, dynamic>.from(candidates.first as Map)
-              : null;
-      final content = firstCandidate?['content'];
-      final parts = content is Map ? content['parts'] as List? : null;
-      final text = parts?.isNotEmpty == true
-          ? (parts!.first as Map<String, dynamic>)['text']?.toString()
-          : null;
-      if (text == null) {
-        lastError = 'The AI could not analyze this image. Please try again.';
-        return [];
-      }
-      var cleaned = text
-          .replaceAll(RegExp(r'^\s*```(?:json)?\s*', multiLine: true), '')
-          .replaceAll(RegExp(r'\s*```\s*$', multiLine: true), '')
-          .trim();
-      // Be tolerant of an occasional introductory sentence despite JSON mode.
-      final firstBracket = cleaned.indexOf('[');
-      final lastBracket = cleaned.lastIndexOf(']');
-      if (firstBracket >= 0 && lastBracket >= firstBracket) {
-        cleaned = cleaned.substring(firstBracket, lastBracket + 1);
-      }
-      final decoded = jsonDecode(cleaned);
-      if (decoded is! List) {
-        lastError = 'The AI returned an invalid food result. Please try again.';
-        return [];
-      }
-      return decoded
-          .whereType<Map>()
-          .map((item) => ScannedFoodItem.fromJson(
-                Map<String, dynamic>.from(item),
-              ))
-          .where((item) => item.weightG >= 10 && item.weightG <= 1500)
-          .toList();
     } on TimeoutException {
       lastError = 'Gemini took too long to respond. Please try again.';
       return [];
     } on SocketException {
       lastError = 'Could not reach Gemini. Check your internet connection.';
       return [];
+    } on _GeminiRequestException catch (error) {
+      lastError = error.message;
+      return [];
     } on FormatException {
-      lastError = 'Gemini returned an unreadable result. Please try again.';
+      lastError =
+          'This image format is not supported. Choose a JPG or PNG photo.';
       return [];
     } catch (error) {
       // Keep the useful exception visible during setup instead of incorrectly
@@ -233,6 +209,132 @@ Rules:
       lastError = 'Food scan failed: $error';
       return [];
     }
+  }
+
+  Future<_GeminiImage> _prepareImageForGemini(File file) async {
+    final bytes = await file.readAsBytes();
+    final decoded = image.decodeImage(bytes);
+    // `package:image` cannot decode HEIC, but Gemini accepts HEIC/HEIF.
+    // Preserve those bytes with their real MIME type instead of falsely
+    // declaring them JPEGs (the former source of the unreadable result).
+    if (decoded == null) {
+      final mimeType = _heifMimeType(bytes);
+      if (mimeType == null)
+        throw const FormatException('unsupported image format');
+      return _GeminiImage(base64Encode(bytes), mimeType);
+    }
+    final normalized = decoded.width > 1600 || decoded.height > 1600
+        ? image.copyResize(
+            decoded,
+            width: decoded.width >= decoded.height ? 1600 : null,
+            height: decoded.height > decoded.width ? 1600 : null,
+          )
+        : decoded;
+    return _GeminiImage(
+      base64Encode(image.encodeJpg(normalized, quality: 88)),
+      'image/jpeg',
+    );
+  }
+
+  String? _heifMimeType(List<int> bytes) {
+    if (bytes.length < 12 ||
+        String.fromCharCodes(bytes.sublist(4, 8)) != 'ftyp') return null;
+    final brand = String.fromCharCodes(bytes.sublist(8, 12)).toLowerCase();
+    if (const {'heic', 'heix', 'hevc', 'hevx'}.contains(brand)) {
+      return 'image/heic';
+    }
+    if (const {'mif1', 'msf1'}.contains(brand)) return 'image/heif';
+    return null;
+  }
+
+  Future<String> _requestScan(
+    _GeminiImage upload, {
+    required bool structured,
+  }) async {
+    final generationConfig = <String, dynamic>{
+      'temperature': 0.1,
+      'maxOutputTokens': 2048,
+      'responseMimeType': 'application/json',
+    };
+    if (structured) generationConfig['responseSchema'] = _foodResponseSchema;
+
+    final response = await http
+        .post(
+          Uri.parse('${AppConstants.geminiApiBase}/models/'
+              '${AppConstants.geminiModel}:generateContent?key=$kGeminiApiKey'),
+          headers: const {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'contents': [
+              {
+                'parts': [
+                  {'text': _prompt},
+                  {
+                    'inline_data': {
+                      'mime_type': upload.mimeType,
+                      'data': upload.base64Data,
+                    },
+                  },
+                ],
+              },
+            ],
+            'generationConfig': generationConfig,
+          }),
+        )
+        .timeout(const Duration(seconds: 40));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw _GeminiRequestException(_apiError(response.body) ??
+          'Food scan request failed (HTTP ${response.statusCode}).');
+    }
+
+    final payload = jsonDecode(response.body);
+    if (payload is! Map) throw const FormatException('invalid Gemini payload');
+    final candidates = payload['candidates'];
+    if (candidates is! List) throw const FormatException('no Gemini candidate');
+    for (final candidate in candidates.whereType<Map>()) {
+      final content = candidate['content'];
+      final parts = content is Map ? content['parts'] : null;
+      if (parts is! List) continue;
+      final text = parts
+          .whereType<Map>()
+          .map((part) => part['text'])
+          .whereType<String>()
+          .join('\n')
+          .trim();
+      if (text.isNotEmpty) return text;
+    }
+    throw const FormatException('no text in Gemini response');
+  }
+
+  List<ScannedFoodItem> _parseFoodItems(String text) {
+    var cleaned = text
+        .replaceAll(RegExp(r'^\s*```(?:json)?\s*', multiLine: true), '')
+        .replaceAll(RegExp(r'\s*```\s*$', multiLine: true), '')
+        .replaceAll(RegExp(r',\s*([}\]])'), r'$1')
+        .trim();
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(cleaned);
+    } on FormatException {
+      final first = cleaned.indexOf('[');
+      final last = cleaned.lastIndexOf(']');
+      if (first < 0 || last < first) rethrow;
+      decoded = jsonDecode(cleaned.substring(first, last + 1));
+    }
+    // Accept common valid wrapper shapes as a compatibility fallback.
+    if (decoded is Map)
+      decoded = decoded['foods'] ?? decoded['items'] ?? decoded['results'];
+    if (decoded is! List)
+      throw const FormatException('food result is not a list');
+    return decoded
+        .whereType<Map>()
+        .map((item) => ScannedFoodItem.fromJson(
+              Map<String, dynamic>.from(item),
+            ))
+        .where((item) =>
+            item.name.trim().isNotEmpty &&
+            item.weightG >= 10 &&
+            item.weightG <= 1500)
+        .toList();
   }
 
   String? _apiError(String body) {
@@ -339,4 +441,17 @@ Rules:
           : VerifiedFoodItem.fromDbValues(item, verified);
     }));
   }
+}
+
+class _GeminiImage {
+  const _GeminiImage(this.base64Data, this.mimeType);
+
+  final String base64Data;
+  final String mimeType;
+}
+
+class _GeminiRequestException implements Exception {
+  const _GeminiRequestException(this.message);
+
+  final String message;
 }

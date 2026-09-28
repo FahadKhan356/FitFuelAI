@@ -136,7 +136,10 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
     super.initState();
     _mainCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 3800),
+      // Entry reveal is intentionally short. With the old 3.8s duration the
+      // headline weight / BMI cards were still animating (showing a partial
+      // value) seconds after the screen opened, which looked like laggy data.
+      duration: const Duration(milliseconds: 1100),
     )..forward();
     _pulseCtrl = AnimationController(
       vsync: this,
@@ -503,80 +506,74 @@ class _WeightHeader extends StatelessWidget {
         ? 'No change since last log'
         : '${isLoss ? '-' : '+'}${deltaAbs.toStringAsFixed(1)}kg since last log';
 
-    return AnimatedBuilder(
-      animation: mainCtrl,
-      builder: (context, child) {
-        final t = _clamp01(CurvedAnimation(
-          parent: mainCtrl,
-          curve: const Interval(0.00, 0.20, curve: Curves.easeOutCubic),
-        ).value);
-        final displayWeight = currentWeight * t;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    // The headline weight renders its real value immediately — the old
+    // count-up multiplier (`currentWeight * t`) meant a partial number was on
+    // screen while the controller ran. With it gone the surrounding
+    // AnimatedBuilder was dead weight, so this subtree no longer rebuilds on
+    // every animation tick either.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                        text: displayWeight.toStringAsFixed(1),
-                        style: const TextStyle(
-                          fontSize: 34,
-                          fontWeight: FontWeight.w800,
-                          color: _textPrimary,
-                          height: 1.0,
-                        ),
-                      ),
-                      const TextSpan(
-                        text: ' kg',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: _textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            // Badge slide & fade
-            AnimatedBuilder(
-              animation: mainCtrl,
-              builder: (context, child) {
-                final badgeT = _clamp01(CurvedAnimation(
-                  parent: mainCtrl,
-                  curve: const Interval(0.06, 0.24, curve: Curves.easeOutCubic),
-                ).value);
-                return Transform.translate(
-                  offset: Offset(-15 * (1 - badgeT), 0),
-                  child: Opacity(
-                    opacity: badgeT,
-                    child: Row(
-                      children: [
-                        Icon(icon, size: 16, color: color),
-                        const SizedBox(width: 4),
-                        Text(
-                          label,
-                          style: TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w700,
-                            color: color,
-                          ),
-                        ),
-                      ],
+            RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: currentWeight.toStringAsFixed(1),
+                    style: const TextStyle(
+                      fontSize: 34,
+                      fontWeight: FontWeight.w800,
+                      color: _textPrimary,
+                      height: 1.0,
                     ),
                   ),
-                );
-              },
+                  const TextSpan(
+                    text: ' kg',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: _textSecondary,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
-        );
-      },
+        ),
+        const SizedBox(height: 6),
+        // Badge slide & fade
+        AnimatedBuilder(
+          animation: mainCtrl,
+          builder: (context, child) {
+            final badgeT = _clamp01(CurvedAnimation(
+              parent: mainCtrl,
+              curve: const Interval(0.06, 0.24, curve: Curves.easeOutCubic),
+            ).value);
+            return Transform.translate(
+              offset: Offset(-15 * (1 - badgeT), 0),
+              child: Opacity(
+                opacity: badgeT,
+                child: Row(
+                  children: [
+                    Icon(icon, size: 16, color: color),
+                    const SizedBox(width: 4),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }
@@ -792,34 +789,38 @@ class _GoalProgressCard extends StatelessWidget {
               },
             ),
             const SizedBox(height: 16),
-            // Target numbers count-up
+            // Target numbers — real values, no count-up multiplier so the
+            // figures are already correct the instant the card appears.
             AnimatedBuilder(
               animation: mainCtrl,
               builder: (context, child) {
-                final countT = _clamp01(CurvedAnimation(
+                final reveal = _clamp01(CurvedAnimation(
                   parent: mainCtrl,
                   curve: const Interval(0.34, 0.60, curve: Curves.easeOutCubic),
                 ).value);
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _MiniStat(
-                      label: 'START',
-                      value: '${(startWeight * countT).round()}kg',
-                      valueSize: 16,
-                    ),
-                    _MiniStat(
-                      label: 'CURRENT',
-                      value: '${(currentWeight * countT).toStringAsFixed(1)}kg',
-                      valueSize: 18,
-                      accent: _purple,
-                    ),
-                    _MiniStat(
-                      label: 'GOAL',
-                      value: '${(goalWeight * countT).round()}kg',
-                      valueSize: 16,
-                    ),
-                  ],
+                return Opacity(
+                  opacity: reveal,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _MiniStat(
+                        label: 'START',
+                        value: '${startWeight.round()}kg',
+                        valueSize: 16,
+                      ),
+                      _MiniStat(
+                        label: 'CURRENT',
+                        value: '${currentWeight.toStringAsFixed(1)}kg',
+                        valueSize: 18,
+                        accent: _purple,
+                      ),
+                      _MiniStat(
+                        label: 'GOAL',
+                        value: '${goalWeight.round()}kg',
+                        valueSize: 16,
+                      ),
+                    ],
+                  ),
                 );
               },
             ),
@@ -975,7 +976,6 @@ class _BmiCard extends StatelessWidget {
           parent: mainCtrl,
           curve: const Interval(0.60, 0.78, curve: Curves.easeOutCubic),
         ).value);
-        final bmiVal = bmi * t;
         return Transform.scale(
           scale: 0.96 + (t * 0.04),
           child: Opacity(
@@ -1018,7 +1018,7 @@ class _BmiCard extends StatelessWidget {
                           runSpacing: 4,
                           children: [
                             Text(
-                              bmiVal.toStringAsFixed(1),
+                              bmi.toStringAsFixed(1),
                               style: const TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.w800,

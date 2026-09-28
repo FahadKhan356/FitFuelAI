@@ -10,6 +10,7 @@ import 'dart:math' as math;
 
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/services/avatar_uploader.dart';
+import '../../../../core/services/home_data_refresh_notifier.dart';
 import '../../../../core/services/streak_service.dart';
 import '../../../../core/services/water_goal_resolver.dart';
 import '../../../../core/data/datasources/supabase_remote_datasource.dart';
@@ -31,6 +32,15 @@ const _textSecondary = Color(0xFF6F6F7C);
 const _border = Color(0xFFE6E4EE);
 
 double _clamp01(double v) => v.clamp(0.0, 1.0);
+
+/// Calories + protein consumed, computed from today's meal log. Used by the
+/// "Today's Goals" card, which resolves both in a single pass over the meals.
+class _MealTotals {
+  const _MealTotals(this.calories, this.protein);
+
+  final int calories;
+  final double protein;
+}
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -77,9 +87,16 @@ class _ProfileScreenState extends State<ProfileScreen>
   void initState() {
     super.initState();
     _listenToAuthState();
+    // Tiles (weight lost, today's goals) are shared with Home / Weight Tracker.
+    // Re-fetch them whenever another screen writes new data so this tab never
+    // shows a stale value after the user navigates back to it.
+    HomeDataRefreshNotifier.instance.addListener(_onExternalRefresh);
     _mainCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 4800),
+      // Short entry animation: the previous 4.8s duration kept the staggered
+      // reveal running for seconds, so cards were still fading/rolling in
+      // long after the tab was opened (felt like laggy data).
+      duration: const Duration(milliseconds: 1100),
     )..forward();
     _floatCtrl = AnimationController(
       vsync: this,
@@ -106,44 +123,73 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   /// Fetches today's targets and totals so the "Today's Goals" card shows real
   /// data (consistently with the home screen / water tracker).
+  ///
+  /// The four lookups are independent, but used to run one after another — so
+  /// the card waited on four sequential network round-trips before it could
+  /// show today's numbers. They now run together, cutting that to roughly one.
   Future<void> _loadTodayGoals() async {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return;
-
-    // Targets from the goals table.
-    await _resolveGoalTargets(user.id);
-
-    // Water goal from the shared resolver (DB → weight fallback).
-    final waterGoal = await WaterGoalResolver.resolve(user.id);
 
     final wRepo = sl<WaterRepository>();
     final mRepo = sl<MealRepository>();
     final today = DateTime.now();
 
-    var waterConsumed = 0;
-    var calorieConsumed = 0;
-    var proteinConsumed = 0.0;
-    try {
-      final waterEntries = await wRepo.getWaterEntries(user.id, today);
-      waterConsumed = waterEntries.fold<int>(0, (s, e) => s + e.amountMl);
-    } catch (_) {}
-    try {
-      final meals = await mRepo.getMealsByDate(user.id, today);
-      calorieConsumed = meals.fold<int>(0, (s, m) => s + m.totalCalories);
-      for (final meal in meals) {
-        for (final item in meal.items) {
-          proteinConsumed += item.protein;
-        }
-      }
-    } catch (_) {}
+    // Targets from the goals table + the goal label (updates its own state).
+    final goalsFuture = _resolveGoalTargets(user.id);
+
+    final results = await Future.wait<Object>([
+      // Water goal from the shared resolver (DB → weight fallback).
+      WaterGoalResolver.resolve(user.id),
+      _sumWaterToday(wRepo, user.id, today),
+      _sumMealsToday(mRepo, user.id, today),
+    ]);
+    await goalsFuture;
 
     if (!mounted) return;
+    final mealTotals = results[2] as _MealTotals;
     setState(() {
-      _waterGoalMl = waterGoal;
-      _waterConsumedMl = waterConsumed;
-      _calorieConsumed = calorieConsumed;
-      _proteinConsumed = proteinConsumed;
+      _waterGoalMl = results[0] as int;
+      _waterConsumedMl = results[1] as int;
+      _calorieConsumed = mealTotals.calories;
+      _proteinConsumed = mealTotals.protein;
     });
+  }
+
+  /// Millilitres of water logged today; 0 when the lookup fails.
+  Future<int> _sumWaterToday(
+    WaterRepository repo,
+    String userId,
+    DateTime day,
+  ) async {
+    try {
+      final entries = await repo.getWaterEntries(userId, day);
+      return entries.fold<int>(0, (s, e) => s + e.amountMl);
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  /// Calories + protein from today's meals; zeroes when the lookup fails.
+  Future<_MealTotals> _sumMealsToday(
+    MealRepository repo,
+    String userId,
+    DateTime day,
+  ) async {
+    try {
+      final meals = await repo.getMealsByDate(userId, day);
+      var calories = 0;
+      var protein = 0.0;
+      for (final meal in meals) {
+        calories += meal.totalCalories;
+        for (final item in meal.items) {
+          protein += item.protein;
+        }
+      }
+      return _MealTotals(calories, protein);
+    } catch (_) {
+      return const _MealTotals(0, 0.0);
+    }
   }
 
   /// Populates calorie/protein goals and the health-goal label from the goals
@@ -427,8 +473,19 @@ class _ProfileScreenState extends State<ProfileScreen>
     });
   }
 
+  /// Fired by [HomeDataRefreshNotifier] whenever another screen mutates shared
+  /// tracking data (meal logged, water logged, weight logged). Only the tiles
+  /// that actually depend on that data are refreshed, and the last known values
+  /// stay on screen while the fetch runs — no flicker, no stale numbers.
+  void _onExternalRefresh() {
+    if (!mounted) return;
+    _loadWeightMetric();
+    _loadTodayGoals();
+  }
+
   @override
   void dispose() {
+    HomeDataRefreshNotifier.instance.removeListener(_onExternalRefresh);
     _mainCtrl.dispose();
     _floatCtrl.dispose();
     _rotateCtrl.dispose();
@@ -1202,34 +1259,30 @@ class _MetricCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            // Number roll-up
+            // Real value rendered directly — the old count-up multiplier sat on
+            // a partial number (e.g. "2.7" instead of "4.2") for well over a
+            // second after the tab was opened, which read as a stale/late
+            // value. Only the fade is animated now, and the Text is passed as
+            // `child` so it isn't rebuilt on every animation tick.
             AnimatedBuilder(
               animation: mainCtrl,
               builder: (context, child) {
-                final countT = _clamp01(CurvedAnimation(
+                final fade = _clamp01(CurvedAnimation(
                   parent: mainCtrl,
-                  curve: Interval(stagger + 0.04, stagger + 0.24, curve: Curves.easeOutCubic),
+                  curve: Interval(stagger + 0.04, stagger + 0.24,
+                      curve: Curves.easeOutCubic),
                 ).value);
-
-                String display;
-                if (targetValue.contains('.')) {
-                  final val = double.tryParse(targetValue) ?? 0.0;
-                  display = '${(val * countT).toStringAsFixed(1)}$suffix';
-                } else {
-                  final val = int.tryParse(targetValue) ?? 0;
-                  display = '${(val * countT).round()}$suffix';
-                }
-
-                return Text(
-                  display,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1F1F2E),
-                    height: 1.0,
-                  ),
-                );
+                return Opacity(opacity: fade, child: child);
               },
+              child: Text(
+                '$targetValue$suffix',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF1F1F2E),
+                  height: 1.0,
+                ),
+              ),
             ),
             const SizedBox(height: 7),
             Text(

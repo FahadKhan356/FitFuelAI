@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fitfuel_ai/core/config/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -51,7 +53,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _navIndex = 0;
-  final Map<int, int> _tabKeys = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0};
 
   void _openScan() {
     Navigator.push(
@@ -61,10 +62,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _switchTab(int index) {
-    setState(() {
-      _navIndex = index;
-      _tabKeys[index] = _tabKeys[index]! + 1;
-    });
+    // IndexedStack keeps inactive tabs alive. Replacing their keys here used
+    // to dispose and recreate every screen on each tap, causing a fresh DB
+    // request and visible late-changing values after navigation.
+    if (index == _navIndex) return;
+    setState(() => _navIndex = index);
   }
 
   @override
@@ -80,14 +82,11 @@ class _HomeScreenState extends State<HomeScreen> {
       body: IndexedStack(
         index: _navIndex,
         children: [
-          _HomeContent(
-            key: ValueKey('home_${_tabKeys[0]}'),
-            onNavigateToProfile: () => _switchTab(4),
-          ),
-          AnalyticsScreen(key: ValueKey('analytics_${_tabKeys[1]}')),
-          FoodScannerScreen(key: ValueKey('scanner_${_tabKeys[2]}')),
-          AiCoachScreen(key: ValueKey('coach_${_tabKeys[3]}')),
-          ProfileScreen(key: ValueKey('profile_${_tabKeys[4]}')),
+          _HomeContent(onNavigateToProfile: () => _switchTab(4)),
+          const AnalyticsScreen(),
+          const FoodScannerScreen(),
+          const AiCoachScreen(),
+          const ProfileScreen(),
         ],
       ),
     );
@@ -126,6 +125,7 @@ class _HomeContentState extends State<_HomeContent>
   bool _streakTodayActive = false;
   List<MealEntity> _meals = const [];
   bool _loading = true;
+  int _loadGeneration = 0;
 
   @override
   void initState() {
@@ -216,10 +216,13 @@ class _HomeContentState extends State<_HomeContent>
 
   /// Fetches DB dashboard (goals + profile + meals + water) in a single parallel query.
   Future<void> _loadData() async {
+    final generation = ++_loadGeneration;
     try {
       final user = Supabase.instance.client.auth.currentUser;
       if (user == null) {
-        if (mounted) setState(() => _loading = false);
+        if (mounted && generation == _loadGeneration) {
+          setState(() => _loading = false);
+        }
         return;
       }
 
@@ -241,7 +244,15 @@ class _HomeContentState extends State<_HomeContent>
             'HomeScreen: ✅ Using DB goals — calories=${goals.targetCalories}, protein=${goals.targetProtein}, carbs=${goals.targetCarbs}, fat=${goals.targetFat}, water=${goals.dailyWaterMl}');
       }
 
-      final dailyKcal = await CalorieGoalResolver.resolve(user.id);
+      // These do not depend on each other. Running them concurrently keeps a
+      // refresh quick, while cached values remain visible in the meantime.
+      final resolved = await Future.wait<Object>([
+        CalorieGoalResolver.resolve(user.id),
+        WaterGoalResolver.resolve(user.id),
+        StreakService.compute(user.id),
+      ]);
+      if (generation != _loadGeneration) return;
+      final dailyKcal = resolved[0] as int;
       final proteinTarget = (hasValidGoals && goals.targetProtein > 0)
           ? goals.targetProtein
           : _calculateFallbackProtein(profile);
@@ -253,9 +264,8 @@ class _HomeContentState extends State<_HomeContent>
           : _calculateFallbackFat(dailyKcal);
       // Use the SAME shared resolver as the water tracker so both screens always
       // show an identical target (DB goal → weight-based fallback).
-      final waterTarget = await WaterGoalResolver.resolve(user.id);
-
-      final streakInfo = await StreakService.compute(user.id);
+      final waterTarget = resolved[1] as int;
+      final streakInfo = resolved[2] as StreakInfo;
 
       debugPrint(
           'HomeScreen DB targets: dailyKcal=$dailyKcal (from DB: ${goals?.targetCalories}), protein=$proteinTarget, carbs=$carbsTarget, fat=$fatTarget, water=$waterTarget');
@@ -277,7 +287,10 @@ class _HomeContentState extends State<_HomeContent>
           : (user.userMetadata?['name'] as String? ?? '');
 
       // Persist to cache so next launch or tab switch is 0ms instant
-      await HomeDataCache.save(
+      // `save` updates the in-memory cache before its first await. Do not
+      // make the UI wait for SharedPreferences disk I/O before rendering the
+      // newly fetched dashboard.
+      unawaited(HomeDataCache.save(
         user.id,
         HomeCachedData(
           name: resolvedName,
@@ -293,9 +306,9 @@ class _HomeContentState extends State<_HomeContent>
           targetWaterMl: waterTarget,
           consumedWaterMl: consumedWater,
         ),
-      );
+      ));
 
-      if (mounted) {
+      if (mounted && generation == _loadGeneration) {
         setState(() {
           _greetingName =
               resolvedName.isNotEmpty ? resolvedName.split(' ').first : 'there';
@@ -319,9 +332,13 @@ class _HomeContentState extends State<_HomeContent>
         });
       }
     } catch (e, stack) {
-      debugPrint('HomeScreen _loadData error: $e\n$stack');
+      if (generation == _loadGeneration) {
+        debugPrint('HomeScreen _loadData error: $e\n$stack');
+      }
     }
-    if (mounted && _loading) setState(() => _loading = false);
+    if (mounted && generation == _loadGeneration && _loading) {
+      setState(() => _loading = false);
+    }
   }
 
   /// Time-based greeting prefix, e.g. "Good morning".
