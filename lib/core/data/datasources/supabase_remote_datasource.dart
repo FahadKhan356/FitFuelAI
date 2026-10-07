@@ -1,18 +1,18 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/user_model.dart';
-import '../models/meal_model.dart';
-import '../models/food_item_model.dart';
-import '../models/scan_result_model.dart';
+
 import '../models/barcode_model.dart';
+import '../models/food_item_model.dart';
+import '../models/meal_model.dart';
+import '../models/scan_result_model.dart';
+import '../models/subscription_model.dart';
+import '../models/user_model.dart';
 import '../models/water_model.dart';
 import '../models/weight_model.dart';
-import '../models/notification_model.dart';
-import '../models/subscription_model.dart';
 
 class SupabaseRemoteDataSource {
-  final SupabaseClient _client;
 
   SupabaseRemoteDataSource(this._client);
+  final SupabaseClient _client;
 
   // ==================== AUTH ====================
   Future<UserModel> signInWithEmail(String email, String password) async {
@@ -157,7 +157,7 @@ class SupabaseRemoteDataSource {
       var dayCalories = 0;
       for (final item in items) {
         final im = item as Map<String, dynamic>;
-        dayCalories += (im['calories'] as int? ?? 0);
+        dayCalories += im['calories'] as int? ?? 0;
       }
       totals[dateStr] = (totals[dateStr] ?? 0) + dayCalories;
     }
@@ -367,7 +367,7 @@ class SupabaseRemoteDataSource {
     if (response is! List) return const <Map<String, dynamic>>[];
     return response
         .whereType<Map>()
-        .map((row) => Map<String, dynamic>.from(row))
+        .map(Map<String, dynamic>.from)
         .toList();
   }
 

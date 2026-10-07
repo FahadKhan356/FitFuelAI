@@ -1,15 +1,15 @@
+import '../../../../features/food_search/data/datasources/nutrition_api_datasource.dart';
 import '../../domain/entities/barcode_product_entity.dart';
 import '../../domain/repositories/barcode_repository.dart';
-import '../../../../features/food_search/data/datasources/nutrition_api_datasource.dart';
 import '../datasources/supabase_remote_datasource.dart';
 
 class BarcodeRepositoryImpl implements BarcodeRepository {
-  final SupabaseRemoteDataSource _dataSource;
-  final NutritionApiDataSource _nutritionApi;
 
   BarcodeRepositoryImpl(this._dataSource,
       [NutritionApiDataSource? nutritionApi])
       : _nutritionApi = nutritionApi ?? NutritionApiDataSource();
+  final SupabaseRemoteDataSource _dataSource;
+  final NutritionApiDataSource _nutritionApi;
 
   @override
   Future<BarcodeProductEntity?> getProductByBarcode(String barcode) async {

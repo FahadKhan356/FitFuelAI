@@ -107,14 +107,12 @@ class BadgeProgress {
   /// Earned in this run but not yet stored in `achievements`.
   bool get pendingPersistence => unlocked && unlockedAt == null;
 
-  BadgeProgress copyWith({int? progress, bool? unlocked, DateTime? unlockedAt}) {
-    return BadgeProgress(
+  BadgeProgress copyWith({int? progress, bool? unlocked, DateTime? unlockedAt}) => BadgeProgress(
       badge: badge,
       progress: progress ?? this.progress,
       unlocked: unlocked ?? this.unlocked,
       unlockedAt: unlockedAt ?? this.unlockedAt,
     );
-  }
 }
 
 /// The result of evaluating a [GamificationStats] snapshot: what still needs
@@ -316,8 +314,7 @@ class XpEngine {
   ///
   /// Doesn't know about persistence, so `unlockedAt` is always null here —
   /// the repository merges the stored timestamps in afterwards.
-  static List<BadgeProgress> evaluate(GamificationStats stats) {
-    return BadgeCatalog.all.map((badge) {
+  static List<BadgeProgress> evaluate(GamificationStats stats) => BadgeCatalog.all.map((badge) {
       final value = stats.valueFor(badge.stat.key);
       return BadgeProgress(
         badge: badge,
@@ -325,7 +322,6 @@ class XpEngine {
         unlocked: value >= badge.target,
       );
     }).toList();
-  }
 
   /// Wraps a persisted XP total and badge list into the view model the UI uses.
   static GamificationSummary summarize({

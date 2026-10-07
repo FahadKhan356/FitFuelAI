@@ -1,5 +1,5 @@
-import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/app_colors.dart';
@@ -235,8 +235,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   }
 
 @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: _bg,
       appBar: AppBar(
         backgroundColor: _bg,
@@ -295,10 +294,8 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
               ),
             ),
     );
-  }
 
-  Widget _buildError() {
-    return Center(
+  Widget _buildError() => Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -329,7 +326,6 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
         ),
       ),
     );
-  }
   Widget _buildForm() {
     final profile = _profile!;
     return SingleChildScrollView(
@@ -563,8 +559,7 @@ Row(
     );
   }
   Widget _card(String title, IconData icon,
-      {required List<Widget> children}) {
-    return Container(
+      {required List<Widget> children}) => Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: _surface,
@@ -593,7 +588,6 @@ Row(
         ],
       ),
     );
-  }
 
   Widget _textField(
     TextEditingController ctrl,
@@ -602,8 +596,7 @@ Row(
     String? Function(String?)? validator,
     int maxLines = 1,
     TextInputType? keyboardType,
-  }) {
-    return Padding(
+  }) => Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextFormField(
         controller: ctrl,
@@ -628,7 +621,6 @@ Row(
         ),
       ),
     );
-  }
 
   Widget _dropdownField(
     String label,

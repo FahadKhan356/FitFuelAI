@@ -1,32 +1,10 @@
 class FoodItemModel {
-  final String id;
-  final String name;
-  final String? brand;
-  final String source;
-  final int calories;
-  final double protein;
-  final double carbs;
-  final double fat;
-  final double fiber;
-  final double sugar;
-  final double sodium;
-  final double potassiumMg;
-  final double calciumMg;
-  final double ironMg;
-  final double vitaminCMg;
-  final double saturatedFatG;
-  final double servingSize;
-  final String servingUnit;
-  final String? barcode;
-  final String? externalId;
-  final String? imageUrl;
 
   const FoodItemModel({
     required this.id,
     required this.name,
-    this.brand,
+    required this.calories, this.brand,
     this.source = 'USDA',
-    required this.calories,
     this.protein = 0,
     this.carbs = 0,
     this.fat = 0,
@@ -45,8 +23,7 @@ class FoodItemModel {
     this.imageUrl,
   });
 
-  factory FoodItemModel.fromJson(Map<String, dynamic> json) {
-    return FoodItemModel(
+  factory FoodItemModel.fromJson(Map<String, dynamic> json) => FoodItemModel(
       id: json['id'] as String,
       name: json['name'] as String,
       brand: json['brand'] as String?,
@@ -69,10 +46,29 @@ class FoodItemModel {
       externalId: json['external_id'] as String?,
       imageUrl: json['image_url'] as String?,
     );
-  }
+  final String id;
+  final String name;
+  final String? brand;
+  final String source;
+  final int calories;
+  final double protein;
+  final double carbs;
+  final double fat;
+  final double fiber;
+  final double sugar;
+  final double sodium;
+  final double potassiumMg;
+  final double calciumMg;
+  final double ironMg;
+  final double vitaminCMg;
+  final double saturatedFatG;
+  final double servingSize;
+  final String servingUnit;
+  final String? barcode;
+  final String? externalId;
+  final String? imageUrl;
 
-  Map<String, dynamic> toJson() {
-    return {
+  Map<String, dynamic> toJson() => {
       'id': id,
       'name': name,
       if (brand != null) 'brand': brand,
@@ -95,5 +91,4 @@ class FoodItemModel {
       if (externalId != null) 'external_id': externalId,
       if (imageUrl != null) 'image_url': imageUrl,
     };
-  }
 }

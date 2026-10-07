@@ -3,9 +3,9 @@ import 'onboarding_step_scaffold.dart';
 
 /// Step 1 — Primary Goal Selection.
 class GoalStep extends StatefulWidget {
-  final ValueChanged<Map<String, dynamic>> onContinue;
 
-  const GoalStep({super.key, required this.onContinue});
+  const GoalStep({required this.onContinue, super.key});
+  final ValueChanged<Map<String, dynamic>> onContinue;
 
   @override
   State<GoalStep> createState() => _GoalStepState();
@@ -64,8 +64,7 @@ class _GoalStepState extends State<GoalStep> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return OnboardingStepScaffold(
+  Widget build(BuildContext context) => OnboardingStepScaffold(
       title: 'What’s your primary goal?',
       subtitle: 'This helps us personalize your calorie & macro targets.',
       showBack: false,
@@ -85,15 +84,9 @@ class _GoalStepState extends State<GoalStep> {
         ],
       ),
     );
-  }
 }
 
 class _GoalOption {
-  final String id;
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
 
   const _GoalOption({
     required this.id,
@@ -102,22 +95,26 @@ class _GoalOption {
     required this.icon,
     required this.color,
   });
+  final String id;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
 }
 
 class _GoalCard extends StatelessWidget {
-  final _GoalOption option;
-  final bool isSelected;
-  final VoidCallback onTap;
 
   const _GoalCard({
     required this.option,
     required this.isSelected,
     required this.onTap,
   });
+  final _GoalOption option;
+  final bool isSelected;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
@@ -196,5 +193,4 @@ class _GoalCard extends StatelessWidget {
         ),
       ),
     );
-  }
 }

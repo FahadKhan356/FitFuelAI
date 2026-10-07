@@ -6,10 +6,10 @@ import '../datasources/supabase_remote_datasource.dart';
 import '../models/subscription_model.dart';
 
 class SubscriptionRepositoryImpl implements SubscriptionRepository {
-  final SupabaseRemoteDataSource _dataSource;
-  bool _revenueCatConfigured = false;
 
   SubscriptionRepositoryImpl(this._dataSource);
+  final SupabaseRemoteDataSource _dataSource;
+  bool _revenueCatConfigured = false;
 
   bool get _useMockPurchases =>
       AppConstants.subscriptionDevelopmentMode ||
@@ -35,8 +35,9 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
   @override
   Future<SubscriptionModel> purchasePackage(
       {required String userId, required String plan}) async {
-    if (_useMockPurchases)
+    if (_useMockPurchases) {
       return _activateMockPremium(userId: userId, plan: plan);
+    }
     await initialize(userId: userId);
     final packages =
         (await Purchases.getOfferings()).current?.availablePackages ??
@@ -49,16 +50,18 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
       }
     }
     selectedPackage ??= packages.isNotEmpty ? packages.first : null;
-    if (selectedPackage == null)
+    if (selectedPackage == null) {
       throw StateError('No RevenueCat package is configured for $plan.');
+    }
     await Purchases.purchasePackage(selectedPackage);
     return _saveActiveSubscription(userId: userId, plan: plan);
   }
 
   @override
   Future<SubscriptionModel?> restorePurchases(String userId) async {
-    if (_useMockPurchases)
+    if (_useMockPurchases) {
       return _activateMockPremium(userId: userId, plan: 'premium_yearly');
+    }
     await initialize(userId: userId);
     final customerInfo = await Purchases.restorePurchases();
     if (customerInfo.entitlements.active.isEmpty) return null;

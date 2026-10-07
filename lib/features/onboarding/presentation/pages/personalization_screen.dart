@@ -5,10 +5,6 @@ import '../../../../core/constants/app_colors.dart';
 
 // ── Activity Level model ──
 class _ActivityLevel {
-  final String id;
-  final IconData icon;
-  final String title;
-  final String subtitle;
 
   const _ActivityLevel({
     required this.id,
@@ -16,6 +12,10 @@ class _ActivityLevel {
     required this.title,
     required this.subtitle,
   });
+  final String id;
+  final IconData icon;
+  final String title;
+  final String subtitle;
 }
 
 const List<_ActivityLevel> _levels = [
@@ -73,8 +73,7 @@ class _PersonalizeScreenState extends State<PersonalizeScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: const Color(AppColors.authBackground),
       body: SafeArea(
         child: Column(
@@ -110,7 +109,7 @@ class _PersonalizeScreenState extends State<PersonalizeScreen> {
                       ),
                     ),
                     const SizedBox(height: 22),
-                    Row(
+                    const Row(
                       children: [
                         Expanded(
                           child: _MetricCard(
@@ -120,7 +119,7 @@ class _PersonalizeScreenState extends State<PersonalizeScreen> {
                             unit: 'kg',
                           ),
                         ),
-                        const SizedBox(width: 14),
+                        SizedBox(width: 14),
                         Expanded(
                           child: _MetricCard(
                             icon: Icons.track_changes_rounded,
@@ -137,8 +136,8 @@ class _PersonalizeScreenState extends State<PersonalizeScreen> {
                       onChanged: (v) => setState(() => _height = v),
                     ),
                     const SizedBox(height: 26),
-                    Row(
-                      children: const [
+                    const Row(
+                      children: [
                         Icon(Icons.bolt_rounded,
                             color: Color(AppColors.authPurple), size: 20),
                         SizedBox(width: 6),
@@ -178,14 +177,12 @@ class _PersonalizeScreenState extends State<PersonalizeScreen> {
         ),
       ),
     );
-  }
 }
 
 // ── App Bar Row ──
 class _AppBarRow extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return Row(
+  Widget build(BuildContext context) => Row(
       children: [
         GestureDetector(
           onTap: () => context.canPop() ? context.pop() : null,
@@ -222,23 +219,21 @@ class _AppBarRow extends StatelessWidget {
         ),
       ],
     );
-  }
 }
 
 // ── Step Indicator ──
 class _StepIndicator extends StatelessWidget {
+
+  const _StepIndicator({required this.currentStep, required this.totalSteps});
   final int currentStep;
   final int totalSteps;
 
-  const _StepIndicator({required this.currentStep, required this.totalSteps});
-
   @override
-  Widget build(BuildContext context) {
-    return Row(
+  Widget build(BuildContext context) => Row(
       children: [
         Row(
           children: List.generate(totalSteps, (i) {
-            final bool active = i < currentStep;
+            final active = i < currentStep;
             return Container(
               margin: const EdgeInsets.only(right: 5),
               width: 36,
@@ -264,15 +259,10 @@ class _StepIndicator extends StatelessWidget {
         ),
       ],
     );
-  }
 }
 
 // ── Metric Card ──
 class _MetricCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final String unit;
 
   const _MetricCard({
     required this.icon,
@@ -280,10 +270,13 @@ class _MetricCard extends StatelessWidget {
     required this.value,
     required this.unit,
   });
+  final IconData icon;
+  final String label;
+  final String value;
+  final String unit;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 14),
       decoration: BoxDecoration(
         color: const Color(AppColors.backgroundLight),
@@ -342,19 +335,17 @@ class _MetricCard extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 // ── Height Slider Card ──
 class _HeightCard extends StatelessWidget {
+
+  const _HeightCard({required this.heightCm, required this.onChanged});
   final double heightCm;
   final ValueChanged<double> onChanged;
 
-  const _HeightCard({required this.heightCm, required this.onChanged});
-
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 10),
       decoration: BoxDecoration(
         color: const Color(AppColors.backgroundLight),
@@ -369,8 +360,8 @@ class _HeightCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: const [
+              const Row(
+                children: [
                   Icon(Icons.straighten_rounded,
                       size: 18, color: Color(AppColors.authPurple)),
                   SizedBox(width: 7),
@@ -417,24 +408,22 @@ class _HeightCard extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 // ── Activity Card ──
 class _ActivityCard extends StatelessWidget {
-  final _ActivityLevel level;
-  final bool isSelected;
-  final VoidCallback onTap;
 
   const _ActivityCard({
     required this.level,
     required this.isSelected,
     required this.onTap,
   });
+  final _ActivityLevel level;
+  final bool isSelected;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
@@ -537,18 +526,16 @@ class _ActivityCard extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 // ── Daily Suggested Intake Banner ──
 class _IntakeBanner extends StatelessWidget {
-  final int kcal;
 
   const _IntakeBanner({required this.kcal});
+  final int kcal;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
       decoration: BoxDecoration(
@@ -618,17 +605,15 @@ class _IntakeBanner extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 // ── Confirm Button ──
 class _ConfirmButton extends StatelessWidget {
-  final VoidCallback onTap;
   const _ConfirmButton({required this.onTap});
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       color: const Color(AppColors.authBackground),
       padding: const EdgeInsets.fromLTRB(22, 12, 22, 24),
       child: Container(
@@ -679,5 +664,4 @@ class _ConfirmButton extends StatelessWidget {
         ),
       ),
     );
-  }
 }

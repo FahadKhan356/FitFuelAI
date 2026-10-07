@@ -6,9 +6,9 @@ import '../../domain/repositories/user_repository.dart';
 import '../datasources/supabase_remote_datasource.dart';
 
 class UserRepositoryImpl implements UserRepository {
-  final SupabaseRemoteDataSource _dataSource;
 
   UserRepositoryImpl(this._dataSource);
+  final SupabaseRemoteDataSource _dataSource;
 
   @override
   Future<UserProfileEntity?> getUserProfile(String userId) async {

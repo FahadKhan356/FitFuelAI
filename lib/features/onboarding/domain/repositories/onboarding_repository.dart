@@ -1,3 +1,5 @@
+import 'package:fitfuel_ai/core/utils/fitness_calculator.dart' show FitnessCalculator;
+
 import '../../../../core/data/models/user_model.dart';
 
 abstract class OnboardingRepository {
@@ -7,19 +9,9 @@ abstract class OnboardingRepository {
   /// 3. Returns the updated unified [UserModel].
   Future<UserModel> submitOnboardingData({
     required String userId,
-    String? email,
+    required int age, required String gender, required double heightCm, required double weightKg, required String activityLevel, required String dietPreference, required int workoutFrequency, required String goalType, required double targetWeightKg, required double weeklyPaceKg, String? email,
     String? name,
     String? avatarUrl,
-    required int age,
-    required String gender,
-    required double heightCm,
-    required double weightKg,
-    required String activityLevel,
-    required String dietPreference,
-    required int workoutFrequency,
-    required String goalType,
-    required double targetWeightKg,
-    required double weeklyPaceKg,
     DateTime? targetDate,
   });
 }

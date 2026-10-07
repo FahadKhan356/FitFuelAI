@@ -1,15 +1,17 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
+
 import 'package:fitfuel_ai/core/di/service_locator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../bloc/analytics_bloc.dart';
+
 import '../../../../core/config/routes.dart';
 import '../../../../core/domain/entities/calendar_tracking.dart';
 import '../../../../core/services/home_data_refresh_notifier.dart';
+import '../bloc/analytics_bloc.dart';
 
 const _bg = Color(0xFFF7F6FB);
 const _surface = Colors.white;
@@ -74,8 +76,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
   }
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider.value(
+  Widget build(BuildContext context) => BlocProvider.value(
       value: _analyticsBloc,
       child: BlocBuilder<AnalyticsBloc, AnalyticsState>(
         builder: (context, state) {
@@ -129,10 +130,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
         },
       ),
     );
-  }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
+  PreferredSizeWidget _buildAppBar() => AppBar(
       elevation: 0,
       backgroundColor: _surface,
       leading: const SizedBox(),
@@ -165,10 +164,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
         ),
       ],
     );
-  }
 
-  Widget _buildTabBar() {
-    return Container(
+  Widget _buildTabBar() => Container(
       color: _surface,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -236,7 +233,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
         ],
       ),
     );
-  }
 
   Widget _buildStatsCards(CalendarTracking? calendarData) {
     final range = _rangeDays;
@@ -290,7 +286,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
       decoration: BoxDecoration(
         color: _surface,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,13 +326,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
     );
   }
 
-  Widget _buildMacroDistribution() {
-    return Container(
+  Widget _buildMacroDistribution() => Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: _surface,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -362,11 +357,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
                   ),
                 ),
               ),
-              Expanded(
+              const Expanded(
                 flex: 1,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     _MacroLegendItem(label: 'Protein', value: '30%', color: Color(0xFF14B8A6)),
                     SizedBox(height: 12),
                     _MacroLegendItem(label: 'Carbs', value: '50%', color: Color(0xFFFFA500)),
@@ -380,7 +375,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
         ],
       ),
     );
-  }
 
   Widget _buildOnTrackToGoal(CalendarTracking? calendarData) {
     final hitCount = _rangeDays
@@ -392,13 +386,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
       decoration: BoxDecoration(
         color: _surface,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Row(
         children: [
           Container(
             width: 40, height: 40,
-            decoration: BoxDecoration(color: const Color(0xFF06B6D4).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(color: const Color(0xFF06B6D4).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
             child: const Icon(Icons.check_circle_outline, color: Color(0xFF06B6D4), size: 22),
           ),
           const SizedBox(width: 12),
@@ -406,7 +400,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('On Track to Goal', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _textPrimary)),
+                const Text('On Track to Goal', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _textPrimary)),
                 Text('Achieved complete: Day $hitCount', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
               ],
             ),
@@ -417,8 +411,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
     );
   }
 
-  Widget _buildAICoachInsight() {
-    return Container(
+  Widget _buildAICoachInsight() => Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(color: _purple, borderRadius: BorderRadius.circular(12)),
       child: Column(
@@ -429,7 +422,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
             children: [
               Container(
                 width: 32, height: 32,
-                decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(6)),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6)),
                 child: const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
               ),
               const SizedBox(width: 10),
@@ -437,11 +430,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('AI COACH INSIGHT!', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5)),
+                    const Text('AI COACH INSIGHT!', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5)),
                     const SizedBox(height: 8),
                     Text(
                       'Your protein intake is 15% lower than last week. Try adding Greek yogurt or almonds to your afternoon snack to hit your muscle gain target.',
-                      style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.95), height: 1.5, fontWeight: FontWeight.w400),
+                      style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.95), height: 1.5, fontWeight: FontWeight.w400),
                     ),
                   ],
                 ),
@@ -449,14 +442,14 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
             ],
           ),
           const SizedBox(height: 12),
-          Container(height: 1, color: Colors.white.withOpacity(0.2)),
+          Container(height: 1, color: Colors.white.withValues(alpha: 0.2)),
           const SizedBox(height: 12),
           GestureDetector(
             onTap: () => context.push(AppRoutes.aiCoach),
-            child: Row(
+            child: const Row(
               children: [
                 Text('View recommendation', style: TextStyle(fontSize: 13, color: Colors.white, fontWeight: FontWeight.w600)),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
                 Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
               ],
             ),
@@ -464,17 +457,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
         ],
       ),
     );
-  }
 }
 
 class _KpiCard extends StatelessWidget {
-  final Animation<double> controller;
-  final int index;
-  final IconData icon;
-  final String value;
-  final String suffix;
-  final String label;
-  final Color color;
 
   const _KpiCard({
     required this.controller,
@@ -485,6 +470,13 @@ class _KpiCard extends StatelessWidget {
     required this.label,
     required this.color,
   });
+  final Animation<double> controller;
+  final int index;
+  final IconData icon;
+  final String value;
+  final String suffix;
+  final String label;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -493,7 +485,7 @@ class _KpiCard extends StatelessWidget {
       child: AnimatedBuilder(
         animation: controller,
         builder: (context, child) {
-          final t = (CurvedAnimation(parent: controller, curve: Interval(staggerDelay, staggerDelay + 0.16, curve: Curves.elasticOut)).value).clamp(0.0, 1.0);
+          final t = CurvedAnimation(parent: controller, curve: Interval(staggerDelay, staggerDelay + 0.16, curve: Curves.elasticOut)).value.clamp(0.0, 1.0);
           final scale = 0.92 + (t * 0.08);
           return Transform.scale(
             scale: scale,
@@ -508,7 +500,7 @@ class _KpiCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: _surface,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2))],
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -527,15 +519,14 @@ class _KpiCard extends StatelessWidget {
 }
 
 class _MacroLegendItem extends StatelessWidget {
+
+  const _MacroLegendItem({required this.label, required this.value, required this.color});
   final String label;
   final String value;
   final Color color;
 
-  const _MacroLegendItem({required this.label, required this.value, required this.color});
-
   @override
-  Widget build(BuildContext context) {
-    return Row(
+  Widget build(BuildContext context) => Row(
       children: [
         Container(width: 12, height: 12, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
         const SizedBox(width: 8),
@@ -548,19 +539,17 @@ class _MacroLegendItem extends StatelessWidget {
         ),
       ],
     );
-  }
 }
 
 class BarChart extends StatelessWidget {
+
+  const BarChart({required this.data, required this.maxValue, required this.targetLine, super.key});
   final List<Map<String, dynamic>> data;
   final double maxValue;
   final double targetLine;
 
-  const BarChart({required this.data, required this.maxValue, required this.targetLine});
-
   @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
+  Widget build(BuildContext context) => LayoutBuilder(
       builder: (context, constraints) {
         final barWidth = (constraints.maxWidth / data.length) * 0.5;
         final spacing = (constraints.maxWidth / data.length) * 0.5;
@@ -571,15 +560,9 @@ class BarChart extends StatelessWidget {
         );
       },
     );
-  }
 }
 
 class BarChartPainter extends CustomPainter {
-  final List<Map<String, dynamic>> data;
-  final double maxValue;
-  final double targetLine;
-  final double barWidth;
-  final double spacing;
 
   BarChartPainter({
     required this.data,
@@ -588,6 +571,11 @@ class BarChartPainter extends CustomPainter {
     required this.barWidth,
     required this.spacing,
   });
+  final List<Map<String, dynamic>> data;
+  final double maxValue;
+  final double targetLine;
+  final double barWidth;
+  final double spacing;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -619,7 +607,7 @@ class BarChartPainter extends CustomPainter {
 
     if (targetLine > 0) {
       final targetY = chartHeight - (targetLine / maxValue) * chartHeight;
-      paint.color = Colors.red.withOpacity(0.4);
+      paint.color = Colors.red.withValues(alpha: 0.4);
       paint.style = PaintingStyle.stroke;
       paint.strokeWidth = 1;
       canvas.drawLine(Offset(0, targetY), Offset(chartWidth, targetY), paint);
@@ -635,28 +623,20 @@ class BarChartPainter extends CustomPainter {
 }
 
 class PieChart extends StatelessWidget {
+
+  const PieChart({required this.sections, super.key, this.sectionsSpace = 2, this.centerSpaceRadius = 42});
   final List<PieChartSectionData> sections;
   final double sectionsSpace;
   final double centerSpaceRadius;
 
-  const PieChart({required this.sections, this.sectionsSpace = 2, this.centerSpaceRadius = 42});
-
   @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
+  Widget build(BuildContext context) => CustomPaint(
       size: const Size(160, 160),
       painter: PieChartPainter(sections: sections, sectionsSpace: sectionsSpace, centerSpaceRadius: centerSpaceRadius),
     );
-  }
 }
 
 class PieChartSectionData {
-  final Color color;
-  final double value;
-  final String title;
-  final TextStyle titleStyle;
-  final double radius;
-  final double titlePositionPercentageOffset;
 
   PieChartSectionData({
     required this.color,
@@ -666,14 +646,20 @@ class PieChartSectionData {
     required this.radius,
     required this.titlePositionPercentageOffset,
   });
+  final Color color;
+  final double value;
+  final String title;
+  final TextStyle titleStyle;
+  final double radius;
+  final double titlePositionPercentageOffset;
 }
 
 class PieChartPainter extends CustomPainter {
+
+  PieChartPainter({required this.sections, required this.sectionsSpace, required this.centerSpaceRadius});
   final List<PieChartSectionData> sections;
   final double sectionsSpace;
   final double centerSpaceRadius;
-
-  PieChartPainter({required this.sections, required this.sectionsSpace, required this.centerSpaceRadius});
 
   @override
   void paint(Canvas canvas, Size size) {

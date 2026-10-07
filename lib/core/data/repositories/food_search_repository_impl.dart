@@ -4,12 +4,12 @@ import '../../domain/repositories/food_search_repository.dart';
 import '../datasources/supabase_remote_datasource.dart';
 
 class FoodSearchRepositoryImpl implements FoodSearchRepository {
-  final SupabaseRemoteDataSource _dataSource;
-  final NutritionApiDataSource _nutritionApi;
 
   FoodSearchRepositoryImpl(this._dataSource,
       [NutritionApiDataSource? nutritionApi])
       : _nutritionApi = nutritionApi ?? NutritionApiDataSource();
+  final SupabaseRemoteDataSource _dataSource;
+  final NutritionApiDataSource _nutritionApi;
 
   @override
   Future<List<FoodItemEntity>> searchFoodItems(String query) async {

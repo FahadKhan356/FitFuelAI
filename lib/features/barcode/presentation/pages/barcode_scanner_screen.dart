@@ -5,14 +5,14 @@ class BarcodeScannerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(title: Text('Scan Barcode')),
+      appBar: AppBar(title: const Text('Scan Barcode')),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
             child: Container(
               color: Colors.black,
-              child: Center(
+              child: const Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -28,7 +28,7 @@ class BarcodeScannerScreen extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -37,10 +37,10 @@ class BarcodeScannerScreen extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodyMedium,
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: 24),
+                const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () {},
-                  child: Text('Manual Entry'),
+                  child: const Text('Manual Entry'),
                 ),
               ],
             ),

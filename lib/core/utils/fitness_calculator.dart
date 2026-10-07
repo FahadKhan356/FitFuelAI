@@ -16,7 +16,7 @@ class FitnessCalculator {
   // ─── Constants ───
   static const int minCaloriesForLoss = 1200;
   static const double caloriesPerKg = 7700; // ~7700 kcal per kg fat, adjusted
-  static const double proteinGramsPerKg = 2.0;
+  static const double proteinGramsPerKg = 2;
   static const double proteinCaloriesPerGram = 4;
   static const double carbCaloriesPerGram = 4;
   static const double fatCaloriesPerGram = 9;
@@ -76,16 +76,12 @@ class FitnessCalculator {
   }
 
   /// Target protein grams per day: 2.0g per kg of current body weight.
-  static double calculateProtein({required double weightKg}) {
-    return double.parse((weightKg * proteinGramsPerKg).toStringAsFixed(1));
-  }
+  static double calculateProtein({required double weightKg}) => double.parse((weightKg * proteinGramsPerKg).toStringAsFixed(1));
 
   /// Target fat grams per day: 25% of total target calories.
-  static double calculateFat({required int targetCalories}) {
-    return double.parse(
+  static double calculateFat({required int targetCalories}) => double.parse(
       ((targetCalories * fatCalorieRatio) / fatCaloriesPerGram).toStringAsFixed(1),
     );
-  }
 
   /// Target carb grams per day: remaining calories after protein & fat.
   static double calculateCarbs({

@@ -11,8 +11,8 @@ abstract class FoodSearchEvent extends Equatable {
 }
 
 class SearchFood extends FoodSearchEvent {
-  final String query;
   const SearchFood(this.query);
+  final String query;
   @override
   List<Object?> get props => [query];
 }
@@ -31,22 +31,21 @@ class FoodSearchInitial extends FoodSearchState {}
 class FoodSearchLoading extends FoodSearchState {}
 
 class FoodSearchResults extends FoodSearchState {
-  final List<FoodItemEntity> results;
   const FoodSearchResults(this.results);
+  final List<FoodItemEntity> results;
   @override
   List<Object?> get props => [results];
 }
 
 class FoodSearchError extends FoodSearchState {
-  final String message;
   const FoodSearchError(this.message);
+  final String message;
   @override
   List<Object?> get props => [message];
 }
 
 // BLoC
 class FoodSearchBloc extends Bloc<FoodSearchEvent, FoodSearchState> {
-  final SearchFoodUseCase _searchFoodUseCase;
 
   FoodSearchBloc({
     required SearchFoodUseCase searchFoodUseCase,
@@ -55,6 +54,7 @@ class FoodSearchBloc extends Bloc<FoodSearchEvent, FoodSearchState> {
     on<SearchFood>(_onSearchFood);
     on<ClearSearch>(_onClearSearch);
   }
+  final SearchFoodUseCase _searchFoodUseCase;
 
   Future<void> _onSearchFood(
     SearchFood event,

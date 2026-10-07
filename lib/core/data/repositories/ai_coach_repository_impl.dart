@@ -18,11 +18,11 @@ import '../../domain/repositories/ai_coach_repository.dart';
 /// locally from the same context by [CoachFallbackResponder], so the feature
 /// never hard-fails on a missing API key.
 class AiCoachRepositoryImpl implements AiCoachRepository {
+
+  AiCoachRepositoryImpl(this._client, this._contextService, this._gemini);
   final SupabaseClient _client;
   final AiContextService _contextService;
   final GeminiService _gemini;
-
-  AiCoachRepositoryImpl(this._client, this._contextService, this._gemini);
 
   @override
   Future<void> sendMessage(

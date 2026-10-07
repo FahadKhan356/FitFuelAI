@@ -45,8 +45,7 @@ class GamificationStats {
     this.grantedSourcesToday = const <String>{},
   });
 
-  factory GamificationStats.fromJson(Map<String, dynamic> json) {
-    return GamificationStats(
+  factory GamificationStats.fromJson(Map<String, dynamic> json) => GamificationStats(
       authenticated: _bool(json, 'authenticated'),
       currentStreakDays: _int(json, 'current_streak_days'),
       longestStreakDays: _int(json, 'longest_streak_days'),
@@ -80,7 +79,6 @@ class GamificationStats {
       grantedSources: _strings(json, 'granted_sources'),
       grantedSourcesToday: _strings(json, 'granted_sources_today'),
     );
-  }
 
   /// A user with no logs at all.
   static const GamificationStats empty = GamificationStats();

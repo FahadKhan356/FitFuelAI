@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../../core/config/routes.dart';
 import '../../../../core/constants/app_colors.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({Key? key}) : super(key: key);
@@ -51,10 +52,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 //  Intro Hero Page
 // ══════════════════════════════════════════════════
 class _IntroPage extends StatelessWidget {
-  final VoidCallback onGetStarted;
-  final VoidCallback onSkip;
 
   const _IntroPage({required this.onGetStarted, required this.onSkip});
+  final VoidCallback onGetStarted;
+  final VoidCallback onSkip;
 
   @override
   Widget build(BuildContext context) {
@@ -84,13 +85,13 @@ class _IntroPage extends StatelessWidget {
                     SizedBox(height: size.height * 0.026),
 
                     // ── Body text ──
-                    Text(
+                    const Text(
                       'FitFuel AI uses advanced vision to instantly scan your meals, track macros, and help you reach your health goals effortlessly.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 15.5,
                         height: 1.65,
-                        color: const Color(AppColors.textSecondary),
+                        color: Color(AppColors.textSecondary),
                         letterSpacing: 0.1,
                         fontWeight: FontWeight.w400,
                       ),
@@ -111,11 +112,11 @@ class _IntroPage extends StatelessWidget {
                     // ── Skip to Login ──
                     GestureDetector(
                       onTap: onSkip,
-                      child: Text(
+                      child: const Text(
                         'Skip to Login',
                         style: TextStyle(
                           fontSize: 14.5,
-                          color: const Color(AppColors.textSecondary),
+                          color: Color(AppColors.textSecondary),
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0.1,
                         ),
@@ -138,10 +139,6 @@ class _IntroPage extends StatelessWidget {
 //  Form Steps Page (keeps existing onboarding flow)
 // ══════════════════════════════════════════════════
 class _FormPage extends StatelessWidget {
-  final int currentStep;
-  final VoidCallback onBack;
-  final VoidCallback onNext;
-  final VoidCallback onComplete;
 
   const _FormPage({
     required this.currentStep,
@@ -149,6 +146,10 @@ class _FormPage extends StatelessWidget {
     required this.onNext,
     required this.onComplete,
   });
+  final int currentStep;
+  final VoidCallback onBack;
+  final VoidCallback onNext;
+  final VoidCallback onComplete;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -268,17 +269,17 @@ class _FormPage extends StatelessWidget {
 //  Hero image card
 // ══════════════════════════════════════════════════
 class _HeroImageCard extends StatelessWidget {
-  final double screenWidth;
-  final double screenHeight;
 
   const _HeroImageCard({
     required this.screenWidth,
     required this.screenHeight,
   });
+  final double screenWidth;
+  final double screenHeight;
 
   @override
   Widget build(BuildContext context) {
-    final double cardHeight = screenHeight * 0.44;
+    final cardHeight = screenHeight * 0.44;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -306,7 +307,7 @@ class _HeroImageCard extends StatelessWidget {
                   ),
                 ],
                 border: Border.all(
-                  color: const Color.fromARGB(255, 255, 255, 255).withOpacity(1),
+                  color: const Color.fromARGB(255, 255, 255, 255).withValues(alpha: 1),
                   width: 2,
                   style: BorderStyle.solid,
                 ),
@@ -358,18 +359,17 @@ class _HeroImageCard extends StatelessWidget {
 // ══════════════════════════════════════════════════
 class _HeadlineText extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return RichText(
+  Widget build(BuildContext context) => RichText(
       textAlign: TextAlign.center,
-      text: TextSpan(
+      text: const TextSpan(
         style: TextStyle(
           fontSize: 28,
           fontWeight: FontWeight.w800,
           letterSpacing: -0.4,
           height: 1.25,
-          color: const Color(AppColors.textPrimary),
+          color: Color(AppColors.textPrimary),
         ),
-        children: const [
+        children: [
           TextSpan(text: 'See Your Food in a '),
           TextSpan(
             text: 'New\nLight',
@@ -378,27 +378,25 @@ class _HeadlineText extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 // ══════════════════════════════════════════════════
 //  Page indicator dots
 // ══════════════════════════════════════════════════
 class _PageIndicator extends StatelessWidget {
-  final int activeIndex;
-  final int count;
 
   const _PageIndicator({
     required this.activeIndex,
     required this.count,
   });
+  final int activeIndex;
+  final int count;
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
+  Widget build(BuildContext context) => Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(count, (i) {
-        final bool isActive = i == activeIndex;
+        final isActive = i == activeIndex;
         return AnimatedContainer(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeOut,
@@ -414,19 +412,17 @@ class _PageIndicator extends StatelessWidget {
         );
       }),
     );
-  }
 }
 
 // ══════════════════════════════════════════════════
 //  Get Started button
 // ══════════════════════════════════════════════════
 class _GetStartedButton extends StatelessWidget {
-  final VoidCallback onTap;
   const _GetStartedButton({required this.onTap});
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       width: double.infinity,
       height: 58,
       decoration: BoxDecoration(
@@ -474,5 +470,4 @@ class _GetStartedButton extends StatelessWidget {
         ),
       ),
     );
-  }
 }

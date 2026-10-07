@@ -9,8 +9,8 @@ import '../../../../core/constants/app_constants.dart';
 /// failure, quota, safety block...). Callers fall back to
 /// `CoachFallbackResponder` instead of surfacing a raw exception.
 class GeminiException implements Exception {
-  final String message;
   const GeminiException(this.message);
+  final String message;
 
   @override
   String toString() => 'GeminiException: $message';
@@ -21,11 +21,6 @@ class GeminiException implements Exception {
 /// Deliberately dependency-light (only `package:http`, already used by the
 /// nutrition data sources) so it works on every platform without codegen.
 class GeminiService {
-  final http.Client _client;
-  final Duration _timeout;
-  final String _model;
-  final String _apiBase;
-  String _apiKey;
 
   GeminiService({
     http.Client? client,
@@ -39,6 +34,11 @@ class GeminiService {
         _apiKey = (apiKey ?? AppConstants.geminiApiKey).trim(),
         _model = model ?? AppConstants.geminiModel,
         _apiBase = apiBase ?? AppConstants.geminiApiBase;
+  final http.Client _client;
+  final Duration _timeout;
+  final String _model;
+  final String _apiBase;
+  String _apiKey;
 
   /// True when `GEMINI_API_KEY` is present, i.e. real model calls are enabled.
   bool get isConfigured => _apiKey.isNotEmpty;

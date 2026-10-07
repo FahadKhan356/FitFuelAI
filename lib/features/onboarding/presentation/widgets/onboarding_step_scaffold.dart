@@ -4,6 +4,11 @@ import '../../../../core/constants/app_colors.dart';
 
 /// Glassmorphic step scaffold: title block + glass card + navigation buttons.
 class OnboardingStepScaffold extends StatelessWidget {
+
+  const OnboardingStepScaffold({
+    required this.title, required this.subtitle, required this.child, required this.showBack, required this.buttonLabel, required this.onBack, required this.onPrimary, super.key,
+    this.isSubmitting = false,
+  });
   final String title;
   final String subtitle;
   final Widget child;
@@ -13,21 +18,8 @@ class OnboardingStepScaffold extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onPrimary;
 
-  const OnboardingStepScaffold({
-    super.key,
-    required this.title,
-    required this.subtitle,
-    required this.child,
-    required this.showBack,
-    required this.buttonLabel,
-    required this.onBack,
-    required this.onPrimary,
-    this.isSubmitting = false,
-  });
-
   @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
+  Widget build(BuildContext context) => SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(0, 16, 0, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -117,23 +109,21 @@ class OnboardingStepScaffold extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 class _PrimaryButton extends StatelessWidget {
-  final String label;
-  final VoidCallback? onTap;
-  final bool isLoading;
 
   const _PrimaryButton({
     required this.label,
     required this.onTap,
     this.isLoading = false,
   });
+  final String label;
+  final VoidCallback? onTap;
+  final bool isLoading;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -173,18 +163,16 @@ class _PrimaryButton extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _SecondaryButton extends StatelessWidget {
+
+  const _SecondaryButton({required this.label, required this.onTap});
   final String label;
   final VoidCallback? onTap;
 
-  const _SecondaryButton({required this.label, required this.onTap});
-
   @override
-  Widget build(BuildContext context) {
-    return InkWell(
+  Widget build(BuildContext context) => InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
       child: Container(
@@ -208,5 +196,4 @@ class _SecondaryButton extends StatelessWidget {
         ),
       ),
     );
-  }
 }

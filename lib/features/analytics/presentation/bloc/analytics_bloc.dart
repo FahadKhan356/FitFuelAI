@@ -1,5 +1,6 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../../../core/domain/entities/calendar_tracking.dart';
 import '../../../../core/domain/usecases/all_usecases.dart';
 
@@ -11,10 +12,10 @@ abstract class AnalyticsEvent extends Equatable {
 }
 
 class LoadAnalytics extends AnalyticsEvent {
+  const LoadAnalytics(this.userId, this.date, {this.isWeekly = true});
   final String userId;
   final DateTime date;
   final bool isWeekly;
-  const LoadAnalytics(this.userId, this.date, {this.isWeekly = true});
   @override
   List<Object?> get props => [userId, date, isWeekly];
 }
@@ -31,23 +32,22 @@ class AnalyticsInitial extends AnalyticsState {}
 class AnalyticsLoading extends AnalyticsState {}
 
 class AnalyticsLoaded extends AnalyticsState {
+  const AnalyticsLoaded({required this.calendarData, required this.isWeekly});
   final CalendarTracking calendarData;
   final bool isWeekly;
-  const AnalyticsLoaded({required this.calendarData, required this.isWeekly});
   @override
   List<Object?> get props => [calendarData, isWeekly];
 }
 
 class AnalyticsError extends AnalyticsState {
-  final String message;
   const AnalyticsError(this.message);
+  final String message;
   @override
   List<Object?> get props => [message];
 }
 
 // BLoC
 class AnalyticsBloc extends Bloc<AnalyticsEvent, AnalyticsState> {
-  final FetchCalendarTrackingUseCase _fetchCalendarTrackingUseCase;
 
   AnalyticsBloc({
     required FetchCalendarTrackingUseCase fetchCalendarTrackingUseCase,
@@ -55,6 +55,7 @@ class AnalyticsBloc extends Bloc<AnalyticsEvent, AnalyticsState> {
         super(AnalyticsInitial()) {
     on<LoadAnalytics>(_onLoadAnalytics);
   }
+  final FetchCalendarTrackingUseCase _fetchCalendarTrackingUseCase;
 
   Future<void> _onLoadAnalytics(
     LoadAnalytics event,

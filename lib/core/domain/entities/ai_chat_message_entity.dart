@@ -1,9 +1,4 @@
 class AiChatMessageEntity {
-  final String id;
-  final String userId;
-  final String message;
-  final String response;
-  final DateTime? createdAt;
 
   const AiChatMessageEntity({
     required this.id,
@@ -12,4 +7,9 @@ class AiChatMessageEntity {
     required this.response,
     this.createdAt,
   });
+  final String id;
+  final String userId;
+  final String message;
+  final String response;
+  final DateTime? createdAt;
 }

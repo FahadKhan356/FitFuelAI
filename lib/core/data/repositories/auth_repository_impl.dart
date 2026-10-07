@@ -6,9 +6,9 @@ import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
-  final SupabaseClient _supabase;
 
   AuthRepositoryImpl(this._supabase);
+  final SupabaseClient _supabase;
 
   @override
   Future<UserEntity> signInWithEmail(String email, String password) async {
@@ -20,7 +20,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final profileJson = prefs.getString('onboarding_profile');
       final goalsJson = prefs.getString('onboarding_goals');
       if (profileJson != null) {
-        final Map<String, dynamic> profile =
+        final profile =
             _withoutStaleUserId(jsonDecode(profileJson) as Map<String, dynamic>);
         await _supabase.from('user_profiles').upsert({
           'user_id': user.id,
@@ -28,7 +28,7 @@ class AuthRepositoryImpl implements AuthRepository {
         }, onConflict: 'user_id');
       }
       if (goalsJson != null) {
-        final Map<String, dynamic> goals =
+        final goals =
             _withoutStaleUserId(jsonDecode(goalsJson) as Map<String, dynamic>);
         await _supabase.from('goals').upsert({
           'user_id': user.id,
@@ -76,7 +76,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final profileJson = prefs.getString('onboarding_profile');
       final goalsJson = prefs.getString('onboarding_goals');
       if (profileJson != null) {
-        final Map<String, dynamic> profile =
+        final profile =
             _withoutStaleUserId(jsonDecode(profileJson) as Map<String, dynamic>);
         await _supabase.from('user_profiles').upsert({
           'user_id': user.id,
@@ -84,7 +84,7 @@ class AuthRepositoryImpl implements AuthRepository {
         }, onConflict: 'user_id');
       }
       if (goalsJson != null) {
-        final Map<String, dynamic> goals =
+        final goals =
             _withoutStaleUserId(jsonDecode(goalsJson) as Map<String, dynamic>);
         await _supabase.from('goals').upsert({
           'user_id': user.id,
@@ -124,7 +124,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
     try {
       if (profileJson != null) {
-        final Map<String, dynamic> profile =
+        final profile =
             _withoutStaleUserId(jsonDecode(profileJson) as Map<String, dynamic>);
         await _supabase.from('user_profiles').upsert({
           'user_id': userId,
@@ -133,7 +133,7 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       if (goalsJson != null) {
-        final Map<String, dynamic> goals =
+        final goals =
             _withoutStaleUserId(jsonDecode(goalsJson) as Map<String, dynamic>);
         await _supabase.from('goals').upsert({
           'user_id': userId,
@@ -183,12 +183,10 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Stream<UserEntity?> get authStateChanges {
-    return _supabase.auth.onAuthStateChange.map((event) {
+  Stream<UserEntity?> get authStateChanges => _supabase.auth.onAuthStateChange.map((event) {
       if (event.session?.user != null) {
         return UserEntity(id: event.session!.user.id, email: event.session!.user.email);
       }
       return null;
     });
-  }
 }

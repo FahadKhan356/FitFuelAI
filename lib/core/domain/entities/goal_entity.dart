@@ -1,16 +1,4 @@
 class GoalEntity {
-  final String id;
-  final String userId;
-  final int targetCalories;
-  final double targetProtein;
-  final double targetCarbs;
-  final double targetFat;
-  final int dailyWaterMl;
-  final String? goalType;
-  final double? targetWeightKg;
-  final double? weeklyPaceKg;
-  final DateTime? targetDate;
-  final DateTime? updatedAt;
 
   const GoalEntity({
     required this.id,
@@ -26,20 +14,6 @@ class GoalEntity {
     this.targetDate,
     this.updatedAt,
   });
-
-  static double _parseDouble(dynamic value) {
-    if (value == null) return 0.0;
-    if (value is num) return value.toDouble();
-    if (value is String) return double.tryParse(value) ?? 0.0;
-    return 0.0;
-  }
-
-  static int _parseInt(dynamic value) {
-    if (value == null) return 0;
-    if (value is num) return value.toInt();
-    if (value is String) return int.tryParse(value) ?? double.tryParse(value)?.toInt() ?? 0;
-    return 0;
-  }
 
   factory GoalEntity.fromJson(Map<String, dynamic> json) => GoalEntity(
     id: json['id']?.toString() ?? '',
@@ -59,9 +33,34 @@ class GoalEntity {
         ? DateTime.tryParse(json['updated_at'].toString())
         : null,
   );
+  final String id;
+  final String userId;
+  final int targetCalories;
+  final double targetProtein;
+  final double targetCarbs;
+  final double targetFat;
+  final int dailyWaterMl;
+  final String? goalType;
+  final double? targetWeightKg;
+  final double? weeklyPaceKg;
+  final DateTime? targetDate;
+  final DateTime? updatedAt;
 
-  Map<String, dynamic> toJson() {
-    return {
+  static double _parseDouble(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0;
+  }
+
+  static int _parseInt(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? double.tryParse(value)?.toInt() ?? 0;
+    return 0;
+  }
+
+  Map<String, dynamic> toJson() => {
       if (id.isNotEmpty) 'id': id,
       'user_id': userId,
       'goal_type': goalType,
@@ -76,7 +75,6 @@ class GoalEntity {
       'daily_water_ml': dailyWaterMl,
       if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
     };
-  }
 
   GoalEntity copyWith({
     String? id,
@@ -91,8 +89,7 @@ class GoalEntity {
     double? weeklyPaceKg,
     DateTime? targetDate,
     DateTime? updatedAt,
-  }) {
-    return GoalEntity(
+  }) => GoalEntity(
       id: id ?? this.id,
       userId: userId ?? this.userId,
       targetCalories: targetCalories ?? this.targetCalories,
@@ -106,5 +103,4 @@ class GoalEntity {
       targetDate: targetDate ?? this.targetDate,
       updatedAt: updatedAt ?? this.updatedAt,
     );
-  }
 }

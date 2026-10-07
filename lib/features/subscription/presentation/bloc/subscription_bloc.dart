@@ -1,5 +1,6 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../../../core/domain/repositories/subscription_repository.dart';
 
 // ── Events ──
@@ -10,23 +11,23 @@ abstract class SubscriptionEvent extends Equatable {
 }
 
 class CheckSubscriptionStatus extends SubscriptionEvent {
-  final String userId;
   const CheckSubscriptionStatus(this.userId);
+  final String userId;
   @override
   List<Object?> get props => [userId];
 }
 
 class PurchasePlanRequested extends SubscriptionEvent {
+  const PurchasePlanRequested({required this.userId, required this.plan});
   final String userId;
   final String plan;
-  const PurchasePlanRequested({required this.userId, required this.plan});
   @override
   List<Object?> get props => [userId, plan];
 }
 
 class RestorePurchasesRequested extends SubscriptionEvent {
-  final String userId;
   const RestorePurchasesRequested(this.userId);
+  final String userId;
   @override
   List<Object?> get props => [userId];
 }
@@ -43,23 +44,22 @@ class SubscriptionInitial extends SubscriptionState {}
 class SubscriptionLoading extends SubscriptionState {}
 
 class SubscriptionStatusLoaded extends SubscriptionState {
+  const SubscriptionStatusLoaded(this.isPremium, {this.plan});
   final bool isPremium;
   final String? plan;
-  const SubscriptionStatusLoaded(this.isPremium, {this.plan});
   @override
   List<Object?> get props => [isPremium, plan];
 }
 
 class SubscriptionError extends SubscriptionState {
-  final String message;
   const SubscriptionError(this.message);
+  final String message;
   @override
   List<Object?> get props => [message];
 }
 
 // ── BLoC ──
 class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
-  final SubscriptionRepository _subscriptionRepository;
 
   SubscriptionBloc({required SubscriptionRepository subscriptionRepository})
       : _subscriptionRepository = subscriptionRepository,
@@ -68,6 +68,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     on<PurchasePlanRequested>(_onPurchasePlanRequested);
     on<RestorePurchasesRequested>(_onRestorePurchasesRequested);
   }
+  final SubscriptionRepository _subscriptionRepository;
 
   Future<void> _onCheckSubscriptionStatus(
       CheckSubscriptionStatus event, Emitter<SubscriptionState> emit) async {

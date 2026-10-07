@@ -1,12 +1,4 @@
 class BarcodeModel {
-  final String id;
-  final String barcode;
-  final String productName;
-  final String? brand;
-  final int? calories;
-  final Map<String, dynamic>? nutritionData;
-  final String source;
-  final DateTime? createdAt;
 
   const BarcodeModel({
     required this.id,
@@ -19,8 +11,7 @@ class BarcodeModel {
     this.createdAt,
   });
 
-  factory BarcodeModel.fromJson(Map<String, dynamic> json) {
-    return BarcodeModel(
+  factory BarcodeModel.fromJson(Map<String, dynamic> json) => BarcodeModel(
       id: json['id'] as String,
       barcode: json['barcode'] as String,
       productName: json['product_name'] as String,
@@ -30,10 +21,16 @@ class BarcodeModel {
       source: json['source'] as String? ?? 'OpenFoodFacts',
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : null,
     );
-  }
+  final String id;
+  final String barcode;
+  final String productName;
+  final String? brand;
+  final int? calories;
+  final Map<String, dynamic>? nutritionData;
+  final String source;
+  final DateTime? createdAt;
 
-  Map<String, dynamic> toJson() {
-    return {
+  Map<String, dynamic> toJson() => {
       'id': id,
       'barcode': barcode,
       'product_name': productName,
@@ -43,5 +40,4 @@ class BarcodeModel {
       'source': source,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
     };
-  }
 }

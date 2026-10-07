@@ -1,12 +1,4 @@
 class NotificationModel {
-  final String id;
-  final String userId;
-  final String title;
-  final String body;
-  final bool isRead;
-  final String? type;
-  final Map<String, dynamic>? data;
-  final DateTime? createdAt;
 
   const NotificationModel({
     required this.id,
@@ -19,8 +11,7 @@ class NotificationModel {
     this.createdAt,
   });
 
-  factory NotificationModel.fromJson(Map<String, dynamic> json) {
-    return NotificationModel(
+  factory NotificationModel.fromJson(Map<String, dynamic> json) => NotificationModel(
       id: json['id'] as String,
       userId: json['user_id'] as String,
       title: json['title'] as String,
@@ -30,10 +21,16 @@ class NotificationModel {
       data: json['data'] as Map<String, dynamic>?,
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : null,
     );
-  }
+  final String id;
+  final String userId;
+  final String title;
+  final String body;
+  final bool isRead;
+  final String? type;
+  final Map<String, dynamic>? data;
+  final DateTime? createdAt;
 
-  Map<String, dynamic> toJson() {
-    return {
+  Map<String, dynamic> toJson() => {
       'id': id,
       'user_id': userId,
       'title': title,
@@ -43,5 +40,4 @@ class NotificationModel {
       if (data != null) 'data': data,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
     };
-  }
 }

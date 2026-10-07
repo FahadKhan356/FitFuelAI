@@ -1,5 +1,6 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../data/models/user_profile_model.dart';
 import '../../domain/repositories/profile_repository.dart';
 
@@ -11,22 +12,22 @@ abstract class ProfileEvent extends Equatable {
 }
 
 class LoadProfile extends ProfileEvent {
-  final String userId;
   const LoadProfile(this.userId);
+  final String userId;
   @override
   List<Object?> get props => [userId];
 }
 
 class UpdateProfile extends ProfileEvent {
-  final UserProfileModel updatedUser;
   const UpdateProfile(this.updatedUser);
+  final UserProfileModel updatedUser;
   @override
   List<Object?> get props => [updatedUser];
 }
 
 class UpdateProfileField extends ProfileEvent {
-  final Map<String, dynamic> fields;
   const UpdateProfileField(this.fields);
+  final Map<String, dynamic> fields;
   @override
   List<Object?> get props => [fields];
 }
@@ -34,8 +35,8 @@ class UpdateProfileField extends ProfileEvent {
 /// Re-runs the FitnessCalculator using the user's current metrics and updates
 /// the `goals` table so dashboard targets update immediately.
 class RecalculateGoals extends ProfileEvent {
-  final UserProfileModel user;
   const RecalculateGoals(this.user);
+  final UserProfileModel user;
   @override
   List<Object?> get props => [user];
 }
@@ -52,22 +53,21 @@ class ProfileInitial extends ProfileState {}
 class ProfileLoading extends ProfileState {}
 
 class ProfileLoaded extends ProfileState {
-  final UserProfileModel user;
   const ProfileLoaded(this.user);
+  final UserProfileModel user;
   @override
   List<Object?> get props => [user];
 }
 
 class ProfileError extends ProfileState {
-  final String message;
   const ProfileError(this.message);
+  final String message;
   @override
   List<Object?> get props => [message];
 }
 
 // ── BLoC ──
 class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
-  final ProfileRepository _profileRepository;
 
   ProfileBloc({required ProfileRepository profileRepository})
       : _profileRepository = profileRepository,
@@ -77,6 +77,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     on<UpdateProfileField>(_onUpdateProfileField);
     on<RecalculateGoals>(_onRecalculateGoals);
   }
+  final ProfileRepository _profileRepository;
 
   Future<void> _onLoadProfile(LoadProfile event, Emitter<ProfileState> emit) async {
     emit(ProfileLoading());

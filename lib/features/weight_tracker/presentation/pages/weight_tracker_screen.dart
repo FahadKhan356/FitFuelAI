@@ -4,10 +4,10 @@ import 'package:fitfuel_ai/core/domain/entities/user_profile_entity.dart';
 import 'package:fitfuel_ai/core/domain/entities/weight_entry_entity.dart';
 import 'package:fitfuel_ai/core/domain/repositories/weight_repository.dart';
 import 'package:fitfuel_ai/core/domain/usecases/all_usecases.dart';
-import 'package:fitfuel_ai/core/utils/bmi_calculator.dart';
 import 'package:fitfuel_ai/core/services/home_data_refresh_notifier.dart';
-import 'package:flutter/material.dart';
+import 'package:fitfuel_ai/core/utils/bmi_calculator.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -26,10 +26,10 @@ double _clamp01(double v) => v.clamp(0.0, 1.0);
 //  Weight Entry Model
 // ─────────────────────────────────────────────
 class WeightEntry {
-  final DateTime date;
-  final double weight;
 
   WeightEntry({required this.date, required this.weight});
+  final DateTime date;
+  final double weight;
 }
 
 class WeightTrackerScreen extends StatefulWidget {
@@ -47,8 +47,8 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
 
   // ─── Weight Data State (real values loaded from Supabase, demo as fallback) ───
   double currentWeight = 72.4;
-  double startWeight = 77.0;
-  double goalWeight = 68.0;
+  double startWeight = 77;
+  double goalWeight = 68;
   List<WeightEntry> weightEntries = [
     WeightEntry(date: DateTime.now().subtract(const Duration(days: 6)), weight: 74.25),
     WeightEntry(date: DateTime.now().subtract(const Duration(days: 5)), weight: 73.95),
@@ -97,9 +97,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
   }
 
   /// How much is left until the goal (>= 0, 0 once reached). Direction-aware.
-  double get _remainingToGoal {
-    return (_totalSpan - _done).clamp(0, double.infinity);
-  }
+  double get _remainingToGoal => (_totalSpan - _done).clamp(0, double.infinity);
 
   /// True when the user has already made at least [thresholdKg] of progress in
   /// their goal direction (loss or gain).
@@ -115,7 +113,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
     final delta = (currentWeight - startWeight).abs();
     final unit = delta.toStringAsFixed(1);
     if (delta == 0) return 'No net change yet';
-    return _isGainGoal ? '${unit} kg gained so far' : '${unit} kg lost so far';
+    return _isGainGoal ? '$unit kg gained so far' : '$unit kg lost so far';
   }
 
   /// Difference between the latest logged weight and the previous one (used for
@@ -129,7 +127,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
 
   // Real profile height (cm) used to compute the live BMI card. Falls back to
   // 175 cm when the profile hasn't loaded yet.
-  double _heightCm = 175.0;
+  double _heightCm = 175;
 
   @override
   void initState() {
@@ -159,7 +157,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
     // directly from the loading spinner to the final real data in one setState —
     // never through intermediate profile-only values that cause a flicker.
     UserProfileEntity? profile;
-    List<WeightEntryEntity> history = const [];
+    var history = const <WeightEntryEntity>[];
     try {
       final results = await Future.wait<Object?>([
         sl<LoadUserProfileUseCase>().call(userId),
@@ -174,7 +172,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
     if (!mounted) return;
 
     setState(() {
-      List<WeightEntry> real = history
+      final real = history
           .map((e) => WeightEntry(date: e.date, weight: e.weightKg))
           .toList()
         ..sort((a, b) => a.date.compareTo(b.date));
@@ -297,8 +295,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: _bg,
       floatingActionButton: _WeightFab(
         mainCtrl: _mainCtrl,
@@ -377,7 +374,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
                         const SizedBox(height: 2),
                         Text(
                           isWeekly ? 'Last 7 days' : 'Last 30 days',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w500,
                             color: _textSecondary,
@@ -474,22 +471,21 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
         ),
       ),
     );
-  }
 }
 
 // ─────────────────────────────────────────────
 //  A. Weight Header – Numeric roll-up + badge slide
 // ─────────────────────────────────────────────
 class _WeightHeader extends StatelessWidget {
-  final Animation<double> mainCtrl;
-  final double currentWeight;
-  final double deltaKg;
 
   const _WeightHeader({
     required this.mainCtrl,
     required this.currentWeight,
     required this.deltaKg,
   });
+  final Animation<double> mainCtrl;
+  final double currentWeight;
+  final double deltaKg;
 
   @override
   Widget build(BuildContext context) {
@@ -526,7 +522,7 @@ class _WeightHeader extends StatelessWidget {
                       fontSize: 34,
                       fontWeight: FontWeight.w800,
                       color: _textPrimary,
-                      height: 1.0,
+                      height: 1,
                     ),
                   ),
                   const TextSpan(
@@ -582,17 +578,16 @@ class _WeightHeader extends StatelessWidget {
 //  B. Weight Trend Chart – Path tracing + area fade
 // ─────────────────────────────────────────────
 class _WeightChart extends StatelessWidget {
-  final Animation<double> mainCtrl;
-  final List<WeightEntry> weightEntries;
 
   const _WeightChart({
     required this.mainCtrl,
     required this.weightEntries,
   });
+  final Animation<double> mainCtrl;
+  final List<WeightEntry> weightEntries;
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
+  Widget build(BuildContext context) => AnimatedBuilder(
       animation: mainCtrl,
       builder: (context, child) {
         final revealT = _clamp01(CurvedAnimation(
@@ -655,16 +650,14 @@ class _WeightChart extends StatelessWidget {
                       interval: (maxWeight - minWeight).abs() < 0.001
                           ? 1.0
                           : (maxWeight - minWeight) / 4,
-                      getTitlesWidget: (value, meta) {
-                        return Text(
+                      getTitlesWidget: (value, meta) => Text(
                           value.toStringAsFixed(1),
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                             color: _textSecondary,
                           ),
-                        );
-                      },
+                        ),
                     ),
                   ),
                 ),
@@ -679,14 +672,12 @@ class _WeightChart extends StatelessWidget {
                     curveSmoothness: 0.22,
                     dotData: FlDotData(
                       show: true,
-                      getDotPainter: (spot, percent, barData, index) {
-                        return FlDotCirclePainter(
+                      getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
                           radius: 3,
                           color: _purple,
                           strokeWidth: 2,
                           strokeColor: Colors.white,
-                        );
-                      },
+                        ),
                     ),
                     belowBarData: BarAreaData(
                       show: areaT > 0,
@@ -694,8 +685,8 @@ class _WeightChart extends StatelessWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          const Color(0xAA7C63FF).withOpacity(areaT),
-                          const Color(0x22FFFFFF).withOpacity(areaT * 0.2),
+                          const Color(0xAA7C63FF).withValues(alpha: areaT),
+                          const Color(0x22FFFFFF).withValues(alpha: areaT * 0.2),
                         ],
                       ),
                     ),
@@ -710,18 +701,12 @@ class _WeightChart extends StatelessWidget {
         );
       },
     );
-  }
 }
 
 // ─────────────────────────────────────────────
 //  C. Goal Progress Card
 // ─────────────────────────────────────────────
 class _GoalProgressCard extends StatelessWidget {
-  final Animation<double> mainCtrl;
-  final double currentWeight;
-  final double startWeight;
-  final double goalWeight;
-  final double goalProgress;
 
   const _GoalProgressCard({
     required this.mainCtrl,
@@ -730,10 +715,14 @@ class _GoalProgressCard extends StatelessWidget {
     required this.goalWeight,
     required this.goalProgress,
   });
+  final Animation<double> mainCtrl;
+  final double currentWeight;
+  final double startWeight;
+  final double goalWeight;
+  final double goalProgress;
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
+  Widget build(BuildContext context) => AnimatedBuilder(
       animation: mainCtrl,
       builder: (context, child) {
         final t = _clamp01(CurvedAnimation(
@@ -828,22 +817,12 @@ class _GoalProgressCard extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 // ─────────────────────────────────────────────
 //  D. Milestone Card – Staggered entry + icon pulse
 // ─────────────────────────────────────────────
 class _MilestoneCard extends StatelessWidget {
-  final Animation<double> mainCtrl;
-  final int index;
-  final IconData icon;
-  final Color iconBg;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  final String dateLabel;
-  final bool highlighted;
 
   const _MilestoneCard({
     required this.mainCtrl,
@@ -856,6 +835,15 @@ class _MilestoneCard extends StatelessWidget {
     required this.dateLabel,
     this.highlighted = false,
   });
+  final Animation<double> mainCtrl;
+  final int index;
+  final IconData icon;
+  final Color iconBg;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final String dateLabel;
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
@@ -932,15 +920,15 @@ class _MilestoneCard extends StatelessWidget {
 //  E. BMI Card – Scale-up + number roll
 // ─────────────────────────────────────────────
 class _BmiCard extends StatelessWidget {
-  final Animation<double> mainCtrl;
-  final double currentWeight;
-  final double heightCm;
 
   const _BmiCard({
     required this.mainCtrl,
     required this.currentWeight,
     required this.heightCm,
   });
+  final Animation<double> mainCtrl;
+  final double currentWeight;
+  final double heightCm;
 
   @override
   Widget build(BuildContext context) {
@@ -1023,7 +1011,7 @@ class _BmiCard extends StatelessWidget {
                                 fontSize: 24,
                                 fontWeight: FontWeight.w800,
                                 color: _textPrimary,
-                                height: 1.0,
+                                height: 1,
                               ),
                             ),
                             Padding(
@@ -1078,17 +1066,16 @@ class _BmiCard extends StatelessWidget {
 //  F. FAB – Spring expansion
 // ─────────────────────────────────────────────
 class _WeightFab extends StatelessWidget {
-  final Animation<double> mainCtrl;
-  final VoidCallback onAddWeight;
 
   const _WeightFab({
     required this.mainCtrl,
     required this.onAddWeight,
   });
+  final Animation<double> mainCtrl;
+  final VoidCallback onAddWeight;
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
+  Widget build(BuildContext context) => AnimatedBuilder(
       animation: mainCtrl,
       builder: (context, child) {
         final t = _clamp01(CurvedAnimation(
@@ -1107,7 +1094,6 @@ class _WeightFab extends StatelessWidget {
         );
       },
     );
-  }
 }
 
 // ─────────────────────────────────────────────
@@ -1116,13 +1102,11 @@ class _WeightFab extends StatelessWidget {
 
 // ─── Weight Entry Bottom Sheet ───
 class WeightEntryBottomSheet extends StatefulWidget {
+
+  const WeightEntryBottomSheet({required this.onWeightAdded, required this.currentWeight, super.key,
+  });
   final Function(double, DateTime) onWeightAdded;
   final double currentWeight;
-
-  const WeightEntryBottomSheet({
-    required this.onWeightAdded,
-    required this.currentWeight,
-  });
 
   @override
   State<WeightEntryBottomSheet> createState() => _WeightEntryBottomSheetState();
@@ -1166,8 +1150,7 @@ class _WeightEntryBottomSheetState extends State<WeightEntryBottomSheet> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedPadding(
+  Widget build(BuildContext context) => AnimatedPadding(
       duration: const Duration(milliseconds: 200),
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
@@ -1327,7 +1310,7 @@ class _WeightEntryBottomSheetState extends State<WeightEntryBottomSheet> {
                     onPressed: isLoading ? null : _handleSave,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _purple,
-                      disabledBackgroundColor: _purple.withOpacity(0.5),
+                      disabledBackgroundColor: _purple.withValues(alpha: 0.5),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -1358,7 +1341,6 @@ class _WeightEntryBottomSheetState extends State<WeightEntryBottomSheet> {
         ),
       ),
     );
-  }
 }
 
 // ─────────────────────────────────────────────
@@ -1371,8 +1353,7 @@ class _IconButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Material(
+  Widget build(BuildContext context) => Material(
       color: Colors.transparent,
       child: InkResponse(
         onTap: onTap,
@@ -1384,7 +1365,6 @@ class _IconButton extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _CardShell extends StatelessWidget {
@@ -1393,8 +1373,7 @@ class _CardShell extends StatelessWidget {
   final EdgeInsets padding;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: padding,
       decoration: BoxDecoration(
         color: _surface,
@@ -1410,14 +1389,9 @@ class _CardShell extends StatelessWidget {
       ),
       child: child,
     );
-  }
 }
 
 class _SegmentPill extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final Animation<double> mainCtrl;
-  final VoidCallback onTap;
 
   const _SegmentPill({
     required this.label,
@@ -1425,10 +1399,13 @@ class _SegmentPill extends StatelessWidget {
     required this.mainCtrl,
     required this.onTap,
   });
+  final String label;
+  final bool selected;
+  final Animation<double> mainCtrl;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
@@ -1457,18 +1434,16 @@ class _SegmentPill extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _ProgressBadge extends StatelessWidget {
+
+  const _ProgressBadge({required this.mainCtrl, required this.text});
   final Animation<double> mainCtrl;
   final String text;
 
-  const _ProgressBadge({required this.mainCtrl, required this.text});
-
   @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
+  Widget build(BuildContext context) => AnimatedBuilder(
       animation: mainCtrl,
       builder: (context, child) {
         final t = _clamp01(CurvedAnimation(
@@ -1496,14 +1471,9 @@ class _ProgressBadge extends StatelessWidget {
         );
       },
     );
-  }
 }
 
 class _MiniStat extends StatelessWidget {
-  final String label;
-  final String value;
-  final double valueSize;
-  final Color? accent;
 
   const _MiniStat({
     required this.label,
@@ -1511,10 +1481,13 @@ class _MiniStat extends StatelessWidget {
     required this.valueSize,
     this.accent,
   });
+  final String label;
+  final String value;
+  final double valueSize;
+  final Color? accent;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
+  Widget build(BuildContext context) => Column(
       children: [
         Text(
           label,
@@ -1536,5 +1509,4 @@ class _MiniStat extends StatelessWidget {
         ),
       ],
     );
-  }
 }

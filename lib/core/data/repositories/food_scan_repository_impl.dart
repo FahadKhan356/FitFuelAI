@@ -3,9 +3,9 @@ import '../../domain/repositories/food_scan_repository.dart';
 import '../datasources/supabase_remote_datasource.dart';
 
 class FoodScanRepositoryImpl implements FoodScanRepository {
-  final SupabaseRemoteDataSource _dataSource;
 
   FoodScanRepositoryImpl(this._dataSource);
+  final SupabaseRemoteDataSource _dataSource;
 
   @override
   Future<FoodScanResultEntity> saveScanResult({

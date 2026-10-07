@@ -167,8 +167,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
 
   /// Horizontal quick-insight action chips. Tapping one asks the coach for a
   /// focused answer built from the user's own tracked data.
-  Widget _buildQuickInsights() {
-    return Container(
+  Widget _buildQuickInsights() => Container(
       width: double.infinity,
       color: Colors.white,
       padding: const EdgeInsets.only(top: 10, bottom: 10),
@@ -252,11 +251,9 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
         ],
       ),
     );
-  }
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider.value(
+  Widget build(BuildContext context) => BlocProvider.value(
       value: _bloc,
       child: BlocListener<AiCoachBloc, AiCoachState>(
         listener: (context, state) {
@@ -422,12 +419,11 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
         ),
       ),
     );
-  }
 }
 
 class ChatMessage {
-  final String text;
-  final bool isUser;
 
   ChatMessage({required this.text, required this.isUser});
+  final String text;
+  final bool isUser;
 }

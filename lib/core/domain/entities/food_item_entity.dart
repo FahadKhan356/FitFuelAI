@@ -1,4 +1,27 @@
 class FoodItemEntity {
+
+  const FoodItemEntity({
+    required this.id,
+    required this.name,
+    required this.calories, this.brand,
+    this.source = 'USDA',
+    this.protein = 0,
+    this.carbs = 0,
+    this.fat = 0,
+    this.fiber = 0,
+    this.sugar = 0,
+    this.sodium = 0,
+    this.potassiumMg = 0,
+    this.calciumMg = 0,
+    this.ironMg = 0,
+    this.vitaminCMg = 0,
+    this.saturatedFatG = 0,
+    this.servingSize = 100,
+    this.servingUnit = 'g',
+    this.barcode,
+    this.externalId,
+    this.imageUrl,
+  });
   final String id;
   final String name;
   final String? brand;
@@ -20,28 +43,4 @@ class FoodItemEntity {
   final String? barcode;
   final String? externalId;
   final String? imageUrl;
-
-  const FoodItemEntity({
-    required this.id,
-    required this.name,
-    this.brand,
-    this.source = 'USDA',
-    required this.calories,
-    this.protein = 0,
-    this.carbs = 0,
-    this.fat = 0,
-    this.fiber = 0,
-    this.sugar = 0,
-    this.sodium = 0,
-    this.potassiumMg = 0,
-    this.calciumMg = 0,
-    this.ironMg = 0,
-    this.vitaminCMg = 0,
-    this.saturatedFatG = 0,
-    this.servingSize = 100,
-    this.servingUnit = 'g',
-    this.barcode,
-    this.externalId,
-    this.imageUrl,
-  });
 }

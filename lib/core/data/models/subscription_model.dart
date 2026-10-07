@@ -1,12 +1,5 @@
 /// Mirrors the public.subscriptions Supabase table.
 class SubscriptionModel {
-  final String id;
-  final String userId;
-  final String plan;
-  final String status;
-  final DateTime? expiresAt;
-  final DateTime? startedAt;
-  final DateTime? createdAt;
 
   const SubscriptionModel(
       {required this.id,
@@ -16,10 +9,6 @@ class SubscriptionModel {
       this.expiresAt,
       this.startedAt,
       this.createdAt});
-
-  bool get isActive =>
-      status == 'active' &&
-      (expiresAt == null || expiresAt!.isAfter(DateTime.now()));
 
   factory SubscriptionModel.fromJson(Map<String, dynamic> json) {
     DateTime? date(String key) =>
@@ -33,6 +22,17 @@ class SubscriptionModel {
         startedAt: date('started_at'),
         createdAt: date('created_at'));
   }
+  final String id;
+  final String userId;
+  final String plan;
+  final String status;
+  final DateTime? expiresAt;
+  final DateTime? startedAt;
+  final DateTime? createdAt;
+
+  bool get isActive =>
+      status == 'active' &&
+      (expiresAt == null || expiresAt!.isAfter(DateTime.now()));
 
   Map<String, dynamic> toJson() => {
         'id': id,

@@ -1,5 +1,6 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../data/models/notification_setting_model.dart';
 import '../../domain/repositories/notification_repository.dart';
 
@@ -11,17 +12,17 @@ abstract class NotificationsEvent extends Equatable {
 }
 
 class LoadNotificationSettings extends NotificationsEvent {
-  final String userId;
   const LoadNotificationSettings(this.userId);
+  final String userId;
   @override
   List<Object?> get props => [userId];
 }
 
 class ToggleNotification extends NotificationsEvent {
+  const ToggleNotification(this.notificationId, this.isEnabled, this.userId);
   final String notificationId;
   final bool isEnabled;
   final String userId;
-  const ToggleNotification(this.notificationId, this.isEnabled, this.userId);
   @override
   List<Object?> get props => [notificationId, isEnabled, userId];
 }
@@ -38,22 +39,21 @@ class NotificationsInitial extends NotificationsState {}
 class NotificationsLoading extends NotificationsState {}
 
 class NotificationSettingsLoaded extends NotificationsState {
-  final List<NotificationSettingModel> settings;
   const NotificationSettingsLoaded(this.settings);
+  final List<NotificationSettingModel> settings;
   @override
   List<Object?> get props => [settings];
 }
 
 class NotificationsError extends NotificationsState {
-  final String message;
   const NotificationsError(this.message);
+  final String message;
   @override
   List<Object?> get props => [message];
 }
 
 // ── BLoC ──
 class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
-  final NotificationRepository _notificationRepository;
 
   NotificationsBloc({required NotificationRepository notificationRepository})
       : _notificationRepository = notificationRepository,
@@ -61,6 +61,7 @@ class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsState> {
     on<LoadNotificationSettings>(_onLoadNotificationSettings);
     on<ToggleNotification>(_onToggleNotification);
   }
+  final NotificationRepository _notificationRepository;
 
   Future<void> _onLoadNotificationSettings(LoadNotificationSettings event, Emitter<NotificationsState> emit) async {
     emit(NotificationsLoading());

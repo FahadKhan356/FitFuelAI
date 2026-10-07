@@ -4,14 +4,12 @@ import 'onboarding_step_scaffold.dart';
 
 /// Step 2 — Biological Metrics (age, gender, height, weight).
 class MetricsStep extends StatefulWidget {
-  final VoidCallback onBack;
-  final ValueChanged<Map<String, dynamic>> onContinue;
 
   const MetricsStep({
-    super.key,
-    required this.onBack,
-    required this.onContinue,
+    required this.onBack, required this.onContinue, super.key,
   });
+  final VoidCallback onBack;
+  final ValueChanged<Map<String, dynamic>> onContinue;
 
   @override
   State<MetricsStep> createState() => _MetricsStepState();
@@ -41,8 +39,7 @@ class _MetricsStepState extends State<MetricsStep> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return OnboardingStepScaffold(
+  Widget build(BuildContext context) => OnboardingStepScaffold(
       title: 'Tell us about you',
       subtitle: 'We use these metrics to calculate your BMR & TDEE.',
       showBack: true,
@@ -110,16 +107,14 @@ class _MetricsStepState extends State<MetricsStep> {
         ],
       ),
     );
-  }
 }
 
 class _FieldLabel extends StatelessWidget {
-  final String text;
   const _FieldLabel(this.text);
+  final String text;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
+  Widget build(BuildContext context) => Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
@@ -130,14 +125,9 @@ class _FieldLabel extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _StepperField extends StatelessWidget {
-  final int value;
-  final String unit;
-  final VoidCallback onDecrement;
-  final VoidCallback onIncrement;
 
   const _StepperField({
     required this.value,
@@ -145,10 +135,13 @@ class _StepperField extends StatelessWidget {
     required this.onDecrement,
     required this.onIncrement,
   });
+  final int value;
+  final String unit;
+  final VoidCallback onDecrement;
+  final VoidCallback onIncrement;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.5),
@@ -171,18 +164,16 @@ class _StepperField extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 class _StepButton extends StatelessWidget {
+
+  const _StepButton({required this.icon, required this.onTap});
   final IconData icon;
   final VoidCallback onTap;
 
-  const _StepButton({required this.icon, required this.onTap});
-
   @override
-  Widget build(BuildContext context) {
-    return InkWell(
+  Widget build(BuildContext context) => InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
@@ -196,14 +187,9 @@ class _StepButton extends StatelessWidget {
         child: Icon(icon, color: const Color(AppColors.authPurple), size: 22),
       ),
     );
-  }
 }
 
 class _GenderToggle extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
 
   const _GenderToggle({
     required this.label,
@@ -211,10 +197,13 @@ class _GenderToggle extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
   });
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -256,15 +245,9 @@ class _GenderToggle extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _SliderField extends StatelessWidget {
-  final double value;
-  final double min;
-  final double max;
-  final String unit;
-  final ValueChanged<double> onChanged;
 
   const _SliderField({
     required this.value,
@@ -273,10 +256,14 @@ class _SliderField extends StatelessWidget {
     required this.unit,
     required this.onChanged,
   });
+  final double value;
+  final double min;
+  final double max;
+  final String unit;
+  final ValueChanged<double> onChanged;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.5),
@@ -325,16 +312,14 @@ class _SliderField extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 class _NameField extends StatelessWidget {
-  final TextEditingController controller;
   const _NameField({required this.controller});
+  final TextEditingController controller;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(16),
@@ -348,23 +333,22 @@ class _NameField extends StatelessWidget {
           fontWeight: FontWeight.w600,
           color: Color(0xFF14142B),
         ),
-        decoration: InputDecoration(
+        decoration: const InputDecoration(
           hintText: 'e.g. Alex',
-          hintStyle: const TextStyle(
+          hintStyle: TextStyle(
             color: Color(0xFF8A8A9A),
             fontWeight: FontWeight.w400,
           ),
-          prefixIcon: const Icon(
+          prefixIcon: Icon(
             Icons.person_outline_rounded,
             color: Color(AppColors.authPurple),
           ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
+          contentPadding: EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 14,
           ),
         ),
       ),
     );
-  }
 }

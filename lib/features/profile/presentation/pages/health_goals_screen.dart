@@ -77,8 +77,7 @@ class _HealthGoalsScreenState extends State<HealthGoalsScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: _bg,
       appBar: AppBar(
         backgroundColor: _bg,
@@ -102,7 +101,6 @@ class _HealthGoalsScreenState extends State<HealthGoalsScreen> {
                 )
               : _buildContent(),
     );
-  }
 
   Widget _buildContent() {
     final g = _goals;
@@ -143,8 +141,7 @@ class _HealthGoalsScreenState extends State<HealthGoalsScreen> {
       ),
     );
   }
-Widget _goalBanner(String? goalType, GoalEntity? g) {
-    return Container(
+Widget _goalBanner(String? goalType, GoalEntity? g) => Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -178,7 +175,6 @@ Widget _goalBanner(String? goalType, GoalEntity? g) {
         ],
       ),
     );
-  }
 
   Widget _twoGoals(GoalEntity? g, UserProfileEntity? p) {
     final cal = g?.targetCalories ?? 0;
@@ -206,8 +202,7 @@ Widget _goalBanner(String? goalType, GoalEntity? g) {
     );
   }
 
-  Widget _goalStatCard(IconData icon, String label, String value) {
-    return Container(
+  Widget _goalStatCard(IconData icon, String label, String value) => Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: _surface,
@@ -234,10 +229,8 @@ Widget _goalBanner(String? goalType, GoalEntity? g) {
         ],
       ),
     );
-  }
 
-  Widget _card(List<Widget> children) {
-    return Container(
+  Widget _card(List<Widget> children) => Container(
       padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
       decoration: BoxDecoration(
         color: _surface,
@@ -253,10 +246,8 @@ Widget _goalBanner(String? goalType, GoalEntity? g) {
         ],
       ),
     );
-  }
 
-  Widget _rowItem(IconData icon, String label, String value) {
-    return Padding(
+  Widget _rowItem(IconData icon, String label, String value) => Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
@@ -278,7 +269,6 @@ Widget _goalBanner(String? goalType, GoalEntity? g) {
         ],
       ),
     );
-  }
 }
 
 class _SectionLabel extends StatelessWidget {
@@ -287,8 +277,7 @@ class _SectionLabel extends StatelessWidget {
   final String text;
 
   @override
-  Widget build(BuildContext context) {
-    return Text(
+  Widget build(BuildContext context) => Text(
       text,
       style: const TextStyle(
         fontSize: 12,
@@ -297,5 +286,4 @@ class _SectionLabel extends StatelessWidget {
         color: _textSecondary,
       ),
     );
-  }
 }

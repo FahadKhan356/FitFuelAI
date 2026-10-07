@@ -1,19 +1,4 @@
 class UserProfileEntity {
-  final String userId;
-  final String? name;
-  final String? avatarUrl;
-  final int? age;
-  final String? gender;
-  final double? heightCm;
-  final double? weightKg;
-  final double? currentWeightKg;
-  final double? goalWeightKg;
-  final String? activityLevel;
-  final String? goalType;
-  final String? dietPreference;
-  final int? workoutFrequency;
-  final String? bio;
-  final DateTime? createdAt;
 
   const UserProfileEntity({
     required this.userId,
@@ -33,22 +18,7 @@ class UserProfileEntity {
     this.createdAt,
   });
 
-  static double? _parseDouble(dynamic value) {
-    if (value == null) return null;
-    if (value is num) return value.toDouble();
-    if (value is String) return double.tryParse(value);
-    return null;
-  }
-
-  static int? _parseInt(dynamic value) {
-    if (value == null) return null;
-    if (value is num) return value.toInt();
-    if (value is String) return int.tryParse(value) ?? double.tryParse(value)?.toInt();
-    return null;
-  }
-
-  factory UserProfileEntity.fromJson(Map<String, dynamic> json) {
-    return UserProfileEntity(
+  factory UserProfileEntity.fromJson(Map<String, dynamic> json) => UserProfileEntity(
       userId: json['user_id']?.toString() ?? '',
       name: json['name'] as String?,
       avatarUrl: json['avatar_url'] as String?,
@@ -67,10 +37,37 @@ class UserProfileEntity {
           ? DateTime.tryParse(json['created_at'].toString())
           : null,
     );
+  final String userId;
+  final String? name;
+  final String? avatarUrl;
+  final int? age;
+  final String? gender;
+  final double? heightCm;
+  final double? weightKg;
+  final double? currentWeightKg;
+  final double? goalWeightKg;
+  final String? activityLevel;
+  final String? goalType;
+  final String? dietPreference;
+  final int? workoutFrequency;
+  final String? bio;
+  final DateTime? createdAt;
+
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
   }
 
-  Map<String, dynamic> toJson() {
-    return {
+  static int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? double.tryParse(value)?.toInt();
+    return null;
+  }
+
+  Map<String, dynamic> toJson() => {
       'user_id': userId,
       if (name != null) 'name': name,
       if (avatarUrl != null) 'avatar_url': avatarUrl,
@@ -87,7 +84,6 @@ class UserProfileEntity {
       if (bio != null) 'bio': bio,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
     };
-  }
 
   UserProfileEntity copyWith({
     String? userId,
@@ -105,8 +101,7 @@ class UserProfileEntity {
     int? workoutFrequency,
     String? bio,
     DateTime? createdAt,
-  }) {
-    return UserProfileEntity(
+  }) => UserProfileEntity(
       userId: userId ?? this.userId,
       name: name ?? this.name,
       avatarUrl: avatarUrl ?? this.avatarUrl,
@@ -123,5 +118,4 @@ class UserProfileEntity {
       bio: bio ?? this.bio,
       createdAt: createdAt ?? this.createdAt,
     );
-  }
 }

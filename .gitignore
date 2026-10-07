@@ -1,6 +1,10 @@
 # Environment Variables
 .env
 
+# OS Files
+.DS_Store
+**/.DS_Store
+
 # Dart/Flutter
 .dart_tool/
 .flutter-plugins

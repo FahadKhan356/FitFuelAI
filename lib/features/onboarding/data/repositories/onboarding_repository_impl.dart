@@ -4,26 +4,16 @@ import '../../../../core/services/home_data_cache.dart';
 import '../../domain/repositories/onboarding_repository.dart';
 
 class OnboardingRepositoryImpl implements OnboardingRepository {
-  final SupabaseRemoteDataSource _dataSource;
 
   OnboardingRepositoryImpl(this._dataSource);
+  final SupabaseRemoteDataSource _dataSource;
 
   @override
   Future<UserModel> submitOnboardingData({
     required String userId,
-    String? email,
+    required int age, required String gender, required double heightCm, required double weightKg, required String activityLevel, required String dietPreference, required int workoutFrequency, required String goalType, required double targetWeightKg, required double weeklyPaceKg, String? email,
     String? name,
     String? avatarUrl,
-    required int age,
-    required String gender,
-    required double heightCm,
-    required double weightKg,
-    required String activityLevel,
-    required String dietPreference,
-    required int workoutFrequency,
-    required String goalType,
-    required double targetWeightKg,
-    required double weeklyPaceKg,
     DateTime? targetDate,
   }) async {
     // 1. Build the profile model (no computed nutrition — server does that).
@@ -59,10 +49,10 @@ class OnboardingRepositoryImpl implements OnboardingRepository {
     final goalsData = await _dataSource.getUserGoals(userId);
 
     double parseD(dynamic v) {
-      if (v == null) return 0.0;
+      if (v == null) return 0;
       if (v is num) return v.toDouble();
       if (v is String) return double.tryParse(v) ?? 0.0;
-      return 0.0;
+      return 0;
     }
 
     int parseI(dynamic v) {

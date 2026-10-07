@@ -18,7 +18,7 @@ class _FoodScannerScreenState extends State<FoodScannerScreen> {
 
   Future<void> _pickImage(ImageSource source) async {
     try {
-      final XFile? image = await _picker.pickImage(
+      final image = await _picker.pickImage(
         source: source,
         imageQuality: 85,
         preferredCameraDevice: CameraDevice.rear,
@@ -53,8 +53,7 @@ class _FoodScannerScreenState extends State<FoodScannerScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
+  Widget build(BuildContext context) => Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // ── Preview area ──
@@ -123,9 +122,9 @@ class _FoodScannerScreenState extends State<FoodScannerScreen> {
         // ── Action buttons ──
         Container(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          decoration: BoxDecoration(
-            color: const Color(AppColors.authBackground),
-            borderRadius: const BorderRadius.only(
+          decoration: const BoxDecoration(
+            color: Color(AppColors.authBackground),
+            borderRadius: BorderRadius.only(
               topLeft: Radius.circular(20),
               topRight: Radius.circular(20),
             ),
@@ -250,5 +249,4 @@ class _FoodScannerScreenState extends State<FoodScannerScreen> {
         ),
       ],
     );
-  }
 }

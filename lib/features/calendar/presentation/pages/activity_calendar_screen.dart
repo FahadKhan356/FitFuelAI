@@ -3,9 +3,9 @@ import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/di/service_locator.dart';
 import '../../../../core/domain/entities/calendar_tracking.dart';
 import '../../../../core/domain/usecases/all_usecases.dart';
-import '../../../../core/di/service_locator.dart';
 import '../../../../core/services/home_data_refresh_notifier.dart';
 import '../../../../core/services/streak_service.dart';
 
@@ -16,8 +16,6 @@ const _purpleSoft = Color(0xFFF0ECFF);
 const _textPrimary = Color(0xFF1F1F2E);
 const _textSecondary = Color(0xFF72707F);
 const _border = Color(0xFFE7E3EF);
-const _waterBlue = Color(0xFF2DCFF1);
-const _calorieOrange = Color(0xFFF5A623);
 
 class ActivityCalendarScreen extends StatefulWidget {
   const ActivityCalendarScreen({super.key});
@@ -111,8 +109,7 @@ class _ActivityCalendarScreenState extends State<ActivityCalendarScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: _bg,
       body: SafeArea(
         child: Column(
@@ -129,10 +126,8 @@ class _ActivityCalendarScreenState extends State<ActivityCalendarScreen> {
         ),
       ),
     );
-  }
 
-Widget _buildHeader() {
-    return Padding(
+Widget _buildHeader() => Padding(
       padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
       child: Row(
         children: [
@@ -182,10 +177,8 @@ Widget _buildHeader() {
         ],
       ),
     );
-  }
 
-  Widget _buildError() {
-    return Padding(
+  Widget _buildError() => Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -206,10 +199,8 @@ Widget _buildHeader() {
         ],
       ),
     );
-  }
 
-  Widget _buildContent() {
-    return SingleChildScrollView(
+  Widget _buildContent() => SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       child: Column(
@@ -222,22 +213,21 @@ Widget _buildHeader() {
         ],
       ),
     );
-  }
 Widget _buildMonthCard() {
     const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
     final firstDayWeekday = _month.weekday - 1; // 0 = Monday
     final daysInMonth = DateTime(_month.year, _month.month + 1, 0).day;
 
     final cells = <Widget>[];
-    for (int i = 0; i < firstDayWeekday; i++) {
+    for (var i = 0; i < firstDayWeekday; i++) {
       cells.add(const SizedBox.shrink());
     }
-    for (int day = 1; day <= daysInMonth; day++) {
+    for (var day = 1; day <= daysInMonth; day++) {
       final date = DateTime(_month.year, _month.month, day);
       cells.add(_buildDayCell(date));
     }
     final remaining = (7 - (cells.length % 7)) % 7;
-    for (int i = 0; i < remaining; i++) {
+    for (var i = 0; i < remaining; i++) {
       cells.add(const SizedBox.shrink());
     }
 
@@ -376,8 +366,7 @@ Widget _buildMonthCard() {
     }
     return const _MiniDot(color: Color(0xFFD0CDDD), size: 4);
   }
-Widget _buildLegend() {
-    return Container(
+Widget _buildLegend() => Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: _surface,
@@ -403,10 +392,8 @@ Widget _buildLegend() {
         ],
       ),
     );
-  }
 
-  Widget _legendItem(Widget dot, String label) {
-    return Row(
+  Widget _legendItem(Widget dot, String label) => Row(
       children: [
         dot,
         const SizedBox(width: 6),
@@ -420,7 +407,6 @@ Widget _buildLegend() {
         ),
       ],
     );
-  }
 
   Widget _buildSelectedDayDetail() {
     final date = _selectedDay;
@@ -449,7 +435,7 @@ Widget _buildLegend() {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${DateFormat('EEEE, d MMMM').format(date)}',
+            DateFormat('EEEE, d MMMM').format(date),
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w800,
@@ -488,8 +474,7 @@ Widget _buildLegend() {
     required String value,
     required String label,
     required bool done,
-  }) {
-    return Container(
+  }) => Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.16),
@@ -528,10 +513,8 @@ Widget _buildLegend() {
         ],
       ),
     );
-  }
 
-  Widget _monthNav(IconData icon, VoidCallback onTap) {
-    return InkWell(
+  Widget _monthNav(IconData icon, VoidCallback onTap) => InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
       child: Container(
@@ -544,7 +527,6 @@ Widget _buildLegend() {
         child: Icon(icon, size: 18, color: _purple),
       ),
     );
-  }
 
   static String _monthName(int month) {
     const names = [
@@ -559,16 +541,14 @@ Widget _buildLegend() {
 }
 
 class _MiniDot extends StatelessWidget {
+  const _MiniDot({required this.color, this.size = 5});
   final Color color;
   final double size;
-  const _MiniDot({required this.color, this.size = 5});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       width: size,
       height: size,
       decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
-  }
 }

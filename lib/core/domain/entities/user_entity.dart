@@ -1,8 +1,4 @@
 class UserEntity {
-  final String id;
-  final String? email;
-  final String? name;
-  final String? avatarUrl;
 
   const UserEntity({
     required this.id,
@@ -10,4 +6,8 @@ class UserEntity {
     this.name,
     this.avatarUrl,
   });
+  final String id;
+  final String? email;
+  final String? name;
+  final String? avatarUrl;
 }

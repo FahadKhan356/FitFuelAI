@@ -27,25 +27,25 @@ void main() {
       expect(BmiCalculator.classify(15.9), BmiCategory.severeUnderweight);
       expect(BmiCalculator.classify(16.4), BmiCategory.moderateUnderweight);
       expect(BmiCalculator.classify(17.9), BmiCategory.mildUnderweight);
-      expect(BmiCalculator.classify(22.0), BmiCategory.normal);
+      expect(BmiCalculator.classify(22), BmiCategory.normal);
       expect(BmiCalculator.classify(27.5), BmiCategory.overweight);
       expect(BmiCalculator.classify(32.4), BmiCategory.obeseClassI);
       expect(BmiCalculator.classify(37.9), BmiCategory.obeseClassII);
-      expect(BmiCalculator.classify(41.0), BmiCategory.obeseClassIII);
+      expect(BmiCalculator.classify(41), BmiCategory.obeseClassIII);
     });
 
     test('boundary values land on the correct side', () {
       expect(BmiCalculator.classify(18.5), BmiCategory.normal);
-      expect(BmiCalculator.classify(25.0), BmiCategory.overweight);
-      expect(BmiCalculator.classify(30.0), BmiCategory.obeseClassI);
+      expect(BmiCalculator.classify(25), BmiCategory.overweight);
+      expect(BmiCalculator.classify(30), BmiCategory.obeseClassI);
     });
   });
 
   group('BmiCalculator.bmiPrime', () {
     test('is BMI / 25 (ratio to healthy upper bound)', () {
-      expect(BmiCalculator.bmiPrime(25.0), 1.0);
+      expect(BmiCalculator.bmiPrime(25), 1.0);
       expect(BmiCalculator.bmiPrime(22.5), 0.9);
-      expect(BmiCalculator.bmiPrime(30.0), 1.2);
+      expect(BmiCalculator.bmiPrime(30), 1.2);
     });
   });
 

@@ -1,23 +1,10 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
-import 'package:go_router/go_router.dart';
-
-import '../../../../core/constants/app_colors.dart';
-import 'package:flutter/material.dart';
 
 // Import apka model class:
 // import 'package:yourapp/models/food_item_model.dart';
 
 // Simplified FoodItem class for this file
 class FoodItem {
-  final String name;
-  final double carbs;
-  final double protein;
-  final double fat;
-  final int calories;
-  double portion;
-  final double maxPortion;
-  final String matchLevel;
 
   FoodItem({
     required this.name,
@@ -29,6 +16,14 @@ class FoodItem {
     required this.maxPortion,
     required this.matchLevel,
   });
+  final String name;
+  final double carbs;
+  final double protein;
+  final double fat;
+  final int calories;
+  double portion;
+  final double maxPortion;
+  final String matchLevel;
 
   double getTotalCalories() => calories * (portion / 100);
   double getTotalProtein() => protein * (portion / 100);
@@ -37,14 +32,14 @@ class FoodItem {
 }
 
 class ScanResultScreen extends StatefulWidget {
-  final String? scannedImageUrl;
-  final Function(List<FoodItem>)? onSave;
 
   const ScanResultScreen({
     Key? key,
     this.scannedImageUrl,
     this.onSave,
   }) : super(key: key);
+  final String? scannedImageUrl;
+  final Function(List<FoodItem>)? onSave;
 
   @override
   State<ScanResultScreen> createState() => _ScanResultScreenState();
@@ -103,8 +98,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
     ];
   }
 
-  double _getTotalNutrition(String nutrient) {
-    return detectedFoods.fold(0, (sum, food) {
+  double _getTotalNutrition(String nutrient) => detectedFoods.fold(0, (sum, food) {
       switch (nutrient) {
         case 'protein':
           return sum + food.getTotalProtein();
@@ -118,7 +112,6 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
           return sum;
       }
     });
-  }
 
   double _getProgressPercent(String nutrient) {
     final total = _getTotalNutrition(nutrient);
@@ -131,7 +124,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
 
     try {
       // Simulate API call
-      await Future.delayed(Duration(seconds: 1));
+      await Future.delayed(const Duration(seconds: 1));
 
       // Callback to parent
       if (widget.onSave != null) {
@@ -166,22 +159,21 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
   void _addFoodItem() {
     // TODO: Open food search/add dialog
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Add food item feature coming soon!')),
+      const SnackBar(content: Text('Add food item feature coming soon!')),
     );
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
+        title: const Text(
           'Scan Result',
           style: TextStyle(
             color: Colors.black,
@@ -192,7 +184,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
         centerTitle: false,
         actions: [
           if (isLoading)
-            Center(
+            const Center(
               child: SizedBox(
                 width: 20,
                 height: 20,
@@ -207,7 +199,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
           else
             TextButton(
               onPressed: _saveScannedFoods,
-              child: Text(
+              child: const Text(
                 'Save',
                 style: TextStyle(
                   color: Color(0xFF6366FF),
@@ -216,16 +208,16 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                 ),
               ),
             ),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
         ],
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               // Food Bowl Image
               ClipRRect(
                 borderRadius: BorderRadius.circular(20),
@@ -237,15 +229,13 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                       ? Image.network(
                           widget.scannedImageUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Center(
+                          errorBuilder: (context, error, stackTrace) => Center(
                               child: Icon(
                                 Icons.broken_image,
                                 size: 50,
                                 color: Colors.grey[600],
                               ),
-                            );
-                          },
+                            ),
                         )
                       : Image.network(
                           'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&h=400&fit=crop',
@@ -253,9 +243,9 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                         ),
                 ),
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               // Nutrition Target Section
-              Row(
+              const Row(
                 children: [
                   Icon(Icons.track_changes, color: Color(0xFF6366FF), size: 20),
                   SizedBox(width: 8),
@@ -269,14 +259,14 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               _buildNutritionTargetCard(),
-              SizedBox(height: 32),
+              const SizedBox(height: 32),
               // Detected Foods Section
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
+                  const Text(
                     'Detected Foods',
                     style: TextStyle(
                       fontSize: 16,
@@ -286,7 +276,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                   ),
                   GestureDetector(
                     onTap: _addFoodItem,
-                    child: Text(
+                    child: const Text(
                       '+ Add Item',
                       style: TextStyle(
                         fontSize: 14,
@@ -297,14 +287,13 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               // Food Items List
               ListView.builder(
                 shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
+                physics: const NeverScrollableScrollPhysics(),
                 itemCount: detectedFoods.length,
-                itemBuilder: (context, index) {
-                  return FoodItemCard(
+                itemBuilder: (context, index) => FoodItemCard(
                     foodItem: detectedFoods[index],
                     onPortionChanged: (newPortion) {
                       setState(() {
@@ -323,39 +312,37 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                         ),
                       );
                     },
-                  );
-                },
+                  ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               // AI Tip Section
               _buildAITipSection(),
-              SizedBox(height: 40),
+              const SizedBox(height: 40),
             ],
           ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _addFoodItem,
-        backgroundColor: Color(0xFF6366FF),
-        child: Icon(Icons.add, color: Colors.white, size: 28),
+        backgroundColor: const Color(0xFF6366FF),
+        child: const Icon(Icons.add, color: Colors.white, size: 28),
       ),
     );
-  }
 
   Widget _buildNutritionTargetCard() {
     final totalCalories = _getTotalNutrition('calories');
     final calorieProgress = _getProgressPercent('calories');
 
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -372,7 +359,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                   value: calorieProgress.clamp(0, 1),
                   strokeWidth: 8,
                   backgroundColor: Colors.grey[200],
-                  valueColor: AlwaysStoppedAnimation<Color>(
+                  valueColor: const AlwaysStoppedAnimation<Color>(
                     Color(0xFF6366FF),
                   ),
                 ),
@@ -381,7 +368,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                   children: [
                     Text(
                       totalCalories.toStringAsFixed(0),
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                         color: Colors.black,
@@ -399,7 +386,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
               ],
             ),
           ),
-          SizedBox(width: 24),
+          const SizedBox(width: 24),
           // Nutrition Details
           Expanded(
             child: Column(
@@ -411,14 +398,14 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                   target: nutritionTargets['protein'].toString(),
                   color: Colors.purple,
                 ),
-                SizedBox(height: 14),
+                const SizedBox(height: 14),
                 NutritionRow(
                   label: 'Carbs',
                   current: _getTotalNutrition('carbs').toStringAsFixed(1),
                   target: nutritionTargets['carbs'].toString(),
                   color: Colors.cyan,
                 ),
-                SizedBox(height: 14),
+                const SizedBox(height: 14),
                 NutritionRow(
                   label: 'Fats',
                   current: _getTotalNutrition('fat').toStringAsFixed(1),
@@ -433,14 +420,13 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
     );
   }
 
-  Widget _buildAITipSection() {
-    return Container(
-      padding: EdgeInsets.all(16),
+  Widget _buildAITipSection() => Container(
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Color(0xFFF3F2FF),
+        color: const Color(0xFFF3F2FF),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Color(0xFFE9E5FF),
+          color: const Color(0xFFE9E5FF),
           width: 1,
         ),
       ),
@@ -450,22 +436,22 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
           Container(
             width: 36,
             height: 36,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle,
               color: Color(0xFF6366FF),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.lightbulb_outline,
               color: Colors.white,
               size: 20,
             ),
           ),
-          SizedBox(width: 12),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'NutriLens AI Tip',
                   style: TextStyle(
                     fontSize: 14,
@@ -473,7 +459,7 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
                     color: Color(0xFF6366FF),
                   ),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Text(
                   'Great source of Omega-3! Consider reducing the rice portion by 20% to stay perfectly within your evening carb goal.',
                   style: TextStyle(
@@ -488,34 +474,29 @@ class _ScanResultScreenState extends State<ScanResultScreen> {
         ],
       ),
     );
-  }
 }
 
 class FoodItemCard extends StatelessWidget {
+
+  const FoodItemCard({
+    required this.foodItem, required this.onPortionChanged, required this.onDelete, Key? key,
+  }) : super(key: key);
   final FoodItem foodItem;
   final Function(double) onPortionChanged;
   final Function() onDelete;
 
-  const FoodItemCard({
-    Key? key,
-    required this.foodItem,
-    required this.onPortionChanged,
-    required this.onDelete,
-  }) : super(key: key);
-
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 16),
-      padding: EdgeInsets.all(16),
+  Widget build(BuildContext context) => Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
-            offset: Offset(0, 1),
+            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -532,16 +513,16 @@ class FoodItemCard extends StatelessWidget {
                     children: [
                       Text(
                         foodItem.name,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           color: Colors.black,
                         ),
                       ),
                       if (foodItem.matchLevel.isNotEmpty) ...[
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Container(
-                          padding: EdgeInsets.symmetric(
+                          padding: const EdgeInsets.symmetric(
                             horizontal: 8,
                             vertical: 2,
                           ),
@@ -561,7 +542,7 @@ class FoodItemCard extends StatelessWidget {
                       ],
                     ],
                   ),
-                  SizedBox(height: 6),
+                  const SizedBox(height: 6),
                   Text(
                     '${foodItem.carbs}g C • ${foodItem.protein}g P • ${foodItem.fat}g F • ${foodItem.calories} kcal',
                     style: TextStyle(
@@ -574,18 +555,18 @@ class FoodItemCard extends StatelessWidget {
               PopupMenuButton(
                 itemBuilder: (context) => [
                   PopupMenuItem(
-                    child: Text('Edit'),
+                    child: const Text('Edit'),
                     onTap: () {},
                   ),
                   PopupMenuItem(
-                    child: Text('Delete'),
                     onTap: onDelete,
+                    child: const Text('Delete'),
                   ),
                 ],
               ),
             ],
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           // Portion Section
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -600,7 +581,7 @@ class FoodItemCard extends StatelessWidget {
               ),
               Text(
                 '${foodItem.portion.toStringAsFixed(0)}g',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: Colors.black,
@@ -608,7 +589,7 @@ class FoodItemCard extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: 10),
+          const SizedBox(height: 10),
           // Slider
           Row(
             children: [
@@ -625,7 +606,7 @@ class FoodItemCard extends StatelessWidget {
                   value: foodItem.portion,
                   min: 0,
                   max: foodItem.maxPortion,
-                  activeColor: Color(0xFF6366FF),
+                  activeColor: const Color(0xFF6366FF),
                   inactiveColor: Colors.grey[200],
                   onChanged: onPortionChanged,
                 ),
@@ -643,28 +624,25 @@ class FoodItemCard extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 class NutritionRow extends StatelessWidget {
+
+  const NutritionRow({
+    required this.label, required this.current, required this.target, required this.color, Key? key,
+  }) : super(key: key);
   final String label;
   final String current;
   final String target;
   final Color color;
 
-  const NutritionRow({
-    Key? key,
-    required this.label,
-    required this.current,
-    required this.target,
-    required this.color,
-  }) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
-    double currentVal = double.tryParse(current) ?? 0;
-    double targetVal = double.tryParse(target) ?? 1;
-    double progressValue = (currentVal / targetVal).clamp(0, 1);
+    final currentVal = double.tryParse(current) ?? 0;
+    final targetVal = double.tryParse(target) ?? 1;
+    // `num.clamp` returns num, so `.toDouble()` is needed to satisfy
+    // LinearProgressIndicator's `double? value`.
+    final progressValue = (currentVal / targetVal).clamp(0, 1).toDouble();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -682,7 +660,7 @@ class NutritionRow extends StatelessWidget {
             ),
             Text(
               '$current / ${target}g',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 13,
                 color: Colors.black,
                 fontWeight: FontWeight.w600,
@@ -690,7 +668,7 @@ class NutritionRow extends StatelessWidget {
             ),
           ],
         ),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
         ClipRRect(
           borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(

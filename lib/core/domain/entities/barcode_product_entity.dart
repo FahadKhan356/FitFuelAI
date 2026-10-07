@@ -1,12 +1,4 @@
 class BarcodeProductEntity {
-  final String id;
-  final String barcode;
-  final String productName;
-  final String? brand;
-  final int? calories;
-  final Map<String, dynamic>? nutritionData;
-  final String source;
-  final DateTime? createdAt;
 
   const BarcodeProductEntity({
     required this.id,
@@ -18,4 +10,12 @@ class BarcodeProductEntity {
     this.source = 'OpenFoodFacts',
     this.createdAt,
   });
+  final String id;
+  final String barcode;
+  final String productName;
+  final String? brand;
+  final int? calories;
+  final Map<String, dynamic>? nutritionData;
+  final String source;
+  final DateTime? createdAt;
 }

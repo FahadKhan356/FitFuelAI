@@ -206,7 +206,7 @@ class NutritionApiDataSource {
   /// Maps USDA FDC nutrient arrays (id -> value per 100g) to a simple map.
   Map<int, double> _usdaNutrientMap(dynamic raw) {
     final map = <int, double>{};
-    final list = (raw as List? ?? const []);
+    final list = raw as List? ?? const [];
     for (final item in list) {
       final typed = item as Map<String, dynamic>;
       final nutrient = typed['nutrient'];

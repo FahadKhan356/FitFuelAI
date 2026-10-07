@@ -1,12 +1,5 @@
 /// Model for notification preference/settings table
 class NotificationSettingModel {
-  final String id;
-  final String userId;
-  final String type;
-  final String title;
-  final bool isEnabled;
-  final String? scheduleTime;
-  final DateTime? createdAt;
 
   const NotificationSettingModel({
     required this.id,
@@ -18,8 +11,7 @@ class NotificationSettingModel {
     this.createdAt,
   });
 
-  factory NotificationSettingModel.fromJson(Map<String, dynamic> json) {
-    return NotificationSettingModel(
+  factory NotificationSettingModel.fromJson(Map<String, dynamic> json) => NotificationSettingModel(
       id: json['id'] as String,
       userId: json['user_id'] as String,
       type: json['type'] as String,
@@ -28,7 +20,13 @@ class NotificationSettingModel {
       scheduleTime: json['schedule_time'] as String?,
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : null,
     );
-  }
+  final String id;
+  final String userId;
+  final String type;
+  final String title;
+  final bool isEnabled;
+  final String? scheduleTime;
+  final DateTime? createdAt;
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -39,8 +37,7 @@ class NotificationSettingModel {
     if (scheduleTime != null) 'schedule_time': scheduleTime,
   };
 
-  NotificationSettingModel copyWith({bool? isEnabled}) {
-    return NotificationSettingModel(
+  NotificationSettingModel copyWith({bool? isEnabled}) => NotificationSettingModel(
       id: id,
       userId: userId,
       type: type,
@@ -49,5 +46,4 @@ class NotificationSettingModel {
       scheduleTime: scheduleTime,
       createdAt: createdAt,
     );
-  }
 }

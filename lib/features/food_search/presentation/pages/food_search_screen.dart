@@ -6,10 +6,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/food_search_bloc.dart';
 
 class FoodSearchScreen extends StatefulWidget {
-  final Function(String foodName, int calories, double protein, double carbs,
-      double fat)? onFoodSelected;
 
   const FoodSearchScreen({Key? key, this.onFoodSelected}) : super(key: key);
+  final Function(String foodName, int calories, double protein, double carbs,
+      double fat)? onFoodSelected;
 
   @override
   State<FoodSearchScreen> createState() => _FoodSearchScreenState();
@@ -45,8 +45,7 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider.value(
+  Widget build(BuildContext context) => BlocProvider.value(
       value: _bloc,
       child: Scaffold(
         backgroundColor: const Color(0xFFF5F5FA),
@@ -182,18 +181,16 @@ class _FoodSearchScreenState extends State<FoodSearchScreen> {
         ),
       ),
     );
-  }
 }
 
 class _FoodTile extends StatelessWidget {
+
+  const _FoodTile({required this.food, required this.onTap});
   final FoodItemEntity food;
   final VoidCallback onTap;
 
-  const _FoodTile({required this.food, required this.onTap});
-
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
@@ -263,5 +260,4 @@ class _FoodTile extends StatelessWidget {
         ),
       ),
     );
-  }
 }

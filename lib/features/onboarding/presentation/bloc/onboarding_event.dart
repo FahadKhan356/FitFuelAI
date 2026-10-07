@@ -9,9 +9,9 @@ abstract class OnboardingEvent extends Equatable {
 
 /// Validates the current step inputs and advances to the next step.
 class NextStepRequested extends OnboardingEvent {
-  final Map<String, dynamic> stepData;
 
   const NextStepRequested({required this.stepData});
+  final Map<String, dynamic> stepData;
 
   @override
   List<Object?> get props => [stepData];

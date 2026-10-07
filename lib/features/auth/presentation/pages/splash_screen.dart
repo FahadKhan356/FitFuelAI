@@ -1,12 +1,13 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:fitfuel_ai/core/config/routes.dart';
+import 'package:fitfuel_ai/core/services/home_data_cache.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:fitfuel_ai/core/services/home_data_cache.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -22,6 +23,7 @@ class _SplashScreenState extends State<SplashScreen>
   late final AnimationController _progressController;
 
   bool _navigated = false;
+  Timer? _initializationTimer;
 
   @override
   void initState() {
@@ -46,7 +48,13 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _initInitializationProcess() async {
-    await Future.delayed(const Duration(seconds: 3));
+    _initializationTimer = Timer(
+      const Duration(seconds: 3),
+      _resolveInitialRoute,
+    );
+  }
+
+  Future<void> _resolveInitialRoute() async {
     if (!mounted || _navigated) return;
     _navigated = true;
     HapticFeedback.mediumImpact();
@@ -58,7 +66,7 @@ class _SplashScreenState extends State<SplashScreen>
     // Check if user is already logged in
     final currentUser = Supabase.instance.client.auth.currentUser;
     if (currentUser != null) {
-      bool shouldGoHome = hasCompletedOnboarding;
+      var shouldGoHome = hasCompletedOnboarding;
       if (!shouldGoHome) {
         // If not completed locally, check DB to see if they already have a profile
         try {
@@ -94,6 +102,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
+    _initializationTimer?.cancel();
     _rotationController.dispose();
     _pulseController.dispose();
     _progressController.dispose();
@@ -101,8 +110,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
         child: Stack(
@@ -172,7 +180,7 @@ class _SplashScreenState extends State<SplashScreen>
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF64748B),
-                      letterSpacing: 2.0,
+                      letterSpacing: 2,
                     ),
                   ),
                   const SizedBox(height: 132),
@@ -190,9 +198,7 @@ class _SplashScreenState extends State<SplashScreen>
                   const SizedBox(height: 40),
                   AnimatedBuilder(
                     animation: _progressController,
-                    builder: (context, child) {
-                      return _ProgressPill(progress: _progressController.value);
-                    },
+                    builder: (context, child) => _ProgressPill(progress: _progressController.value),
                   ),
                   const SizedBox(height: 14),
                   const Text(
@@ -214,15 +220,13 @@ class _SplashScreenState extends State<SplashScreen>
         ),
       ),
     );
-  }
 }
 
 class _CentralOrb extends StatelessWidget {
   const _CentralOrb();
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       width: 122,
       height: 122,
       decoration: BoxDecoration(
@@ -264,7 +268,6 @@ class _CentralOrb extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _ProgressPill extends StatelessWidget {
@@ -273,8 +276,7 @@ class _ProgressPill extends StatelessWidget {
   final double progress;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       width: 150,
       height: 8,
       decoration: BoxDecoration(
@@ -296,19 +298,18 @@ class _ProgressPill extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class DottedCirclePainter extends CustomPainter {
-  final Color color;
-  final int dashCount;
-  final double strokeWidth;
 
   DottedCirclePainter({
     required this.color,
     required this.dashCount,
     required this.strokeWidth,
   });
+  final Color color;
+  final int dashCount;
+  final double strokeWidth;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -321,7 +322,7 @@ class DottedCirclePainter extends CustomPainter {
     final radius = size.width / 2;
     final sweepAngle = (2 * math.pi) / dashCount;
 
-    for (int i = 0; i < dashCount; i++) {
+    for (var i = 0; i < dashCount; i++) {
       if (i % 2 == 0) {
         canvas.drawArc(
           Rect.fromCircle(center: center, radius: radius),
@@ -335,9 +336,7 @@ class DottedCirclePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant DottedCirclePainter oldDelegate) {
-    return oldDelegate.color != color ||
+  bool shouldRepaint(covariant DottedCirclePainter oldDelegate) => oldDelegate.color != color ||
         oldDelegate.dashCount != dashCount ||
         oldDelegate.strokeWidth != strokeWidth;
-  }
 }

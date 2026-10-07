@@ -1,5 +1,6 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../../../core/domain/entities/water_entry_entity.dart';
 import '../../../../core/domain/repositories/water_repository.dart';
 import '../../../../core/services/home_data_refresh_notifier.dart';
@@ -12,27 +13,27 @@ abstract class WaterTrackerEvent extends Equatable {
 }
 
 class LoadWaterData extends WaterTrackerEvent {
+  const LoadWaterData(this.userId, this.date);
   final String userId;
   final DateTime date;
-  const LoadWaterData(this.userId, this.date);
   @override
   List<Object?> get props => [userId, date];
 }
 
 class AddWaterLog extends WaterTrackerEvent {
+  const AddWaterLog(this.userId, this.amountMl, this.date);
   final String userId;
   final int amountMl;
   final DateTime date;
-  const AddWaterLog(this.userId, this.amountMl, this.date);
   @override
   List<Object?> get props => [userId, amountMl, date];
 }
 
 class DeleteWaterEntry extends WaterTrackerEvent {
+  const DeleteWaterEntry(this.entryId, this.userId, this.date);
   final String entryId;
   final String userId;
   final DateTime date;
-  const DeleteWaterEntry(this.entryId, this.userId, this.date);
   @override
   List<Object?> get props => [entryId, userId, date];
 }
@@ -49,29 +50,28 @@ class WaterTrackerInitial extends WaterTrackerState {}
 class WaterTrackerLoading extends WaterTrackerState {}
 
 class WaterDataLoaded extends WaterTrackerState {
-  final List<WaterEntryEntity> entries;
-  final int totalMl;
-  final DateTime selectedDate;
 
   const WaterDataLoaded({
     required this.entries,
     required this.totalMl,
     required this.selectedDate,
   });
+  final List<WaterEntryEntity> entries;
+  final int totalMl;
+  final DateTime selectedDate;
   @override
   List<Object?> get props => [entries, totalMl, selectedDate];
 }
 
 class WaterTrackerError extends WaterTrackerState {
-  final String message;
   const WaterTrackerError(this.message);
+  final String message;
   @override
   List<Object?> get props => [message];
 }
 
 // ── BLoC ──
 class WaterTrackerBloc extends Bloc<WaterTrackerEvent, WaterTrackerState> {
-  final WaterRepository _waterRepository;
 
   WaterTrackerBloc({required WaterRepository waterRepository})
       : _waterRepository = waterRepository,
@@ -80,6 +80,7 @@ class WaterTrackerBloc extends Bloc<WaterTrackerEvent, WaterTrackerState> {
     on<AddWaterLog>(_onAddWaterLog);
     on<DeleteWaterEntry>(_onDeleteWaterEntry);
   }
+  final WaterRepository _waterRepository;
 
   Future<void> _onLoadWaterData(LoadWaterData event, Emitter<WaterTrackerState> emit) async {
     emit(WaterTrackerLoading());

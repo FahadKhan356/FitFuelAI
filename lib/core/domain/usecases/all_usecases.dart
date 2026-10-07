@@ -1,63 +1,63 @@
 
-import 'package:flutter/foundation.dart';
 import 'package:fitfuel_ai/core/domain/entities/user_entity.dart';
+import 'package:flutter/foundation.dart';
 
-import '../entities/meal_entity.dart';
-import '../entities/food_item_entity.dart';
-import '../entities/barcode_product_entity.dart';
-import '../entities/food_scan_result_entity.dart';
-import '../entities/water_entry_entity.dart';
-import '../entities/weight_entry_entity.dart';
-import '../entities/user_profile_entity.dart';
-import '../entities/goal_entity.dart';
-import '../entities/calendar_tracking.dart';
-import '../entities/coach_insight.dart';
-import '../repositories/auth_repository.dart';
-import '../repositories/user_repository.dart';
-import '../repositories/meal_repository.dart';
-import '../repositories/food_search_repository.dart';
-import '../repositories/food_scan_repository.dart';
-import '../repositories/barcode_repository.dart';
-import '../repositories/water_repository.dart';
-import '../repositories/weight_repository.dart';
-import '../repositories/analytics_repository.dart';
-import '../repositories/ai_coach_repository.dart';
-import '../repositories/subscription_repository.dart';
 import '../../services/calorie_goal_resolver.dart';
 import '../../services/water_goal_resolver.dart';
+import '../entities/barcode_product_entity.dart';
+import '../entities/calendar_tracking.dart';
+import '../entities/coach_insight.dart';
+import '../entities/food_item_entity.dart';
+import '../entities/food_scan_result_entity.dart';
+import '../entities/goal_entity.dart';
+import '../entities/meal_entity.dart';
+import '../entities/user_profile_entity.dart';
+import '../entities/water_entry_entity.dart';
+import '../entities/weight_entry_entity.dart';
+import '../repositories/ai_coach_repository.dart';
+import '../repositories/analytics_repository.dart';
+import '../repositories/auth_repository.dart';
+import '../repositories/barcode_repository.dart';
+import '../repositories/food_scan_repository.dart';
+import '../repositories/food_search_repository.dart';
+import '../repositories/meal_repository.dart';
+import '../repositories/subscription_repository.dart';
+import '../repositories/user_repository.dart';
+import '../repositories/water_repository.dart';
+import '../repositories/weight_repository.dart';
 
 // ==================== AUTH USE CASES ====================
-class SignInWithEmailUseCase {
-  final AuthRepository _repo; SignInWithEmailUseCase(this._repo);
+class SignInWithEmailUseCase { SignInWithEmailUseCase(this._repo);
+  final AuthRepository _repo;
   Future<UserEntity> call(String email, String password) => _repo.signInWithEmail(email, password);
 }
 
-class SignUpWithEmailUseCase {
-  final AuthRepository _repo; SignUpWithEmailUseCase(this._repo);
+class SignUpWithEmailUseCase { SignUpWithEmailUseCase(this._repo);
+  final AuthRepository _repo;
   Future<UserEntity> call(String email, String password) => _repo.signUpWithEmail(email, password);
 }
 
 // ==================== USER USE CASES ====================
-class LoadUserProfileUseCase {
-  final UserRepository _repo; LoadUserProfileUseCase(this._repo);
+class LoadUserProfileUseCase { LoadUserProfileUseCase(this._repo);
+  final UserRepository _repo;
   Future<UserProfileEntity?> call(String userId) => _repo.getUserProfile(userId);
 }
 
-class UpdateUserProfileUseCase {
-  final UserRepository _repo; UpdateUserProfileUseCase(this._repo);
+class UpdateUserProfileUseCase { UpdateUserProfileUseCase(this._repo);
+  final UserRepository _repo;
   Future<void> call(String userId, Map<String, dynamic> data) => _repo.updateUserProfile(userId, data);
 }
 
 // ==================== HOME USE CASE ====================
 class FetchHomeDashboardUseCase {
+  FetchHomeDashboardUseCase(this._mealRepo, this._waterRepo, this._userRepo);
   final MealRepository _mealRepo;
   final WaterRepository _waterRepo;
   final UserRepository _userRepo;
-  FetchHomeDashboardUseCase(this._mealRepo, this._waterRepo, this._userRepo);
 
   Future<Map<String, dynamic>> call(String userId, DateTime date) async {
-    List<MealEntity> meals = const [];
-    List<WaterEntryEntity> water = const [];
+    var meals = const <MealEntity>[];
+    var water = const <WaterEntryEntity>[];
     GoalEntity? goals;
     UserProfileEntity? profile;
 
@@ -66,13 +66,11 @@ class FetchHomeDashboardUseCase {
         meals = res;
       }).catchError((e) {
         debugPrint('FetchHomeDashboard: getMealsByDate error: $e');
-        return <MealEntity>[];
       }),
       _waterRepo.getWaterEntries(userId, date).then((res) {
         water = res;
       }).catchError((e) {
         debugPrint('FetchHomeDashboard: getWaterEntries error: $e');
-        return <WaterEntryEntity>[];
       }),
       _userRepo.getUserGoals(userId).then((res) {
         goals = res;
@@ -107,14 +105,14 @@ class FetchHomeDashboardUseCase {
 }
 
 // ==================== FOOD SEARCH ====================
-class SearchFoodUseCase {
-  final FoodSearchRepository _repo; SearchFoodUseCase(this._repo);
+class SearchFoodUseCase { SearchFoodUseCase(this._repo);
+  final FoodSearchRepository _repo;
   Future<List<FoodItemEntity>> call(String query) => _repo.searchFoodItems(query);
 }
 
 // ==================== FOOD SCAN ====================
-class ScanFoodImageUseCase {
-  final FoodScanRepository _repo; ScanFoodImageUseCase(this._repo);
+class ScanFoodImageUseCase { ScanFoodImageUseCase(this._repo);
+  final FoodScanRepository _repo;
   Future<FoodScanResultEntity> call({
     required String userId,
     required String imageUrl,
@@ -123,8 +121,8 @@ class ScanFoodImageUseCase {
   }) => _repo.saveScanResult(userId: userId, imageUrl: imageUrl, rawResult: rawResult, confidence: confidence);
 }
 
-class SaveScanResultUseCase {
-  final FoodScanRepository _repo; SaveScanResultUseCase(this._repo);
+class SaveScanResultUseCase { SaveScanResultUseCase(this._repo);
+  final FoodScanRepository _repo;
   Future<FoodScanResultEntity> call({
     required String userId,
     required String imageUrl,
@@ -134,48 +132,48 @@ class SaveScanResultUseCase {
 }
 
 // ==================== BARCODE ====================
-class SearchBarcodeUseCase {
-  final BarcodeRepository _repo; SearchBarcodeUseCase(this._repo);
+class SearchBarcodeUseCase { SearchBarcodeUseCase(this._repo);
+  final BarcodeRepository _repo;
   Future<BarcodeProductEntity?> call(String barcode) => _repo.getProductByBarcode(barcode);
 }
 
 // ==================== MEAL USE CASES ====================
-class AddMealUseCase {
-  final MealRepository _repo; AddMealUseCase(this._repo);
+class AddMealUseCase { AddMealUseCase(this._repo);
+  final MealRepository _repo;
   Future<MealEntity> call(MealEntity meal, List<Map<String, dynamic>> items) => _repo.addMeal(meal, items);
 }
 
-class UpdateMealUseCase {
-  final MealRepository _repo; UpdateMealUseCase(this._repo);
+class UpdateMealUseCase { UpdateMealUseCase(this._repo);
+  final MealRepository _repo;
   Future<void> call(String mealId, Map<String, dynamic> data) => _repo.updateMeal(mealId, data);
 }
 
-class DeleteMealUseCase {
-  final MealRepository _repo; DeleteMealUseCase(this._repo);
+class DeleteMealUseCase { DeleteMealUseCase(this._repo);
+  final MealRepository _repo;
   Future<void> call(String mealId) => _repo.deleteMeal(mealId);
 }
 
 // ==================== WATER ====================
-class TrackWaterUseCase {
-  final WaterRepository _repo; TrackWaterUseCase(this._repo);
+class TrackWaterUseCase { TrackWaterUseCase(this._repo);
+  final WaterRepository _repo;
   Future<WaterEntryEntity> call(String userId, int amountMl, DateTime date) => _repo.addWaterEntry(userId, amountMl, date);
 }
 
 // ==================== WEIGHT ====================
-class TrackWeightUseCase {
-  final WeightRepository _repo; TrackWeightUseCase(this._repo);
+class TrackWeightUseCase { TrackWeightUseCase(this._repo);
+  final WeightRepository _repo;
   Future<WeightEntryEntity> call(String userId, DateTime date, double weightKg, double heightCm, double? bodyFat, String? notes) => _repo.addWeightEntry(userId, date, weightKg, heightCm, bodyFat, notes);
 }
 
 // ==================== ANALYTICS ====================
-class FetchAnalyticsUseCase {
-  final AnalyticsRepository _repo; FetchAnalyticsUseCase(this._repo);
+class FetchAnalyticsUseCase { FetchAnalyticsUseCase(this._repo);
+  final AnalyticsRepository _repo;
   Future<Map<String, dynamic>> call(String userId, DateTime date) => _repo.getDailyAnalytics(userId, date);
 }
 
 // ==================== AI COACH ====================
-class SendAiCoachMessageUseCase {
-  final AiCoachRepository _repo; SendAiCoachMessageUseCase(this._repo);
+class SendAiCoachMessageUseCase { SendAiCoachMessageUseCase(this._repo);
+  final AiCoachRepository _repo;
   Future<void> call(String userId, String message, String response) => _repo.sendMessage(userId, message, response);
 }
 
@@ -184,23 +182,23 @@ class SendAiCoachMessageUseCase {
 /// The repository injects the read-only context (profile, goals, meals, water,
 /// weight) into the Gemini prompt and falls back to a locally composed answer
 /// when the model is unavailable.
-class GenerateAiCoachReplyUseCase {
-  final AiCoachRepository _repo; GenerateAiCoachReplyUseCase(this._repo);
+class GenerateAiCoachReplyUseCase { GenerateAiCoachReplyUseCase(this._repo);
+  final AiCoachRepository _repo;
   Future<String> call(String userId, String message, {CoachInsight? insight}) =>
       _repo.generateCoachReply(userId, message, insight: insight);
 }
 
 // ==================== SUBSCRIPTION ====================
-class SubscribePremiumUseCase {
-  final SubscriptionRepository _repo; SubscribePremiumUseCase(this._repo);
+class SubscribePremiumUseCase { SubscribePremiumUseCase(this._repo);
+  final SubscriptionRepository _repo;
   Future<bool> call(String userId) => _repo.isSubscribed(userId);
 }
 
 // ==================== CALENDAR TRACKING ====================
 class FetchCalendarTrackingUseCase {
+  FetchCalendarTrackingUseCase(this._waterRepo, this._mealRepo);
   final WaterRepository _waterRepo;
   final MealRepository _mealRepo;
-  FetchCalendarTrackingUseCase(this._waterRepo, this._mealRepo);
 
   Future<CalendarTracking> call({
     required String userId,

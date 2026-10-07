@@ -1,5 +1,6 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../../../core/domain/entities/meal_entity.dart';
 import '../../../../core/domain/repositories/meal_repository.dart';
 
@@ -11,31 +12,21 @@ abstract class MealTrackingEvent extends Equatable {
 }
 
 class SelectDate extends MealTrackingEvent {
-  final DateTime date;
   const SelectDate(this.date);
+  final DateTime date;
   @override
   List<Object?> get props => [date];
 }
 
 class LoadDailyMeals extends MealTrackingEvent {
+  const LoadDailyMeals(this.userId, this.date);
   final String userId;
   final DateTime date;
-  const LoadDailyMeals(this.userId, this.date);
   @override
   List<Object?> get props => [userId, date];
 }
 
 class AddFoodToMeal extends MealTrackingEvent {
-  final String userId;
-  final String mealType;
-  final String foodName;
-  final int calories;
-  final double protein;
-  final double carbs;
-  final double fat;
-  final double servingSize;
-  final String servingUnit;
-  final DateTime? date;
 
   const AddFoodToMeal({
     required this.userId,
@@ -49,14 +40,24 @@ class AddFoodToMeal extends MealTrackingEvent {
     this.servingUnit = 'g',
     this.date,
   });
+  final String userId;
+  final String mealType;
+  final String foodName;
+  final int calories;
+  final double protein;
+  final double carbs;
+  final double fat;
+  final double servingSize;
+  final String servingUnit;
+  final DateTime? date;
   @override
   List<Object?> get props => [userId, mealType, foodName, calories];
 }
 
 class DeleteMealItem extends MealTrackingEvent {
+  const DeleteMealItem(this.itemId, this.mealId);
   final String itemId;
   final String mealId;
-  const DeleteMealItem(this.itemId, this.mealId);
   @override
   List<Object?> get props => [itemId, mealId];
 }
@@ -73,12 +74,6 @@ class MealTrackingInitial extends MealTrackingState {}
 class MealTrackingLoading extends MealTrackingState {}
 
 class DailyMealsLoaded extends MealTrackingState {
-  final DateTime selectedDate;
-  final List<MealEntity> meals;
-  final int totalCalories;
-  final double totalProtein;
-  final double totalCarbs;
-  final double totalFat;
 
   const DailyMealsLoaded({
     required this.selectedDate,
@@ -88,20 +83,25 @@ class DailyMealsLoaded extends MealTrackingState {
     this.totalCarbs = 0,
     this.totalFat = 0,
   });
+  final DateTime selectedDate;
+  final List<MealEntity> meals;
+  final int totalCalories;
+  final double totalProtein;
+  final double totalCarbs;
+  final double totalFat;
   @override
   List<Object?> get props => [selectedDate, meals, totalCalories, totalProtein, totalCarbs, totalFat];
 }
 
 class MealTrackingError extends MealTrackingState {
-  final String message;
   const MealTrackingError(this.message);
+  final String message;
   @override
   List<Object?> get props => [message];
 }
 
 // ── BLoC ──
 class MealTrackingBloc extends Bloc<MealTrackingEvent, MealTrackingState> {
-  final MealRepository _mealRepository;
 
   MealTrackingBloc({required MealRepository mealRepository})
       : _mealRepository = mealRepository,
@@ -111,6 +111,7 @@ class MealTrackingBloc extends Bloc<MealTrackingEvent, MealTrackingState> {
     on<DeleteMealItem>(_onDeleteMealItem);
     on<SelectDate>(_onSelectDate);
   }
+  final MealRepository _mealRepository;
 
   Future<void> _onLoadDailyMeals(LoadDailyMeals event, Emitter<MealTrackingState> emit) async {
     emit(MealTrackingLoading());
@@ -196,7 +197,7 @@ class MealTrackingBloc extends Bloc<MealTrackingEvent, MealTrackingState> {
   }
 
   DailyMealsLoaded _buildLoadedState(DateTime date, List<MealEntity> meals) {
-    int totalCal = 0;
+    var totalCal = 0;
     double totalProt = 0;
     double totalCarb = 0;
     double totalF = 0;

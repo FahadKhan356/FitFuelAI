@@ -4,9 +4,7 @@ import '../../core/constants/app_colors.dart';
 class PrimaryButton extends StatelessWidget {
 
   const PrimaryButton({
-    Key? key,
-    required this.text,
-    required this.onPressed,
+    required this.text, required this.onPressed, Key? key,
     this.isLoading = false,
     this.width,
     this.height = 56,
@@ -24,7 +22,7 @@ class PrimaryButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         child: isLoading
-            ? SizedBox(
+            ? const SizedBox(
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
@@ -40,9 +38,7 @@ class PrimaryButton extends StatelessWidget {
 class SecondaryButton extends StatelessWidget {
 
   const SecondaryButton({
-    Key? key,
-    required this.text,
-    required this.onPressed,
+    required this.text, required this.onPressed, Key? key,
     this.width,
   }) : super(key: key);
   final String text;
@@ -63,9 +59,7 @@ class SecondaryButton extends StatelessWidget {
 class GradientButton extends StatelessWidget {
 
   const GradientButton({
-    Key? key,
-    required this.text,
-    required this.onPressed,
+    required this.text, required this.onPressed, Key? key,
     this.width,
   }) : super(key: key);
   final String text;
@@ -77,7 +71,7 @@ class GradientButton extends StatelessWidget {
       width: width ?? double.infinity,
       height: 56,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           colors: [
             Color(AppColors.gradientStart),
             Color(AppColors.gradientEnd),
@@ -93,7 +87,7 @@ class GradientButton extends StatelessWidget {
           child: Center(
             child: Text(
               text,
-              style: TextStyle(
+              style: const TextStyle(
                 color: Color(AppColors.textPrimary),
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

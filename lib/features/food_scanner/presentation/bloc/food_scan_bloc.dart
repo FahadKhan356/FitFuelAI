@@ -1,5 +1,6 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../../../core/domain/entities/food_scan_result_entity.dart';
 import '../../../../core/domain/repositories/food_scan_repository.dart';
 
@@ -11,10 +12,6 @@ abstract class FoodScanEvent extends Equatable {
 }
 
 class SaveScan extends FoodScanEvent {
-  final String userId;
-  final String imageUrl;
-  final Map<String, dynamic> rawResult;
-  final double confidence;
 
   const SaveScan({
     required this.userId,
@@ -22,13 +19,17 @@ class SaveScan extends FoodScanEvent {
     required this.rawResult,
     required this.confidence,
   });
+  final String userId;
+  final String imageUrl;
+  final Map<String, dynamic> rawResult;
+  final double confidence;
   @override
   List<Object?> get props => [userId, imageUrl, rawResult, confidence];
 }
 
 class LoadScanHistory extends FoodScanEvent {
-  final String userId;
   const LoadScanHistory(this.userId);
+  final String userId;
   @override
   List<Object?> get props => [userId];
 }
@@ -45,29 +46,28 @@ class FoodScanInitial extends FoodScanState {}
 class FoodScanLoading extends FoodScanState {}
 
 class ScanSaved extends FoodScanState {
-  final FoodScanResultEntity scan;
   const ScanSaved(this.scan);
+  final FoodScanResultEntity scan;
   @override
   List<Object?> get props => [scan];
 }
 
 class ScanHistoryLoaded extends FoodScanState {
-  final List<FoodScanResultEntity> scans;
   const ScanHistoryLoaded(this.scans);
+  final List<FoodScanResultEntity> scans;
   @override
   List<Object?> get props => [scans];
 }
 
 class FoodScanError extends FoodScanState {
-  final String message;
   const FoodScanError(this.message);
+  final String message;
   @override
   List<Object?> get props => [message];
 }
 
 // ── BLoC ──
 class FoodScanBloc extends Bloc<FoodScanEvent, FoodScanState> {
-  final FoodScanRepository _foodScanRepository;
 
   FoodScanBloc({required FoodScanRepository foodScanRepository})
       : _foodScanRepository = foodScanRepository,
@@ -75,6 +75,7 @@ class FoodScanBloc extends Bloc<FoodScanEvent, FoodScanState> {
     on<SaveScan>(_onSaveScan);
     on<LoadScanHistory>(_onLoadScanHistory);
   }
+  final FoodScanRepository _foodScanRepository;
 
   Future<void> _onSaveScan(SaveScan event, Emitter<FoodScanState> emit) async {
     emit(FoodScanLoading());

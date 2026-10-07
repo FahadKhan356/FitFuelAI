@@ -5,10 +5,6 @@ import '../../../../core/constants/app_colors.dart';
 
 // ── Goal model ──
 class _Goal {
-  final String id;
-  final IconData icon;
-  final String title;
-  final String subtitle;
 
   const _Goal({
     required this.id,
@@ -16,6 +12,10 @@ class _Goal {
     required this.title,
     required this.subtitle,
   });
+  final String id;
+  final IconData icon;
+  final String title;
+  final String subtitle;
 }
 
 const List<_Goal> _goals = [
@@ -57,8 +57,7 @@ class _GoalSelectionScreenState extends State<GoalSelectionScreen> {
   String _selectedId = 'weight_loss';
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: const Color(AppColors.authBackground),
       body: SafeArea(
         child: Column(
@@ -142,14 +141,12 @@ class _GoalSelectionScreenState extends State<GoalSelectionScreen> {
         ),
       ),
     );
-  }
 }
 
 // ── App Bar Row ──
 class _AppBarRow extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    return Row(
+  Widget build(BuildContext context) => Row(
       children: [
         GestureDetector(
           onTap: () => context.canPop() ? context.pop() : null,
@@ -186,27 +183,25 @@ class _AppBarRow extends StatelessWidget {
         ),
       ],
     );
-  }
 }
 
 // ── Step Progress Indicator ──
 class _StepIndicator extends StatelessWidget {
-  final int currentStep;
-  final int totalSteps;
 
   const _StepIndicator({
     required this.currentStep,
     required this.totalSteps,
   });
+  final int currentStep;
+  final int totalSteps;
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
+  Widget build(BuildContext context) => Row(
       children: [
         // Pills
         Row(
           children: List.generate(totalSteps, (i) {
-            final bool isActive = i < currentStep;
+            final isActive = i < currentStep;
             return Container(
               margin: const EdgeInsets.only(right: 5),
               width: 36,
@@ -233,24 +228,22 @@ class _StepIndicator extends StatelessWidget {
         ),
       ],
     );
-  }
 }
 
 // ── Goal Card ──
 class _GoalCard extends StatelessWidget {
-  final _Goal goal;
-  final bool isSelected;
-  final VoidCallback onTap;
 
   const _GoalCard({
     required this.goal,
     required this.isSelected,
     required this.onTap,
   });
+  final _Goal goal;
+  final bool isSelected;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
@@ -368,7 +361,6 @@ class _GoalCard extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 // ── Pro Tip Banner ──
@@ -376,8 +368,7 @@ class _ProTipBanner extends StatelessWidget {
   const _ProTipBanner();
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
       decoration: BoxDecoration(
@@ -427,17 +418,15 @@ class _ProTipBanner extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 // ── Sticky Bottom Action Area ──
 class _BottomActionArea extends StatelessWidget {
-  final VoidCallback onContinue;
   const _BottomActionArea({required this.onContinue});
+  final VoidCallback onContinue;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       color: const Color(AppColors.authBackground),
       padding: const EdgeInsets.fromLTRB(22, 14, 22, 20),
       child: Column(
@@ -495,5 +484,4 @@ class _BottomActionArea extends StatelessWidget {
         ],
       ),
     );
-  }
 }

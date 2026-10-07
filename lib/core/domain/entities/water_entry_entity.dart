@@ -1,9 +1,4 @@
 class WaterEntryEntity {
-  final String id;
-  final String userId;
-  final DateTime date;
-  final int amountMl;
-  final DateTime? createdAt;
 
   const WaterEntryEntity({
     required this.id,
@@ -12,4 +7,9 @@ class WaterEntryEntity {
     required this.amountMl,
     this.createdAt,
   });
+  final String id;
+  final String userId;
+  final DateTime date;
+  final int amountMl;
+  final DateTime? createdAt;
 }

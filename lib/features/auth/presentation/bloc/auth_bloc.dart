@@ -1,5 +1,6 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../../../core/domain/entities/user_entity.dart';
 import '../../../../core/domain/repositories/auth_repository.dart';
 import '../../../../core/domain/usecases/all_usecases.dart';
@@ -12,15 +13,15 @@ abstract class AuthEvent extends Equatable {
 }
 
 class SignInRequested extends AuthEvent {
+  const SignInRequested(this.email, this.password);
   final String email;
   final String password;
-  const SignInRequested(this.email, this.password);
 }
 
 class SignUpRequested extends AuthEvent {
+  const SignUpRequested(this.email, this.password);
   final String email;
   final String password;
-  const SignUpRequested(this.email, this.password);
 }
 
 class SignOutRequested extends AuthEvent {}
@@ -39,8 +40,8 @@ class AuthInitial extends AuthState {}
 class AuthLoading extends AuthState {}
 
 class Authenticated extends AuthState {
-  final UserEntity user;
   const Authenticated(this.user);
+  final UserEntity user;
   @override
   List<Object?> get props => [user];
 }
@@ -48,17 +49,14 @@ class Authenticated extends AuthState {
 class Unauthenticated extends AuthState {}
 
 class AuthError extends AuthState {
-  final String message;
   const AuthError(this.message);
+  final String message;
   @override
   List<Object?> get props => [message];
 }
 
 // BLoC
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  final SignInWithEmailUseCase _signIn;
-  final SignUpWithEmailUseCase _signUp;
-  final AuthRepository _authRepository;
 
   AuthBloc({
     required SignInWithEmailUseCase signIn,
@@ -73,6 +71,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<SignOutRequested>(_onSignOutRequested);
     on<AuthCheckRequested>(_onAuthCheckRequested);
   }
+  final SignInWithEmailUseCase _signIn;
+  final SignUpWithEmailUseCase _signUp;
+  final AuthRepository _authRepository;
 
   Future<void> _onSignInRequested(SignInRequested event, Emitter<AuthState> emit) async {
     emit(AuthLoading());

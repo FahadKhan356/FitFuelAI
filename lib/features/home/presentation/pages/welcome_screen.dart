@@ -14,12 +14,11 @@ class WelcomeScreen extends StatelessWidget {
   static const Color secondary = Color(0xFF64748B);
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: bg,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             children: [
               const SizedBox(height: 28),
@@ -28,14 +27,14 @@ class WelcomeScreen extends StatelessWidget {
                 child: Center(
                   child: Container(
                     width: double.infinity,
-                    margin: const EdgeInsets.symmetric(horizontal: 8.0),
-                    padding: const EdgeInsets.symmetric(vertical: 40.0, horizontal: 24.0),
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
                     decoration: BoxDecoration(
                       color: surface,
                       borderRadius: BorderRadius.circular(28),
                       boxShadow: [
                         BoxShadow(
-                          color: primary.withOpacity(0.08),
+                          color: primary.withValues(alpha: 0.08),
                           blurRadius: 40,
                           offset: const Offset(0, 14),
                         ),
@@ -52,7 +51,7 @@ class WelcomeScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(14),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.04),
+                                color: Colors.black.withValues(alpha: 0.04),
                                 blurRadius: 10,
                                 offset: const Offset(0, 6),
                               ),
@@ -67,7 +66,7 @@ class WelcomeScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: primary.withOpacity(0.32),
+                                    color: primary.withValues(alpha: 0.32),
                                     blurRadius: 18,
                                     offset: const Offset(0, 8),
                                   ),
@@ -86,7 +85,7 @@ class WelcomeScreen extends StatelessWidget {
 
                         RichText(
                           textAlign: TextAlign.center,
-                          text: TextSpan(
+                          text: const TextSpan(
                             children: [
                               TextSpan(
                                 text: 'NutriLens ',
@@ -110,7 +109,7 @@ class WelcomeScreen extends StatelessWidget {
 
                         const SizedBox(height: 6),
 
-                        Text(
+                        const Text(
                           'VISIONARY NUTRITION',
                           style: TextStyle(
                             color: secondary,
@@ -126,14 +125,14 @@ class WelcomeScreen extends StatelessWidget {
                           width: 36,
                           height: 6,
                           decoration: BoxDecoration(
-                            color: accent.withOpacity(0.9),
+                            color: accent.withValues(alpha: 0.9),
                             borderRadius: BorderRadius.circular(6),
                           ),
                         ),
 
                         const SizedBox(height: 28),
 
-                        Text(
+                        const Text(
                           'The future of calorie tracking is through your lens.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -160,13 +159,13 @@ class WelcomeScreen extends StatelessWidget {
                     backgroundColor: primary,
                     elevation: 8,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    shadowColor: primary.withOpacity(0.28),
+                    shadowColor: primary.withValues(alpha: 0.28),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text('Get Started', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                      const SizedBox(width: 10),
+                      SizedBox(width: 10),
                       Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white),
                     ],
                   ),
@@ -177,7 +176,7 @@ class WelcomeScreen extends StatelessWidget {
 
               Text(
                 'POWERED BY ADVANCED VISION AI',
-                style: TextStyle(color: secondary.withOpacity(0.7), fontSize: 11, letterSpacing: 1.6),
+                style: TextStyle(color: secondary.withValues(alpha: 0.7), fontSize: 11, letterSpacing: 1.6),
               ),
 
               const SizedBox(height: 16),
@@ -186,5 +185,4 @@ class WelcomeScreen extends StatelessWidget {
         ),
       ),
     );
-  }
 }

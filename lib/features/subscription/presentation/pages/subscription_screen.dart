@@ -85,7 +85,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _staggered(
-                      start: 0.0,
+                      start: 0,
                       end: 0.18,
                       offsetY: 12,
                       child: Row(
@@ -378,7 +378,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                                           subscriptionState.isPremium
                                       ? 'Premium Active'
                                       : 'Start 7-Day Free Trial',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -428,8 +428,7 @@ class _IconButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Material(
+  Widget build(BuildContext context) => Material(
       color: Colors.transparent,
       child: InkResponse(
         onTap: onTap,
@@ -445,7 +444,6 @@ class _IconButton extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _BenefitCard extends StatelessWidget {
@@ -460,8 +458,7 @@ class _BenefitCard extends StatelessWidget {
   final String subtitle;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       height: 190,
       padding: const EdgeInsets.fromLTRB(14, 16, 14, 14),
       decoration: BoxDecoration(
@@ -482,7 +479,7 @@ class _BenefitCard extends StatelessWidget {
           Container(
             width: 52,
             height: 52,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: _purpleSoft,
               shape: BoxShape.circle,
             ),
@@ -517,7 +514,6 @@ class _BenefitCard extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 class _PlanCard extends StatelessWidget {
@@ -674,8 +670,7 @@ class _SocialProofCard extends StatelessWidget {
   const _SocialProofCard();
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
       decoration: BoxDecoration(
         color: _surface,
@@ -694,18 +689,18 @@ class _SocialProofCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              _AvatarChip(
-                color: const Color(0xFFF4D0C8),
+              const _AvatarChip(
+                color: Color(0xFFF4D0C8),
                 initials: 'A',
               ),
               const SizedBox(width: 6),
-              _AvatarChip(
-                color: const Color(0xFFD4C6FF),
+              const _AvatarChip(
+                color: Color(0xFFD4C6FF),
                 initials: 'M',
               ),
               const SizedBox(width: 6),
-              _AvatarChip(
-                color: const Color(0xFFC7E6F3),
+              const _AvatarChip(
+                color: Color(0xFFC7E6F3),
                 initials: 'K',
               ),
               const SizedBox(width: 10),
@@ -756,7 +751,6 @@ class _SocialProofCard extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 class _AvatarChip extends StatelessWidget {
@@ -769,8 +763,7 @@ class _AvatarChip extends StatelessWidget {
   final String initials;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       width: 28,
       height: 28,
       decoration: BoxDecoration(
@@ -788,5 +781,4 @@ class _AvatarChip extends StatelessWidget {
         ),
       ),
     );
-  }
 }

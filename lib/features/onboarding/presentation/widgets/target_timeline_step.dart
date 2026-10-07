@@ -4,14 +4,12 @@ import 'onboarding_step_scaffold.dart';
 
 /// Step 3 — Target & Timeline (target weight, weekly pace, target date).
 class TargetTimelineStep extends StatefulWidget {
-  final VoidCallback onBack;
-  final ValueChanged<Map<String, dynamic>> onContinue;
 
   const TargetTimelineStep({
-    super.key,
-    required this.onBack,
-    required this.onContinue,
+    required this.onBack, required this.onContinue, super.key,
   });
+  final VoidCallback onBack;
+  final ValueChanged<Map<String, dynamic>> onContinue;
 
   @override
   State<TargetTimelineStep> createState() => _TargetTimelineStepState();
@@ -64,8 +62,7 @@ class _TargetTimelineStepState extends State<TargetTimelineStep> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return OnboardingStepScaffold(
+  Widget build(BuildContext context) => OnboardingStepScaffold(
       title: 'Set your target',
       subtitle: 'Define where you want to be and how fast to get there.',
       showBack: true,
@@ -160,16 +157,14 @@ class _TargetTimelineStepState extends State<TargetTimelineStep> {
         ],
       ),
     );
-  }
 }
 
 class _FieldLabel extends StatelessWidget {
-  final String text;
   const _FieldLabel(this.text);
+  final String text;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
+  Widget build(BuildContext context) => Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
@@ -180,15 +175,9 @@ class _FieldLabel extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _SliderField extends StatelessWidget {
-  final double value;
-  final double min;
-  final double max;
-  final String unit;
-  final ValueChanged<double> onChanged;
 
   const _SliderField({
     required this.value,
@@ -197,10 +186,14 @@ class _SliderField extends StatelessWidget {
     required this.unit,
     required this.onChanged,
   });
+  final double value;
+  final double min;
+  final double max;
+  final String unit;
+  final ValueChanged<double> onChanged;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.5),
@@ -249,14 +242,9 @@ class _SliderField extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 class _PaceChip extends StatelessWidget {
-  final String label;
-  final String value;
-  final bool isSelected;
-  final VoidCallback onTap;
 
   const _PaceChip({
     required this.label,
@@ -264,10 +252,13 @@ class _PaceChip extends StatelessWidget {
     required this.isSelected,
     required this.onTap,
   });
+  final String label;
+  final String value;
+  final bool isSelected;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -316,5 +307,4 @@ class _PaceChip extends StatelessWidget {
         ),
       ),
     );
-  }
 }

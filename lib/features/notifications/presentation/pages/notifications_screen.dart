@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -20,8 +19,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   final List<NotificationItem> notifications = [
     NotificationItem(
       icon: Icons.local_fire_department_rounded,
-      iconColor: Color(AppColors.streakOrange),
-      iconBg: Color(0xFFFFF0DE),
+      iconColor: const Color(AppColors.streakOrange),
+      iconBg: const Color(0xFFFFF0DE),
       title: 'Streak Reminder',
       description: 'You\'re on a 12-day streak! Keep it going',
       time: '2 hours ago',
@@ -29,8 +28,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     ),
     NotificationItem(
       icon: Icons.water_drop_rounded,
-      iconColor: Color(AppColors.secondary),
-      iconBg: Color(0xFFE0F2FE),
+      iconColor: const Color(AppColors.secondary),
+      iconBg: const Color(0xFFE0F2FE),
       title: 'Hydration Alert',
       description: 'Time to drink water! 1.5L remaining',
       time: '1 hour ago',
@@ -38,17 +37,17 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     ),
     NotificationItem(
       icon: Icons.emoji_events_rounded,
-      iconColor: Color(AppColors.xpGold),
-      iconBg: Color(0xFFFEF3C7),
+      iconColor: const Color(AppColors.xpGold),
+      iconBg: const Color(0xFFFEF3C7),
       title: 'Achievement Unlocked',
-      description: '7-Day streak badge earned! 🔥',
+      description: '7-Day streak badge earned!',
       time: '30 min ago',
       isUnread: false,
     ),
     NotificationItem(
       icon: Icons.restaurant_rounded,
-      iconColor: Color(AppColors.primary),
-      iconBg: Color(0xFFDBEAFE),
+      iconColor: const Color(AppColors.primary),
+      iconBg: const Color(0xFFDBEAFE),
       title: 'Meal Logged',
       description: 'Lunch: 650 calories • Protein: 35g',
       time: '3 hours ago',
@@ -56,8 +55,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     ),
     NotificationItem(
       icon: Icons.trending_down_rounded,
-      iconColor: Color(AppColors.success),
-      iconBg: Color(0xFFD1FAE5),
+      iconColor: const Color(AppColors.success),
+      iconBg: const Color(0xFFD1FAE5),
       title: 'Weight Milestone',
       description: 'You\'ve lost 4.2kg! Keep pushing!',
       time: '1 day ago',
@@ -102,9 +101,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(AppColors.background),
+  Widget build(BuildContext context) => Scaffold(
+      backgroundColor: const Color(AppColors.background),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,19 +117,15 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 itemCount: notifications.length,
-                itemBuilder: (context, index) {
-                  return _buildNotificationCard(index);
-                },
+                itemBuilder: (context, index) => _buildNotificationCard(index),
               ),
             ),
           ],
         ),
       ),
     );
-  }
 
-  Widget _buildHeader() {
-    return Padding(
+  Widget _buildHeader() => Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: Row(
         children: [
@@ -142,7 +136,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: Color(AppColors.surface),
+                color: const Color(AppColors.surface),
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
@@ -152,7 +146,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                   ),
                 ],
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.arrow_back_ios_new_rounded,
                 size: 18,
                 color: Color(AppColors.textPrimary),
@@ -167,7 +161,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Flexible(
+                const Flexible(
                   child: Text(
                     'Notifications',
                     style: TextStyle(
@@ -197,13 +191,13 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Color(AppColors.authPurple).withValues(alpha: 0.3),
+                        color: const Color(AppColors.authPurple).withValues(alpha: 0.3),
                         blurRadius: 10,
                         offset: const Offset(0, 3),
                       ),
                     ],
                   ),
-                  child: Text(
+                  child: const Text(
                     '2 new',
                     style: TextStyle(
                       fontSize: 11,
@@ -221,21 +215,18 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
           // Mark all as read button
           GestureDetector(
-            onTap: () {
-              HapticFeedback.lightImpact();
-              // TODO: Mark all as read logic
-            },
+            onTap: HapticFeedback.lightImpact,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: Color(AppColors.authPurpleBg),
+                color: const Color(AppColors.authPurpleBg),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: Color(AppColors.authPurple).withValues(alpha: 0.2),
+                  color: const Color(AppColors.authPurple).withValues(alpha: 0.2),
                   width: 1.2,
                 ),
               ),
-              child: Text(
+              child: const Text(
                 'Mark all read',
                 style: TextStyle(
                   fontSize: 11,
@@ -249,7 +240,6 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         ],
       ),
     );
-  }
 
   Widget _buildNotificationCard(int index) {
     final notification = notifications[index];
@@ -284,7 +274,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             colors: [
               Color(AppColors.surface),
               Color(AppColors.surfaceLight),
@@ -309,19 +299,16 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () {
-              HapticFeedback.mediumImpact();
-              // TODO: Navigate to notification detail
-            },
+            onTap: HapticFeedback.mediumImpact,
             borderRadius: BorderRadius.circular(20),
-            splashColor: Color(AppColors.authPurple).withValues(alpha: 0.08),
+            splashColor: const Color(AppColors.authPurple).withValues(alpha: 0.08),
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: notification.isUnread
-                      ? Color(AppColors.authPurple).withValues(alpha: 0.3)
+                      ? const Color(AppColors.authPurple).withValues(alpha: 0.3)
                       : Colors.transparent,
                   width: 1.5,
                 ),
@@ -333,7 +320,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                   AnimatedBuilder(
                     animation: notification.isUnread
                         ? _pulseController
-                        : AlwaysStoppedAnimation(1.0),
+                        : const AlwaysStoppedAnimation(1),
                     builder: (context, child) {
                       if (!notification.isUnread) return child!;
 
@@ -382,7 +369,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                                   fontWeight: notification.isUnread
                                       ? FontWeight.w700
                                       : FontWeight.w600,
-                                  color: Color(AppColors.textPrimary),
+                                  color: const Color(AppColors.textPrimary),
                                   letterSpacing: -0.2,
                                 ),
                                 overflow: TextOverflow.ellipsis,
@@ -395,11 +382,11 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                                 width: 8,
                                 height: 8,
                                 decoration: BoxDecoration(
-                                  color: Color(AppColors.authPurple),
+                                  color: const Color(AppColors.authPurple),
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Color(AppColors.authPurple).withValues(alpha: 0.5),
+                                      color: const Color(AppColors.authPurple).withValues(alpha: 0.5),
                                       blurRadius: 6,
                                       offset: const Offset(0, 2),
                                     ),
@@ -414,7 +401,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
                         Text(
                           notification.description,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w500,
                             color: Color(AppColors.textSecondary),
@@ -426,7 +413,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
                         Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.access_time_rounded,
                               size: 14,
                               color: Color(AppColors.textTertiary),
@@ -434,7 +421,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                             const SizedBox(width: 4),
                             Text(
                               notification.time,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                                 color: Color(AppColors.textTertiary),
@@ -457,13 +444,6 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 }
 
 class NotificationItem {
-  final IconData icon;
-  final Color iconColor;
-  final Color iconBg;
-  final String title;
-  final String description;
-  final String time;
-  final bool isUnread;
 
   NotificationItem({
     required this.icon,
@@ -474,4 +454,11 @@ class NotificationItem {
     required this.time,
     required this.isUnread,
   });
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBg;
+  final String title;
+  final String description;
+  final String time;
+  final bool isUnread;
 }

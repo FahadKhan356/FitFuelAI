@@ -27,12 +27,12 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       leading: leading ??
           (showBackButton
               ? IconButton(
-                  icon: Icon(Icons.arrow_back),
+                  icon: const Icon(Icons.arrow_back),
                   onPressed: onLeadingPressed ?? () => Navigator.of(context).pop(),
                 )
               : null),
-      backgroundColor: Color(AppColors.background),
-      foregroundColor: Color(AppColors.textPrimary),
+      backgroundColor: const Color(AppColors.background),
+      foregroundColor: const Color(AppColors.textPrimary),
       elevation: 0,
       scrolledUnderElevation: 0,
     );
@@ -44,10 +44,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 class CustomBottomNavBar extends StatelessWidget {
 
   const CustomBottomNavBar({
-    Key? key,
-    required this.currentIndex,
-    required this.onItemTapped,
-    required this.items,
+    required this.currentIndex, required this.onItemTapped, required this.items, Key? key,
   }) : super(key: key);
   final int currentIndex;
   final Function(int) onItemTapped;
@@ -58,9 +55,9 @@ class CustomBottomNavBar extends StatelessWidget {
       currentIndex: currentIndex,
       onTap: onItemTapped,
       items: items,
-      backgroundColor: Color(AppColors.surface),
-      selectedItemColor: Color(AppColors.primary),
-      unselectedItemColor: Color(AppColors.textSecondary),
+      backgroundColor: const Color(AppColors.surface),
+      selectedItemColor: const Color(AppColors.primary),
+      unselectedItemColor: const Color(AppColors.textSecondary),
       type: BottomNavigationBarType.fixed,
       elevation: 10,
     );

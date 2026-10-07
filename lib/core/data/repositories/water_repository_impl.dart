@@ -3,9 +3,9 @@ import '../../domain/repositories/water_repository.dart';
 import '../datasources/supabase_remote_datasource.dart';
 
 class WaterRepositoryImpl implements WaterRepository {
-  final SupabaseRemoteDataSource _dataSource;
 
   WaterRepositoryImpl(this._dataSource);
+  final SupabaseRemoteDataSource _dataSource;
 
   @override
   Future<List<WaterEntryEntity>> getWaterEntries(String userId, DateTime date) async {
@@ -51,7 +51,5 @@ class WaterRepositoryImpl implements WaterRepository {
     String userId,
     DateTime start,
     DateTime end,
-  ) {
-    return _dataSource.getWaterTotalsByDateRange(userId, start, end);
-  }
+  ) => _dataSource.getWaterTotalsByDateRange(userId, start, end);
 }

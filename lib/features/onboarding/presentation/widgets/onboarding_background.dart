@@ -6,8 +6,7 @@ class OnboardingBackground extends StatelessWidget {
   const OnboardingBackground({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
+  Widget build(BuildContext context) => DecoratedBox(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -44,18 +43,16 @@ class OnboardingBackground extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 class _GlassBlob extends StatelessWidget {
+
+  const _GlassBlob({required this.size, required this.color});
   final double size;
   final Color color;
 
-  const _GlassBlob({required this.size, required this.color});
-
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
@@ -70,5 +67,4 @@ class _GlassBlob extends StatelessWidget {
         ],
       ),
     );
-  }
 }

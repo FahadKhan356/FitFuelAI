@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../../../core/config/routes.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../bloc/auth_bloc.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -47,7 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
   /// SharedPreferences is wiped but DB still has data).
   Future<void> _navigateAfterAuth() async {
     final prefs = await SharedPreferences.getInstance();
-    bool hasCompletedOnboarding =
+    var hasCompletedOnboarding =
         prefs.getBool('onboarding_completed') ?? false;
 
     if (!hasCompletedOnboarding) {
@@ -101,8 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: const Color(AppColors.authBackground),
       body: SafeArea(
         child: Column(
@@ -190,22 +190,22 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(
-                            color: const Color(AppColors.authBorder),
+                          borderSide: const BorderSide(
+                            color: Color(AppColors.authBorder),
                             width: 1.2,
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(
-                            color: const Color(AppColors.authBorder),
+                          borderSide: const BorderSide(
+                            color: Color(AppColors.authBorder),
                             width: 1.2,
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(
-                            color: const Color(AppColors.authPurple),
+                          borderSide: const BorderSide(
+                            color: Color(AppColors.authPurple),
                             width: 1.8,
                           ),
                         ),
@@ -248,22 +248,22 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(
-                            color: const Color(AppColors.authBorder),
+                          borderSide: const BorderSide(
+                            color: Color(AppColors.authBorder),
                             width: 1.2,
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(
-                            color: const Color(AppColors.authBorder),
+                          borderSide: const BorderSide(
+                            color: Color(AppColors.authBorder),
                             width: 1.2,
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(
-                            color: const Color(AppColors.authPurple),
+                          borderSide: const BorderSide(
+                            color: Color(AppColors.authPurple),
                             width: 1.8,
                           ),
                         ),
@@ -376,19 +376,17 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
-  }
 }
 
 // ── Auth Button ──
 class _AuthButton extends StatelessWidget {
+
+  const _AuthButton({required this.label, required this.onTap});
   final String label;
   final VoidCallback onTap;
 
-  const _AuthButton({required this.label, required this.onTap});
-
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       width: double.infinity,
       height: 56,
       decoration: BoxDecoration(
@@ -429,24 +427,22 @@ class _AuthButton extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 // ── Social Button ──
 class _SocialButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
 
   const _SocialButton({
     required this.icon,
     required this.label,
     required this.onTap,
   });
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       width: double.infinity,
       height: 52,
       decoration: BoxDecoration(
@@ -481,7 +477,6 @@ class _SocialButton extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 // ── Divider Line ──
@@ -489,13 +484,11 @@ class _DividerLine extends StatelessWidget {
   const _DividerLine();
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       height: 1.2,
       decoration: BoxDecoration(
         color: const Color(AppColors.authBorder).withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(1),
       ),
     );
-  }
 }

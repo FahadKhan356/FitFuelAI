@@ -1,10 +1,5 @@
 /// A single tracked food line (one `meal_items` row).
 class AiFoodLine {
-  final String name;
-  final int calories;
-  final double protein;
-  final double carbs;
-  final double fat;
 
   const AiFoodLine({
     required this.name,
@@ -21,14 +16,15 @@ class AiFoodLine {
         carbs: _toDouble(json['carbs']),
         fat: _toDouble(json['fat']),
       );
+  final String name;
+  final int calories;
+  final double protein;
+  final double carbs;
+  final double fat;
 }
 
 /// A logged meal (`meals` row) plus its items.
 class AiMealSummary {
-  final DateTime date;
-  final String mealType;
-  final int totalCalories;
-  final List<AiFoodLine> items;
 
   const AiMealSummary({
     required this.date,
@@ -36,6 +32,10 @@ class AiMealSummary {
     this.totalCalories = 0,
     this.items = const [],
   });
+  final DateTime date;
+  final String mealType;
+  final int totalCalories;
+  final List<AiFoodLine> items;
 
   /// Sum of the item calories. Used instead of the denormalized
   /// `total_calories` column so the coach always agrees with what the home and
@@ -47,11 +47,11 @@ class AiMealSummary {
 
 /// One `weight_entries` row.
 class AiWeightPoint {
+
+  const AiWeightPoint({required this.date, required this.weightKg, this.bmi});
   final DateTime date;
   final double weightKg;
   final double? bmi;
-
-  const AiWeightPoint({required this.date, required this.weightKg, this.bmi});
 }
 
 double _toDouble(dynamic value) {
@@ -68,6 +68,78 @@ double _toDouble(dynamic value) {
 /// It is rebuilt by `AiContextService` on every request (cached briefly) and
 /// never writes anything back to Supabase.
 class AiUserContextModel {
+
+  const AiUserContextModel({
+    required this.userId,
+    required this.today, required this.generatedAt, this.name,
+    this.age,
+    this.gender,
+    this.heightCm,
+    this.currentWeightKg,
+    this.goalWeightKg,
+    this.activityLevel,
+    this.goalType,
+    this.dietPreference,
+    this.workoutFrequency,
+    this.targetCalories = 0,
+    this.targetProtein = 0,
+    this.targetCarbs = 0,
+    this.targetFat = 0,
+    this.dailyWaterMl = 0,
+    this.weeklyPaceKg,
+    this.caloriesConsumedToday = 0,
+    this.proteinToday = 0,
+    this.carbsToday = 0,
+    this.fatToday = 0,
+    this.waterTodayMl = 0,
+    this.calorieTotalsByDate = const {},
+    this.waterTotalsByDate = const {},
+    this.recentMeals = const [],
+    this.weightHistory = const [],
+  });
+
+  /// Safe placeholder used when the context fetch fails entirely, so the coach
+  /// can still answer instead of throwing at the user.
+  factory AiUserContextModel.empty(String userId, {DateTime? now}) {
+    final stamp = now ?? DateTime.now();
+    return AiUserContextModel(
+      userId: userId,
+      today: DateTime(stamp.year, stamp.month, stamp.day),
+      generatedAt: stamp,
+    );
+  }
+
+  /// Rebuilds the scalar part of the context (see [toJson]).
+  factory AiUserContextModel.fromJson(Map<String, dynamic> json) =>
+      AiUserContextModel(
+        userId: json['user_id']?.toString() ?? '',
+        name: json['name'] as String?,
+        age: _toNullableInt(json['age']),
+        gender: json['gender'] as String?,
+        heightCm: _toNullableDouble(json['height_cm']),
+        currentWeightKg: _toNullableDouble(json['current_weight_kg']),
+        goalWeightKg: _toNullableDouble(json['goal_weight_kg']),
+        activityLevel: json['activity_level'] as String?,
+        goalType: json['goal_type'] as String?,
+        dietPreference: json['diet_preference'] as String?,
+        workoutFrequency: _toNullableInt(json['workout_frequency']),
+        targetCalories: _toInt(json['target_calories']),
+        targetProtein: _toDouble(json['target_protein']),
+        targetCarbs: _toDouble(json['target_carbs']),
+        targetFat: _toDouble(json['target_fat']),
+        dailyWaterMl: _toInt(json['daily_water_ml']),
+        weeklyPaceKg: _toNullableDouble(json['weekly_pace_kg']),
+        today:
+            DateTime.tryParse(json['today']?.toString() ?? '') ?? DateTime.now(),
+        caloriesConsumedToday: _toInt(json['calories_consumed_today']),
+        proteinToday: _toDouble(json['protein_today']),
+        carbsToday: _toDouble(json['carbs_today']),
+        fatToday: _toDouble(json['fat_today']),
+        waterTodayMl: _toInt(json['water_today_ml']),
+        generatedAt:
+            DateTime.tryParse(json['generated_at']?.toString() ?? '') ??
+                DateTime.now(),
+      );
   final String userId;
 
   // ---- Profile (user_profiles) ----
@@ -108,48 +180,6 @@ class AiUserContextModel {
   final List<AiWeightPoint> weightHistory; // newest first
 
   final DateTime generatedAt;
-
-  const AiUserContextModel({
-    required this.userId,
-    this.name,
-    this.age,
-    this.gender,
-    this.heightCm,
-    this.currentWeightKg,
-    this.goalWeightKg,
-    this.activityLevel,
-    this.goalType,
-    this.dietPreference,
-    this.workoutFrequency,
-    this.targetCalories = 0,
-    this.targetProtein = 0,
-    this.targetCarbs = 0,
-    this.targetFat = 0,
-    this.dailyWaterMl = 0,
-    this.weeklyPaceKg,
-    required this.today,
-    this.caloriesConsumedToday = 0,
-    this.proteinToday = 0,
-    this.carbsToday = 0,
-    this.fatToday = 0,
-    this.waterTodayMl = 0,
-    this.calorieTotalsByDate = const {},
-    this.waterTotalsByDate = const {},
-    this.recentMeals = const [],
-    this.weightHistory = const [],
-    required this.generatedAt,
-  });
-
-  /// Safe placeholder used when the context fetch fails entirely, so the coach
-  /// can still answer instead of throwing at the user.
-  factory AiUserContextModel.empty(String userId, {DateTime? now}) {
-    final stamp = now ?? DateTime.now();
-    return AiUserContextModel(
-      userId: userId,
-      today: DateTime(stamp.year, stamp.month, stamp.day),
-      generatedAt: stamp,
-    );
-  }
 
   /// `yyyy-MM-dd` key used by the `meals` / `water_intake` / `weight_entries`
   /// date columns.
@@ -386,8 +416,7 @@ class AiUserContextModel {
     List<AiMealSummary>? recentMeals,
     List<AiWeightPoint>? weightHistory,
     DateTime? generatedAt,
-  }) {
-    return AiUserContextModel(
+  }) => AiUserContextModel(
       userId: userId ?? this.userId,
       name: name ?? this.name,
       age: age ?? this.age,
@@ -417,7 +446,6 @@ class AiUserContextModel {
       weightHistory: weightHistory ?? this.weightHistory,
       generatedAt: generatedAt ?? this.generatedAt,
     );
-  }
 
   /// Structured payload of the scalar context (used for logging/debugging the
   /// context layer). History collections are intentionally not serialized -
@@ -448,38 +476,6 @@ class AiUserContextModel {
         'water_today_ml': waterTodayMl,
         'generated_at': generatedAt.toIso8601String(),
       };
-
-  /// Rebuilds the scalar part of the context (see [toJson]).
-  factory AiUserContextModel.fromJson(Map<String, dynamic> json) =>
-      AiUserContextModel(
-        userId: json['user_id']?.toString() ?? '',
-        name: json['name'] as String?,
-        age: _toNullableInt(json['age']),
-        gender: json['gender'] as String?,
-        heightCm: _toNullableDouble(json['height_cm']),
-        currentWeightKg: _toNullableDouble(json['current_weight_kg']),
-        goalWeightKg: _toNullableDouble(json['goal_weight_kg']),
-        activityLevel: json['activity_level'] as String?,
-        goalType: json['goal_type'] as String?,
-        dietPreference: json['diet_preference'] as String?,
-        workoutFrequency: _toNullableInt(json['workout_frequency']),
-        targetCalories: _toInt(json['target_calories']),
-        targetProtein: _toDouble(json['target_protein']),
-        targetCarbs: _toDouble(json['target_carbs']),
-        targetFat: _toDouble(json['target_fat']),
-        dailyWaterMl: _toInt(json['daily_water_ml']),
-        weeklyPaceKg: _toNullableDouble(json['weekly_pace_kg']),
-        today:
-            DateTime.tryParse(json['today']?.toString() ?? '') ?? DateTime.now(),
-        caloriesConsumedToday: _toInt(json['calories_consumed_today']),
-        proteinToday: _toDouble(json['protein_today']),
-        carbsToday: _toDouble(json['carbs_today']),
-        fatToday: _toDouble(json['fat_today']),
-        waterTodayMl: _toInt(json['water_today_ml']),
-        generatedAt:
-            DateTime.tryParse(json['generated_at']?.toString() ?? '') ??
-                DateTime.now(),
-      );
 
   String _balanceLabel() {
     if (targetCalories <= 0) return 'no calorie target set';

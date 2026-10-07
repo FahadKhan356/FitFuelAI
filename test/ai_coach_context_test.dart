@@ -289,7 +289,7 @@ void main() {
         'What about dinner?',
         insight: CoachInsight.weeklyReview,
         history: [
-          AiChatMessageEntity(
+          const AiChatMessageEntity(
             id: '1',
             userId: 'user-1',
             message: 'First question',

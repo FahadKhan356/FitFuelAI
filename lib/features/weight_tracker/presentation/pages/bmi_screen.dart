@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:fitfuel_ai/core/constants/app_colors.dart';
 import 'package:fitfuel_ai/core/di/service_locator.dart';
 import 'package:fitfuel_ai/core/domain/usecases/all_usecases.dart';
 import 'package:fitfuel_ai/core/utils/bmi_calculator.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 const _bg = Color(0xFFF7F6FB);
@@ -227,7 +227,7 @@ class _BmiScreenState extends State<BmiScreen> with SingleTickerProviderStateMix
                           border: Border.all(color: const Color(0xFFDEE1E9)),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
+                              color: Colors.black.withValues(alpha: 0.04),
                               blurRadius: 18,
                               offset: const Offset(0, 8),
                             ),
@@ -267,7 +267,7 @@ class _BmiScreenState extends State<BmiScreen> with SingleTickerProviderStateMix
                                           Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                             decoration: BoxDecoration(
-                                              color: _categoryColor.withOpacity(0.14),
+                                              color: _categoryColor.withValues(alpha: 0.14),
                                               borderRadius: BorderRadius.circular(12),
                                             ),
                                             child: Text(
@@ -281,7 +281,7 @@ class _BmiScreenState extends State<BmiScreen> with SingleTickerProviderStateMix
                                           ),
                                           Text(
                                             'Healthy $_healthyRangeText',
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                               fontSize: 12,
                                               fontWeight: FontWeight.w500,
                                               color: _textSecondary,
@@ -305,7 +305,7 @@ class _BmiScreenState extends State<BmiScreen> with SingleTickerProviderStateMix
                                           value: progress,
                                           strokeWidth: 10,
                                           color: _categoryColor,
-                                          backgroundColor: _categoryColor.withOpacity(0.16),
+                                          backgroundColor: _categoryColor.withValues(alpha: 0.16),
                                         ),
                                       ),
                                       Column(
@@ -421,7 +421,7 @@ class _BmiScreenState extends State<BmiScreen> with SingleTickerProviderStateMix
                                 width: double.infinity,
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: _categoryColor.withOpacity(0.08),
+                                  color: _categoryColor.withValues(alpha: 0.08),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
@@ -483,10 +483,6 @@ class _BmiScreenState extends State<BmiScreen> with SingleTickerProviderStateMix
 }
 
 class _InputCard extends StatelessWidget {
-  final String label;
-  final String suffix;
-  final TextEditingController controller;
-  final void Function(String) onChanged;
 
   const _InputCard({
     required this.label,
@@ -494,10 +490,13 @@ class _InputCard extends StatelessWidget {
     required this.controller,
     required this.onChanged,
   });
+  final String label;
+  final String suffix;
+  final TextEditingController controller;
+  final void Function(String) onChanged;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: _surface,
@@ -549,21 +548,19 @@ class _InputCard extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 class _StatusBadge extends StatelessWidget {
+
+  const _StatusBadge({required this.label, required this.color});
   final String label;
   final Color color;
 
-  const _StatusBadge({required this.label, required this.color});
-
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.14),
+        color: color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -575,5 +572,4 @@ class _StatusBadge extends StatelessWidget {
         ),
       ),
     );
-  }
 }

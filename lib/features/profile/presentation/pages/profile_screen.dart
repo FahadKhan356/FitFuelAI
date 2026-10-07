@@ -1,25 +1,26 @@
+import 'dart:math' as math;
+
 import 'package:fitfuel_ai/core/config/routes.dart';
 import 'package:fitfuel_ai/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../auth/presentation/bloc/auth_bloc.dart';
-import 'dart:math' as math;
 
+import '../../../../core/data/datasources/supabase_remote_datasource.dart';
 import '../../../../core/di/service_locator.dart';
+import '../../../../core/domain/repositories/meal_repository.dart';
+import '../../../../core/domain/repositories/subscription_repository.dart';
+import '../../../../core/domain/repositories/user_repository.dart';
+import '../../../../core/domain/repositories/water_repository.dart';
+import '../../../../core/domain/repositories/weight_repository.dart';
 import '../../../../core/services/avatar_uploader.dart';
 import '../../../../core/services/home_data_refresh_notifier.dart';
 import '../../../../core/services/streak_service.dart';
 import '../../../../core/services/water_goal_resolver.dart';
-import '../../../../core/data/datasources/supabase_remote_datasource.dart';
-import '../../../../core/domain/repositories/subscription_repository.dart';
-import '../../../../core/domain/repositories/user_repository.dart';
-import '../../../../core/domain/repositories/water_repository.dart';
-import '../../../../core/domain/repositories/meal_repository.dart';
-import '../../../../core/domain/repositories/weight_repository.dart';
 import '../../../../core/utils/weight_progress_calculator.dart';
+import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../data/models/user_profile_model.dart';
 
 const _bg = Color(0xFFF5F5FA);
@@ -188,7 +189,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       }
       return _MealTotals(calories, protein);
     } catch (_) {
-      return const _MealTotals(0, 0.0);
+      return const _MealTotals(0, 0);
     }
   }
 
@@ -352,7 +353,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       ctx,
       duration: const Duration(milliseconds: 420),
       curve: Curves.easeInOutCubic,
-      alignment: 0.0,
+      alignment: 0,
     );
   }
 
@@ -548,9 +549,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                     const SizedBox(height: 18),
                     Text(
                       _displayName,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 30,
-                        height: 1.0,
+                        height: 1,
                         fontWeight: FontWeight.w800,
                         color: _textPrimary,
                       ),
@@ -831,8 +832,7 @@ class _TopIconButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Material(
+  Widget build(BuildContext context) => Material(
       color: Colors.transparent,
       child: InkResponse(
         onTap: onTap,
@@ -844,19 +844,12 @@ class _TopIconButton extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 // ─────────────────────────────────────────────
 //  A. Avatar With Badge – Floating + Rotating Ring + Spring Badge
 // ─────────────────────────────────────────────
 class _AvatarWithBadge extends StatelessWidget {
-  final Animation<double> floatCtrl;
-  final Animation<double> rotateCtrl;
-  final Animation<double> mainCtrl;
-  final String? avatarUrl;
-  final VoidCallback? onTap;
-  final bool changing;
 
   const _AvatarWithBadge({
     required this.floatCtrl,
@@ -866,10 +859,15 @@ class _AvatarWithBadge extends StatelessWidget {
     this.onTap,
     this.changing = false,
   });
+  final Animation<double> floatCtrl;
+  final Animation<double> rotateCtrl;
+  final Animation<double> mainCtrl;
+  final String? avatarUrl;
+  final VoidCallback? onTap;
+  final bool changing;
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
+  Widget build(BuildContext context) => AnimatedBuilder(
       animation: floatCtrl,
       builder: (context, child) {
         final floatY = math.sin(floatCtrl.value * math.pi * 2) * 3.0;
@@ -898,7 +896,7 @@ class _AvatarWithBadge extends StatelessWidget {
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: const Color(0xFFD8D3F7),
-                        width: 2.0,
+                        width: 2,
                         strokeAlign: BorderSide.strokeAlignInside,
                       ),
                     ),
@@ -1029,7 +1027,6 @@ class _AvatarWithBadge extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 // ─────────────────────────────────────────────
@@ -1066,10 +1063,6 @@ class _DottedBorderPainter extends CustomPainter {
 //  Premium Pill – Shimmer sweep
 // ─────────────────────────────────────────────
 class _PremiumPill extends StatelessWidget {
-  final Animation<double> mainCtrl;
-  final Animation<double> shimmerCtrl;
-  final bool isPremium;
-  final VoidCallback? onTap;
 
   const _PremiumPill({
     required this.mainCtrl,
@@ -1077,10 +1070,13 @@ class _PremiumPill extends StatelessWidget {
     this.isPremium = false,
     this.onTap,
   });
+  final Animation<double> mainCtrl;
+  final Animation<double> shimmerCtrl;
+  final bool isPremium;
+  final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: onTap,
       child: AnimatedBuilder(
       animation: mainCtrl,
@@ -1138,7 +1134,7 @@ class _PremiumPill extends StatelessWidget {
                                     end: Alignment.centerRight,
                                     colors: [
                                       Colors.transparent,
-                                      Colors.white.withOpacity(0.45),
+                                      Colors.white.withValues(alpha: 0.45),
                                       Colors.transparent,
                                     ],
                                   ),
@@ -1158,23 +1154,12 @@ class _PremiumPill extends StatelessWidget {
       },
     ),
     );
-  }
 }
 
 // ─────────────────────────────────────────────
 //  B. Metric Card – Number Roll + Streak Flame
 // ─────────────────────────────────────────────
 class _MetricCard extends StatelessWidget {
-  final Animation<double> mainCtrl;
-  final Animation<double> flameCtrl;
-  final IconData icon;
-  final Color iconBackground;
-  final Color iconColor;
-  final String label;
-  final String targetValue;
-  final String suffix;
-  final String subtitle;
-  final int index;
 
   const _MetricCard({
     required this.mainCtrl,
@@ -1188,6 +1173,16 @@ class _MetricCard extends StatelessWidget {
     required this.subtitle,
     required this.index,
   });
+  final Animation<double> mainCtrl;
+  final Animation<double> flameCtrl;
+  final IconData icon;
+  final Color iconBackground;
+  final Color iconColor;
+  final String label;
+  final String targetValue;
+  final String suffix;
+  final String subtitle;
+  final int index;
 
   @override
   Widget build(BuildContext context) {
@@ -1280,7 +1275,7 @@ class _MetricCard extends StatelessWidget {
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
                   color: Color(0xFF1F1F2E),
-                  height: 1.0,
+                  height: 1,
                 ),
               ),
             ),
@@ -1304,10 +1299,6 @@ class _MetricCard extends StatelessWidget {
 //  C. Achievement Badge – Radial pop-in + glow
 // ─────────────────────────────────────────────
 class _AchievementItem extends StatelessWidget {
-  final Animation<double> mainCtrl;
-  final int index;
-  final IconData icon;
-  final String label;
 
   const _AchievementItem({
     required this.mainCtrl,
@@ -1315,6 +1306,10 @@ class _AchievementItem extends StatelessWidget {
     required this.icon,
     required this.label,
   });
+  final Animation<double> mainCtrl;
+  final int index;
+  final IconData icon;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
@@ -1376,14 +1371,6 @@ class _AchievementItem extends StatelessWidget {
 //  D. Today's Goals Card – Animated Progress + Percentage Fade
 // ─────────────────────────────────────────────
 class _GoalsCard extends StatelessWidget {
-  final TextTheme textTheme;
-  final Animation<double> mainCtrl;
-  final int waterGoal;
-  final int waterConsumed;
-  final int calorieGoal;
-  final int calorieConsumed;
-  final double proteinGoal;
-  final double proteinConsumed;
 
   const _GoalsCard({
     required this.textTheme,
@@ -1395,10 +1382,17 @@ class _GoalsCard extends StatelessWidget {
     this.proteinGoal = 120,
     this.proteinConsumed = 0,
   });
+  final TextTheme textTheme;
+  final Animation<double> mainCtrl;
+  final int waterGoal;
+  final int waterConsumed;
+  final int calorieGoal;
+  final int calorieConsumed;
+  final double proteinGoal;
+  final double proteinConsumed;
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
+  Widget build(BuildContext context) => AnimatedBuilder(
       animation: mainCtrl,
       builder: (context, child) {
         final t = _clamp01(CurvedAnimation(
@@ -1496,7 +1490,6 @@ class _GoalsCard extends StatelessWidget {
         ),
       ),
     );
-  }
 
   static double _goalProgress(int consumed, int target) {
     if (target <= 0) return 0;
@@ -1510,14 +1503,6 @@ class _GoalsCard extends StatelessWidget {
 }
 
 class _GoalRow extends StatelessWidget {
-  final Animation<double> mainCtrl;
-  final int index;
-  final IconData icon;
-  final Color iconColor;
-  final String label;
-  final double progress;
-  final String value;
-  final VoidCallback? onTap;
 
   const _GoalRow({
     required this.mainCtrl,
@@ -1529,6 +1514,14 @@ class _GoalRow extends StatelessWidget {
     required this.value,
     this.onTap,
   });
+  final Animation<double> mainCtrl;
+  final int index;
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final double progress;
+  final String value;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1600,13 +1593,6 @@ class _GoalRow extends StatelessWidget {
 //  E. Setting Tile – Cascading slide + touch scale
 // ─────────────────────────────────────────────
 class _SettingTile extends StatelessWidget {
-  final Animation<double> mainCtrl;
-  final int index;
-  final IconData icon;
-  final String title;
-  final String? trailingText;
-  final VoidCallback? onTap;
-  final bool isLogout;
 
   const _SettingTile({
     required this.mainCtrl,
@@ -1617,6 +1603,13 @@ class _SettingTile extends StatelessWidget {
     this.onTap,
     this.isLogout = false,
   });
+  final Animation<double> mainCtrl;
+  final int index;
+  final IconData icon;
+  final String title;
+  final String? trailingText;
+  final VoidCallback? onTap;
+  final bool isLogout;
 
   @override
   Widget build(BuildContext context) {

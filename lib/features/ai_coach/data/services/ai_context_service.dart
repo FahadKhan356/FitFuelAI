@@ -21,12 +21,12 @@ import '../models/ai_user_context_model.dart';
 /// * **Cheap** - results are cached for [AppConstants.aiContextCacheTtl] so
 ///   two messages in a row do not re-fetch the whole history.
 class AiContextService {
+
+  AiContextService(this._client);
   final SupabaseClient _client;
 
   final Map<String, AiUserContextModel> _cache = {};
   final Map<String, DateTime> _cacheTimestamps = {};
-
-  AiContextService(this._client);
 
   /// Builds (or returns a cached) context snapshot for [userId].
   ///
@@ -312,7 +312,7 @@ class AiContextService {
     double Function(AiFoodLine line) selector,
   ) =>
       meals.fold(
-        0.0,
+        0,
         (sum, meal) =>
             sum + meal.items.fold(0.0, (lineSum, line) => lineSum + selector(line)),
       );

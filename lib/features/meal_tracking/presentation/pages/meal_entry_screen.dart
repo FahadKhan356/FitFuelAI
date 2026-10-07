@@ -1,9 +1,11 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/data/models/nutrition_food.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../features/food_search/data/datasources/nutrition_api_datasource.dart';
-import '../../../../core/data/models/nutrition_food.dart';
 
 const _surface = Colors.white;
 const _purple = Color(AppColors.authPurple);
@@ -16,21 +18,6 @@ const _border = Color(0xFFE7E3EF);
 //  Food Item Model
 // ─────────────────────────────────────────────
 class FoodItem {
-  final String id;
-  final String name;
-  final int caloriesPer100g;
-  final int proteinPer100g;
-  final int carbsPer100g;
-  final int fatPer100g;
-  final int fiberPer100g;
-  final int potassiumMgPer100g;
-  final int calciumMgPer100g;
-  final int ironMgPer100g;
-  final int vitaminCMgPer100g;
-  final int sodiumMgPer100g;
-  final String category;
-  final String servingLabel;
-  final String source;
 
   FoodItem({
     required this.id,
@@ -49,12 +36,26 @@ class FoodItem {
     required this.servingLabel,
     required this.source,
   });
+  final String id;
+  final String name;
+  final int caloriesPer100g;
+  final int proteinPer100g;
+  final int carbsPer100g;
+  final int fatPer100g;
+  final int fiberPer100g;
+  final int potassiumMgPer100g;
+  final int calciumMgPer100g;
+  final int ironMgPer100g;
+  final int vitaminCMgPer100g;
+  final int sodiumMgPer100g;
+  final String category;
+  final String servingLabel;
+  final String source;
 }
 
 /// Maps a real API food result onto the screen's local `FoodItem` model so the
 /// existing nutrition UI can render USDA / OpenFoodFacts data unchanged.
-FoodItem _fromNutritionFood(NutritionFood n) {
-  return FoodItem(
+FoodItem _fromNutritionFood(NutritionFood n) => FoodItem(
     id: n.externalId.isEmpty ? n.name : n.externalId,
     name: n.brand != null && n.brand!.isNotEmpty
         ? '${n.name} (${n.brand})'
@@ -73,14 +74,13 @@ FoodItem _fromNutritionFood(NutritionFood n) {
     servingLabel: '100 g',
     source: n.source,
   );
-}
 
 class MealEntryBottomSheet extends StatefulWidget {
+
+  const MealEntryBottomSheet({required this.onMealAdded, super.key, this.onSearchFood});
   final void Function(String foodName, int calories, double protein,
       double carbs, double fat, String mealType) onMealAdded;
   final VoidCallback? onSearchFood;
-
-  const MealEntryBottomSheet({required this.onMealAdded, this.onSearchFood});
 
   @override
   State<MealEntryBottomSheet> createState() => _MealEntryBottomSheetState();
@@ -169,8 +169,7 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedPadding(
+  Widget build(BuildContext context) => AnimatedPadding(
       duration: const Duration(milliseconds: 200),
       padding:
           EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -288,11 +287,11 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
                           color: _surface,
                           borderRadius: BorderRadius.circular(18),
                           border: Border.all(color: _border),
-                          boxShadow: [
+                          boxShadow: const [
                             BoxShadow(
-                              color: const Color.fromRGBO(0, 0, 0, 0.03),
+                              color: Color.fromRGBO(0, 0, 0, 0.03),
                               blurRadius: 10,
-                              offset: const Offset(0, 4),
+                              offset: Offset(0, 4),
                             ),
                           ],
                         ),
@@ -444,16 +443,15 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
         ),
       ),
     );
-  }
 }
 
 class FoodNutritionDetailSheet extends StatefulWidget {
+
+  const FoodNutritionDetailSheet(
+      {required this.food, required this.onMealAdded, super.key});
   final FoodItem food;
   final void Function(String foodName, int calories, double protein,
       double carbs, double fat, String mealType) onMealAdded;
-
-  const FoodNutritionDetailSheet(
-      {required this.food, required this.onMealAdded});
 
   @override
   State<FoodNutritionDetailSheet> createState() =>
@@ -498,8 +496,7 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedPadding(
+  Widget build(BuildContext context) => AnimatedPadding(
       duration: const Duration(milliseconds: 200),
       padding:
           EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
@@ -542,9 +539,9 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
+              const Text(
                 'Adjust the portion and meal type, then log your entry with micronutrients included.',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: _textSecondary,
@@ -800,23 +797,21 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
         ),
       ),
     );
-  }
 }
 
 class _MacroBadge extends StatelessWidget {
+
+  const _MacroBadge(
+      {required this.label, required this.value, required this.color});
   final String label;
   final String value;
   final Color color;
 
-  const _MacroBadge(
-      {required this.label, required this.value, required this.color});
-
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: Color.fromRGBO(143, 91, 255, 0.12),
+        color: const Color.fromRGBO(143, 91, 255, 0.12),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -828,20 +823,18 @@ class _MacroBadge extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _FoodCategoryChip extends StatelessWidget {
+
+  const _FoodCategoryChip(
+      {required this.label, required this.isSelected, required this.onTap});
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _FoodCategoryChip(
-      {required this.label, required this.isSelected, required this.onTap});
-
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
@@ -861,18 +854,16 @@ class _FoodCategoryChip extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _MicronutrientRow extends StatelessWidget {
+
+  const _MicronutrientRow({required this.label, required this.value});
   final String label;
   final String value;
 
-  const _MicronutrientRow({required this.label, required this.value});
-
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
@@ -903,5 +894,4 @@ class _MicronutrientRow extends StatelessWidget {
         ],
       ),
     );
-  }
 }

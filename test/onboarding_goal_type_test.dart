@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('goal type is persisted in both profile and goals payloads', () {
-    final user = UserModel(
+    const user = UserModel(
       id: 'user-1',
       goalType: 'weight_loss',
       targetCalories: 1800,

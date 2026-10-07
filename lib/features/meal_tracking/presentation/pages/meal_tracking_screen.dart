@@ -19,6 +19,14 @@ const _border = Color(0xFFE7E3EF);
 //  Meal Entry Model
 // ─────────────────────────────────────────────
 class MealLog {
+
+  MealLog({
+    required this.foodName, required this.calories, required this.mealType, required this.date, this.mealId = '',
+    this.itemId = '',
+    this.protein = 0,
+    this.carbs = 0,
+    this.fat = 0,
+  });
   final String mealId;
   final String itemId;
   final String foodName;
@@ -28,18 +36,6 @@ class MealLog {
   final double fat;
   final String mealType;
   final DateTime date;
-
-  MealLog({
-    this.mealId = '',
-    this.itemId = '',
-    required this.foodName,
-    required this.calories,
-    this.protein = 0,
-    this.carbs = 0,
-    this.fat = 0,
-    required this.mealType,
-    required this.date,
-  });
 }
 
 // ─────────────────────────────────────────────
@@ -267,8 +263,7 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: _bg,
       floatingActionButton: FloatingActionButton(
         onPressed: _showMealEntryDialog,
@@ -341,11 +336,11 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
                                   fontSize: 32,
                                   fontWeight: FontWeight.w800,
                                   color: _textPrimary,
-                                  height: 1.0,
+                                  height: 1,
                                 ),
                               ),
                               TextSpan(
-                                text: ' / ${calorieGoal} kcal',
+                                text: ' / $calorieGoal kcal',
                                 style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -402,30 +397,31 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
         ),
       ),
     );
-  }
 }
 
 // ─────────────────────────────────────────────
 //  Meal Card
 // ─────────────────────────────────────────────
 class _MealCard extends StatelessWidget {
+
+  const _MealCard({required this.meal, required this.onRemove});
   final MealLog meal;
   final VoidCallback onRemove;
 
-  const _MealCard({required this.meal, required this.onRemove});
-
-  String _getMealIcon(String mealType) {
+  /// Material icons rather than emoji: the app's text theme is Poppins, which
+  /// has no colour-emoji glyphs, so emoji render as empty "tofu" boxes on iOS.
+  IconData _getMealIcon(String mealType) {
     switch (mealType) {
       case 'breakfast':
-        return '🥐';
+        return Icons.free_breakfast_rounded;
       case 'lunch':
-        return '🍽️';
+        return Icons.lunch_dining_rounded;
       case 'dinner':
-        return '🍲';
+        return Icons.dinner_dining_rounded;
       case 'snack':
-        return '🍎';
+        return Icons.fastfood_rounded;
       default:
-        return '🍽️';
+        return Icons.restaurant_rounded;
     }
   }
 
@@ -445,8 +441,7 @@ class _MealCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
@@ -471,7 +466,8 @@ class _MealCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
-              child: Text(_getMealIcon(meal.mealType), style: const TextStyle(fontSize: 20)),
+              child: Icon(_getMealIcon(meal.mealType),
+                  size: 20, color: _purple),
             ),
           ),
           const SizedBox(width: 12),
@@ -525,5 +521,4 @@ class _MealCard extends StatelessWidget {
         ],
       ),
     );
-  }
 }

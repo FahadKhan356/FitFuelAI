@@ -1,11 +1,4 @@
 class ScanResultModel {
-  final String id;
-  final String userId;
-  final String? scanImageUrl;
-  final Map<String, dynamic>? scanResult;
-  final double? confidence;
-  final String scanType;
-  final DateTime? createdAt;
 
   const ScanResultModel({
     required this.id,
@@ -17,8 +10,7 @@ class ScanResultModel {
     this.createdAt,
   });
 
-  factory ScanResultModel.fromJson(Map<String, dynamic> json) {
-    return ScanResultModel(
+  factory ScanResultModel.fromJson(Map<String, dynamic> json) => ScanResultModel(
       id: json['id'] as String,
       userId: json['user_id'] as String,
       scanImageUrl: json['scan_image_url'] as String?,
@@ -27,10 +19,15 @@ class ScanResultModel {
       scanType: json['scan_type'] as String? ?? 'YOLOv8',
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : null,
     );
-  }
+  final String id;
+  final String userId;
+  final String? scanImageUrl;
+  final Map<String, dynamic>? scanResult;
+  final double? confidence;
+  final String scanType;
+  final DateTime? createdAt;
 
-  Map<String, dynamic> toJson() {
-    return {
+  Map<String, dynamic> toJson() => {
       'id': id,
       'user_id': userId,
       if (scanImageUrl != null) 'scan_image_url': scanImageUrl,
@@ -39,5 +36,4 @@ class ScanResultModel {
       'scan_type': scanType,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
     };
-  }
 }

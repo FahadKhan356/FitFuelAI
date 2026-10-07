@@ -1,12 +1,4 @@
 class WeightEntryEntity {
-  final String id;
-  final String userId;
-  final DateTime date;
-  final double weightKg;
-  final double? bmi;
-  final double? bodyFat;
-  final String? notes;
-  final DateTime? createdAt;
 
   const WeightEntryEntity({
     required this.id,
@@ -18,4 +10,12 @@ class WeightEntryEntity {
     this.notes,
     this.createdAt,
   });
+  final String id;
+  final String userId;
+  final DateTime date;
+  final double weightKg;
+  final double? bmi;
+  final double? bodyFat;
+  final String? notes;
+  final DateTime? createdAt;
 }

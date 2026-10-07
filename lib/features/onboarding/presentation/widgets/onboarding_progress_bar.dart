@@ -3,18 +3,15 @@ import '../../../../core/constants/app_colors.dart';
 
 /// Animated step progress bar shown at the top of the onboarding flow.
 class OnboardingProgressBar extends StatelessWidget {
+
+  const OnboardingProgressBar({
+    required this.stepIndex, required this.totalSteps, super.key,
+  });
   final int stepIndex;
   final int totalSteps;
 
-  const OnboardingProgressBar({
-    super.key,
-    required this.stepIndex,
-    required this.totalSteps,
-  });
-
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       height: 6,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(100),
@@ -33,5 +30,4 @@ class OnboardingProgressBar extends StatelessWidget {
         ),
       ),
     );
-  }
 }

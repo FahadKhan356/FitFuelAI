@@ -5,9 +5,9 @@ import '../../domain/repositories/weight_repository.dart';
 import '../datasources/supabase_remote_datasource.dart';
 
 class WeightRepositoryImpl implements WeightRepository {
-  final SupabaseRemoteDataSource _dataSource;
 
   WeightRepositoryImpl(this._dataSource);
+  final SupabaseRemoteDataSource _dataSource;
 
   @override
   Future<List<WeightEntryEntity>> getWeightHistory(String userId) async {

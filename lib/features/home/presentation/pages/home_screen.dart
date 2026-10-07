@@ -1,11 +1,7 @@
 import 'dart:async';
-
-import 'package:fitfuel_ai/core/config/routes.dart';
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:math' as math;
 
+import 'package:fitfuel_ai/core/config/routes.dart';
 import 'package:fitfuel_ai/core/di/service_locator.dart';
 import 'package:fitfuel_ai/core/domain/entities/goal_entity.dart';
 import 'package:fitfuel_ai/core/domain/entities/meal_entity.dart';
@@ -17,11 +13,14 @@ import 'package:fitfuel_ai/core/services/home_data_refresh_notifier.dart';
 import 'package:fitfuel_ai/core/services/streak_service.dart';
 import 'package:fitfuel_ai/core/services/water_goal_resolver.dart';
 import 'package:fitfuel_ai/core/utils/fitness_calculator.dart';
-import '../../../analytics/presentation/pages/analytics_screen.dart';
-import '../../../food_scanner/presentation/pages/food_scanner_screen.dart';
-import '../../../ai_coach/presentation/pages/ai_coach_screen.dart';
-import '../../../profile/presentation/pages/profile_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../../../screens/camera_scan_screen.dart';
+import '../../../ai_coach/presentation/pages/ai_coach_screen.dart';
+import '../../../analytics/presentation/pages/analytics_screen.dart';
+import '../../../profile/presentation/pages/profile_screen.dart';
 
 // ─────────────────────────────────────────────
 //  Design Tokens
@@ -70,10 +69,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: kBg,
-      floatingActionButton: _CameraFAB(onTap: _openScan),
+      // The Scan tab already *is* the scanner, so the FAB would be a redundant
+      // duplicate of the screen sitting underneath it.
+      floatingActionButton:
+          _navIndex == 2 ? null : _CameraFAB(onTap: _openScan),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: _BottomNav(
         currentIndex: _navIndex,
@@ -84,20 +85,19 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           _HomeContent(onNavigateToProfile: () => _switchTab(4)),
           const AnalyticsScreen(),
-          const FoodScannerScreen(),
+          const CameraScanScreen(embedded: true),
           const AiCoachScreen(),
           const ProfileScreen(),
         ],
       ),
     );
-  }
 }
 
 // ─────────────────────────────────────────────
 //  Home Tab Content
 // ─────────────────────────────────────────────
 class _HomeContent extends StatefulWidget {
-  const _HomeContent({super.key, this.onNavigateToProfile});
+  const _HomeContent({this.onNavigateToProfile});
 
   final VoidCallback? onNavigateToProfile;
 
@@ -193,7 +193,7 @@ class _HomeContentState extends State<_HomeContent>
   double _calculateFallbackProtein(UserProfileEntity? profile) {
     final weight = profile?.currentWeightKg ?? profile?.weightKg;
     if (weight == null) {
-      return 150.0;
+      return 150;
     }
     return FitnessCalculator.calculateProtein(weightKg: weight);
   }
@@ -201,7 +201,7 @@ class _HomeContentState extends State<_HomeContent>
   double _calculateFallbackCarbs(
       UserProfileEntity? profile, int calories, double protein) {
     if (profile == null) {
-      return 200.0;
+      return 200;
     }
     return FitnessCalculator.calculateCarbs(
       targetCalories: calories,
@@ -210,9 +210,7 @@ class _HomeContentState extends State<_HomeContent>
     );
   }
 
-  double _calculateFallbackFat(int calories) {
-    return FitnessCalculator.calculateFat(targetCalories: calories);
-  }
+  double _calculateFallbackFat(int calories) => FitnessCalculator.calculateFat(targetCalories: calories);
 
   /// Fetches DB dashboard (goals + profile + meals + water) in a single parallel query.
   Future<void> _loadData() async {
@@ -363,17 +361,20 @@ class _HomeContentState extends State<_HomeContent>
     }
   }
 
-  /// Emoji used on the meal card (falls back to a generic icon).
-  String _mealIcon(String mealType) {
+  /// Icon used on the meal card (falls back to a generic icon).
+  ///
+  /// Material icons rather than emoji: the app's text theme is Poppins, which
+  /// has no colour-emoji glyphs, so emoji render as empty "tofu" boxes on iOS.
+  IconData _mealIcon(String mealType) {
     switch (mealType.toLowerCase()) {
       case 'breakfast':
-        return '🥑';
+        return Icons.free_breakfast_rounded;
       case 'lunch':
-        return '🥗';
+        return Icons.lunch_dining_rounded;
       case 'dinner':
-        return '🍽️';
+        return Icons.dinner_dining_rounded;
       default:
-        return '🥗';
+        return Icons.restaurant_rounded;
     }
   }
 
@@ -403,8 +404,7 @@ class _HomeContentState extends State<_HomeContent>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return SafeArea(
+  Widget build(BuildContext context) => SafeArea(
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -426,7 +426,7 @@ class _HomeContentState extends State<_HomeContent>
                 final t = Curves.easeOutCubic.transform(
                   CurvedAnimation(
                     parent: _entryController,
-                    curve: const Interval(0.00, 0.22),
+                    curve: const Interval(0, 0.22),
                   ).value,
                 );
                 return Transform.translate(
@@ -438,14 +438,15 @@ class _HomeContentState extends State<_HomeContent>
                 children: [
                   Text(
                     '${_greetingPrefix()}, $_greetingName ',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.w800,
                       color: kHeadline,
                       letterSpacing: -0.4,
                     ),
                   ),
-                  const Text('👋', style: TextStyle(fontSize: 22)),
+                  const Icon(Icons.waving_hand_rounded,
+                      size: 22, color: kOrange),
                 ],
               ),
             ),
@@ -560,7 +561,7 @@ class _HomeContentState extends State<_HomeContent>
                     border: Border.all(color: kBorder, width: 1),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
+                        color: Colors.black.withValues(alpha: 0.03),
                         blurRadius: 16,
                         offset: const Offset(0, 8),
                       ),
@@ -579,10 +580,10 @@ class _HomeContentState extends State<_HomeContent>
                             color: kPurple, size: 24),
                       ),
                       const SizedBox(width: 14),
-                      Expanded(
+                      const Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
+                          children: [
                             Text(
                               'BMI Calculator',
                               style: TextStyle(
@@ -663,8 +664,8 @@ class _HomeContentState extends State<_HomeContent>
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: kBorder, width: 1),
                 ),
-                child: Column(
-                  children: const [
+                child: const Column(
+                  children: [
                     Icon(Icons.restaurant_rounded, size: 30, color: kPurple),
                     SizedBox(height: 10),
                     Text(
@@ -706,7 +707,6 @@ class _HomeContentState extends State<_HomeContent>
         ),
       ),
     );
-  }
 }
 
 double _clamp01(double value) => value.clamp(0.0, 1.0);
@@ -730,8 +730,7 @@ class _TopBar extends StatelessWidget {
   final bool streakTodayActive;
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
+  Widget build(BuildContext context) => Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         AnimatedBuilder(
@@ -803,19 +802,23 @@ class _TopBar extends StatelessWidget {
                 Row(
                   children: streak <= 0
                       ? const [
-                          Text('🔥', style: TextStyle(fontSize: 14)),
+                          Icon(Icons.local_fire_department_rounded,
+                              size: 14, color: kOrange),
                           Opacity(
                             opacity: 0.35,
-                            child: Text('🔥', style: TextStyle(fontSize: 14)),
+                            child: Icon(Icons.local_fire_department_rounded,
+                                size: 14, color: kOrange),
                           ),
                           Opacity(
                             opacity: 0.35,
-                            child: Text('🔥', style: TextStyle(fontSize: 14)),
+                            child: Icon(Icons.local_fire_department_rounded,
+                                size: 14, color: kOrange),
                           ),
                         ]
                       : [
                           for (var i = 0; i < streak.clamp(1, 3); i++)
-                            const Text('🔥', style: TextStyle(fontSize: 14)),
+                            const Icon(Icons.local_fire_department_rounded,
+                                size: 14, color: kOrange),
                         ],
                 ),
               ],
@@ -839,11 +842,13 @@ class _TopBar extends StatelessWidget {
                         height: 40,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stack) => const Center(
-                          child: Text('👤', style: TextStyle(fontSize: 18)),
+                          child: Icon(Icons.person_rounded,
+                              size: 18, color: kPurple),
                         ),
                       )
                     : const Center(
-                        child: Text('👤', style: TextStyle(fontSize: 18)),
+                        child: Icon(Icons.person_rounded,
+                            size: 18, color: kPurple),
                       ),
               ),
             ),
@@ -869,7 +874,6 @@ class _TopBar extends StatelessWidget {
         ),
       ],
     );
-  }
 }
 
 // ─────────────────────────────────────────────
@@ -881,8 +885,7 @@ class _DashboardLoading extends StatelessWidget {
   const _DashboardLoading();
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       width: double.infinity,
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
@@ -894,7 +897,6 @@ class _DashboardLoading extends StatelessWidget {
         child: CircularProgressIndicator(color: kPurple),
       ),
     );
-  }
 }
 
 // ─────────────────────────────────────────────
@@ -965,7 +967,7 @@ class _CalorieCard extends StatelessWidget {
                         width: 32,
                         height: 32,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.4),
+                          color: Colors.white.withValues(alpha: 0.4),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(
@@ -987,7 +989,7 @@ class _CalorieCard extends StatelessWidget {
                             fontWeight: FontWeight.w900,
                             color: kHeadline,
                             letterSpacing: -2,
-                            height: 1.0,
+                            height: 1,
                           ),
                         ),
                         const TextSpan(
@@ -1037,7 +1039,7 @@ class _CalorieCard extends StatelessWidget {
                     child: LinearProgressIndicator(
                       value: progress,
                       minHeight: 6,
-                      backgroundColor: Colors.white.withOpacity(0.45),
+                      backgroundColor: Colors.white.withValues(alpha: 0.45),
                       valueColor: const AlwaysStoppedAnimation<Color>(kPurple),
                     ),
                   ),
@@ -1052,14 +1054,13 @@ class _CalorieCard extends StatelessWidget {
 }
 
 class _CalorieStat extends StatelessWidget {
+
+  const _CalorieStat({required this.label, required this.value});
   final String label;
   final String value;
 
-  const _CalorieStat({required this.label, required this.value});
-
   @override
-  Widget build(BuildContext context) {
-    return Column(
+  Widget build(BuildContext context) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -1083,7 +1084,6 @@ class _CalorieStat extends StatelessWidget {
         ),
       ],
     );
-  }
 }
 
 // ─────────────────────────────────────────────
@@ -1109,8 +1109,7 @@ class _MacroRow extends StatelessWidget {
   final double fatTotal;
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
+  Widget build(BuildContext context) => Row(
       children: [
         Expanded(
           child: _MacroCard(
@@ -1149,7 +1148,6 @@ class _MacroRow extends StatelessWidget {
         ),
       ],
     );
-  }
 }
 
 class _MacroCard extends StatelessWidget {
@@ -1172,8 +1170,7 @@ class _MacroCard extends StatelessWidget {
   final String total;
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
+  Widget build(BuildContext context) => AnimatedBuilder(
       animation: animation,
       builder: (context, child) {
         final intervalStart = 0.22 + (index * 0.06);
@@ -1246,7 +1243,6 @@ class _MacroCard extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 // ─────────────────────────────────────────────
@@ -1258,8 +1254,7 @@ class _MealCard extends StatelessWidget {
   final Animation<double> animation;
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
+  Widget build(BuildContext context) => AnimatedBuilder(
       animation: animation,
       builder: (context, child) {
         final t = _clamp01(CurvedAnimation(
@@ -1287,7 +1282,7 @@ class _MealCard extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: kOrange.withOpacity(0.14),
+                  color: kOrange.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(13),
                 ),
                 child: const Icon(
@@ -1297,10 +1292,10 @@ class _MealCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Expanded(
+              const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
                       'Track a Meal',
                       style: TextStyle(
@@ -1350,7 +1345,6 @@ class _MealCard extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 // ─────────────────────────────────────────────
@@ -1370,8 +1364,7 @@ class _WaterCard extends StatelessWidget {
   final VoidCallback onReload;
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
+  Widget build(BuildContext context) => AnimatedBuilder(
         animation: animation,
         builder: (context, child) {
           final t = _clamp01(CurvedAnimation(
@@ -1423,7 +1416,7 @@ class _WaterCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 7, vertical: 3),
                       decoration: BoxDecoration(
-                        color: kPurple.withOpacity(0.10),
+                        color: kPurple.withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(100),
                       ),
                       child: Text(
@@ -1447,7 +1440,7 @@ class _WaterCard extends StatelessWidget {
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     color: kBody,
-                    letterSpacing: 1.0,
+                    letterSpacing: 1,
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -1503,7 +1496,6 @@ class _WaterCard extends StatelessWidget {
             ),
           ),
         ));
-  }
 }
 
 // ─────────────────────────────────────────────
@@ -1515,8 +1507,7 @@ class _AICoachCard extends StatelessWidget {
   final Animation<double> animation;
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
+  Widget build(BuildContext context) => AnimatedBuilder(
       animation: animation,
       builder: (context, child) {
         final t = _clamp01(CurvedAnimation(
@@ -1575,7 +1566,8 @@ class _AICoachCard extends StatelessWidget {
                         border: Border.all(color: kBorder, width: 1),
                       ),
                       child: const Center(
-                        child: Text('ℹ️', style: TextStyle(fontSize: 12)),
+                        child: Icon(Icons.info_outline_rounded,
+                            size: 14, color: kBody),
                       ),
                     ),
                   ],
@@ -1605,8 +1597,8 @@ class _AICoachCard extends StatelessWidget {
                   onTap: () {},
                   child: Stack(
                     children: [
-                      Row(
-                        children: const [
+                      const Row(
+                        children: [
                           Text(
                             'ASK NOW',
                             style: TextStyle(
@@ -1642,7 +1634,6 @@ class _AICoachCard extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 // ─────────────────────────────────────────────
@@ -1667,7 +1658,7 @@ class _MealItem extends StatelessWidget {
   final String time;
   final String name;
   final String kcal;
-  final String icon;
+  final IconData icon;
 
   Color get _mealTypeColor {
     switch (mealType) {
@@ -1683,8 +1674,7 @@ class _MealItem extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
+  Widget build(BuildContext context) => AnimatedBuilder(
       animation: animation,
       builder: (context, child) {
         final start = 0.66 + (index * 0.06);
@@ -1718,7 +1708,7 @@ class _MealItem extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Center(
-                child: Text(icon, style: const TextStyle(fontSize: 26)),
+                child: Icon(icon, size: 26, color: kHeadline),
               ),
             ),
             const SizedBox(width: 12),
@@ -1732,7 +1722,7 @@ class _MealItem extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: _mealTypeColor.withOpacity(0.12),
+                          color: _mealTypeColor.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(100),
                         ),
                         child: Text(
@@ -1798,7 +1788,6 @@ class _MealItem extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _ShineSweep extends StatefulWidget {
@@ -1828,8 +1817,7 @@ class _ShineSweepState extends State<_ShineSweep>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return ClipRect(
+  Widget build(BuildContext context) => ClipRect(
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
@@ -1858,20 +1846,18 @@ class _ShineSweepState extends State<_ShineSweep>
         },
       ),
     );
-  }
 }
 
 // ─────────────────────────────────────────────
 //  Camera FAB
 // ─────────────────────────────────────────────
 class _CameraFAB extends StatelessWidget {
-  final VoidCallback onTap;
 
   const _CameraFAB({required this.onTap});
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       width: 58,
       height: 58,
       decoration: BoxDecoration(
@@ -1879,7 +1865,7 @@ class _CameraFAB extends StatelessWidget {
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: kPurple.withOpacity(0.42),
+            color: kPurple.withValues(alpha: 0.42),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -1898,35 +1884,34 @@ class _CameraFAB extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 // ─────────────────────────────────────────────
 //  Bottom Navigation Bar
 // ─────────────────────────────────────────────
 class _BottomNav extends StatelessWidget {
-  final int currentIndex;
-  final ValueChanged<int> onTap;
 
   const _BottomNav({required this.currentIndex, required this.onTap});
+  final int currentIndex;
+  final ValueChanged<int> onTap;
 
   @override
   Widget build(BuildContext context) {
     final items = [
-      _NavItem(icon: Icons.home_rounded, label: 'Home'),
-      _NavItem(icon: Icons.bar_chart_rounded, label: 'Stats'),
-      _NavItem(icon: Icons.qr_code_scanner_rounded, label: 'Scan'),
-      _NavItem(icon: Icons.smart_toy_outlined, label: 'Coach'),
-      _NavItem(icon: Icons.person_outline_rounded, label: 'Profile'),
+      const _NavItem(icon: Icons.home_rounded, label: 'Home'),
+      const _NavItem(icon: Icons.bar_chart_rounded, label: 'Stats'),
+      const _NavItem(icon: Icons.qr_code_scanner_rounded, label: 'Scan'),
+      const _NavItem(icon: Icons.smart_toy_outlined, label: 'Coach'),
+      const _NavItem(icon: Icons.person_outline_rounded, label: 'Profile'),
     ];
 
     return Container(
       decoration: BoxDecoration(
         color: kWhite,
-        border: Border(top: BorderSide(color: kBorder, width: 1)),
+        border: const Border(top: BorderSide(color: kBorder, width: 1)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -1939,7 +1924,7 @@ class _BottomNav extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: List.generate(items.length, (i) {
-              final bool active = i == currentIndex;
+              final active = i == currentIndex;
               return GestureDetector(
                 onTap: () => onTap(i),
                 behavior: HitTestBehavior.opaque,
@@ -1986,7 +1971,7 @@ class _BottomNav extends StatelessWidget {
 }
 
 class _NavItem {
+  const _NavItem({required this.icon, required this.label});
   final IconData icon;
   final String label;
-  const _NavItem({required this.icon, required this.label});
 }

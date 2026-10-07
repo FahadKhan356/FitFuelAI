@@ -4,14 +4,14 @@ import '../datasources/supabase_remote_datasource.dart';
 import '../models/meal_model.dart';
 
 class MealRepositoryImpl implements MealRepository {
-  final SupabaseRemoteDataSource _dataSource;
 
   MealRepositoryImpl(this._dataSource);
+  final SupabaseRemoteDataSource _dataSource;
 
   @override
   Future<List<MealEntity>> getMealsByDate(String userId, DateTime date) async {
     final models = await _dataSource.getMealsByDate(userId, date);
-    return models.map((m) => _toEntity(m)).toList();
+    return models.map(_toEntity).toList();
   }
 
   @override
@@ -145,12 +145,9 @@ class MealRepositoryImpl implements MealRepository {
     String userId,
     DateTime start,
     DateTime end,
-  ) {
-    return _dataSource.getCalorieTotalsByDateRange(userId, start, end);
-  }
+  ) => _dataSource.getCalorieTotalsByDateRange(userId, start, end);
 
-  MealEntity _toEntity(MealModel model) {
-    return MealEntity(
+  MealEntity _toEntity(MealModel model) => MealEntity(
       id: model.id,
       userId: model.userId,
       date: model.date,
@@ -173,5 +170,4 @@ class MealRepositoryImpl implements MealRepository {
         createdAt: i.createdAt,
       )).toList(),
     );
-  }
 }

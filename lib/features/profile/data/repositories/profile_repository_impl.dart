@@ -4,9 +4,9 @@ import '../../data/models/user_profile_model.dart';
 import '../../domain/repositories/profile_repository.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
-  final SupabaseRemoteDataSource _dataSource;
 
   ProfileRepositoryImpl(this._dataSource);
+  final SupabaseRemoteDataSource _dataSource;
 
   @override
   Future<UserProfileModel> fetchUserProfile(String userId) async {
@@ -48,11 +48,11 @@ class ProfileRepositoryImpl implements ProfileRepository {
 
     final goalType = user.goalType ?? 'maintain';
     final weeklyPace = user.weeklyPaceKg ?? 0.5;
-    final targetWeight = user.goalWeightKg ?? effectiveWeight!;
+    final targetWeight = user.goalWeightKg ?? effectiveWeight;
 
     // Re-run FitnessCalculator with current (possibly updated) metrics.
     final targets = FitnessCalculator.calculateAllTargets(
-      weightKg: effectiveWeight!,
+      weightKg: effectiveWeight,
       heightCm: user.heightCm!,
       age: user.age!,
       gender: user.gender!,
@@ -77,8 +77,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
     return updated;
   }
 
-  UserProfileModel _combine(Map<String, dynamic>? profile, Map<String, dynamic>? goals, String userId) {
-    return UserProfileModel(
+  UserProfileModel _combine(Map<String, dynamic>? profile, Map<String, dynamic>? goals, String userId) => UserProfileModel(
       userId: userId,
       name: profile?['name'] as String?,
       avatarUrl: profile?['avatar_url'] as String?,
@@ -106,7 +105,6 @@ class ProfileRepositoryImpl implements ProfileRepository {
           ? DateTime.tryParse(goals!['target_date'] as String)
           : null,
     );
-  }
 
   /// Robust parser that accepts both native numbers and string-encoded numbers
   /// (e.g. `"160.00"`, `"3"`) since Supabase may return them as strings.

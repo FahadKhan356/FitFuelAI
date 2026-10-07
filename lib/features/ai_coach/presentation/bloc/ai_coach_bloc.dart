@@ -1,5 +1,6 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../../../core/domain/entities/ai_chat_message_entity.dart';
 import '../../../../core/domain/entities/coach_insight.dart';
 import '../../../../core/domain/repositories/ai_coach_repository.dart';
@@ -12,16 +13,16 @@ abstract class AiCoachEvent extends Equatable {
 }
 
 class SendMessage extends AiCoachEvent {
+  const SendMessage(this.userId, this.message);
   final String userId;
   final String message;
-  const SendMessage(this.userId, this.message);
   @override
   List<Object?> get props => [userId, message];
 }
 
 class LoadChatHistory extends AiCoachEvent {
-  final String userId;
   const LoadChatHistory(this.userId);
+  final String userId;
   @override
   List<Object?> get props => [userId];
 }
@@ -29,9 +30,9 @@ class LoadChatHistory extends AiCoachEvent {
 /// Fired by a quick-insight chip: asks the coach for one focused answer built
 /// from the user's own tracking data.
 class FetchInsight extends AiCoachEvent {
+  const FetchInsight(this.userId, this.insight);
   final String userId;
   final CoachInsight insight;
-  const FetchInsight(this.userId, this.insight);
   @override
   List<Object?> get props => [userId, insight];
 }
@@ -48,48 +49,47 @@ class AiCoachInitial extends AiCoachState {}
 class AiCoachLoading extends AiCoachState {}
 
 class AiCoachMessageSent extends AiCoachState {
+  const AiCoachMessageSent(this.userMessage, this.aiResponse);
   final String userMessage;
   final String aiResponse;
-  const AiCoachMessageSent(this.userMessage, this.aiResponse);
   @override
   List<Object?> get props => [userMessage, aiResponse];
 }
 
 class AiCoachHistoryLoaded extends AiCoachState {
-  final List<AiChatMessageEntity> messages;
   const AiCoachHistoryLoaded(this.messages);
+  final List<AiChatMessageEntity> messages;
   @override
   List<Object?> get props => [messages];
 }
 
 /// A quick-insight request is in flight (used to spin on the tapped chip).
 class AiCoachInsightLoading extends AiCoachState {
-  final CoachInsight insight;
   const AiCoachInsightLoading(this.insight);
+  final CoachInsight insight;
   @override
   List<Object?> get props => [insight];
 }
 
 /// A quick-insight answer grounded in the user's tracked data.
 class AiCoachInsightLoaded extends AiCoachState {
+  const AiCoachInsightLoaded(this.insight, this.prompt, this.response);
   final CoachInsight insight;
   final String prompt;
   final String response;
-  const AiCoachInsightLoaded(this.insight, this.prompt, this.response);
   @override
   List<Object?> get props => [insight, prompt, response];
 }
 
 class AiCoachError extends AiCoachState {
-  final String message;
   const AiCoachError(this.message);
+  final String message;
   @override
   List<Object?> get props => [message];
 }
 
 // BLoC
 class AiCoachBloc extends Bloc<AiCoachEvent, AiCoachState> {
-  final AiCoachRepository _aiCoachRepository;
 
   AiCoachBloc({required AiCoachRepository aiCoachRepository})
       : _aiCoachRepository = aiCoachRepository,
@@ -98,6 +98,7 @@ class AiCoachBloc extends Bloc<AiCoachEvent, AiCoachState> {
     on<LoadChatHistory>(_onLoadChatHistory);
     on<FetchInsight>(_onFetchInsight);
   }
+  final AiCoachRepository _aiCoachRepository;
 
   Future<void> _onSendMessage(
     SendMessage event,

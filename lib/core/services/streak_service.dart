@@ -3,6 +3,12 @@ import '../domain/repositories/meal_repository.dart';
 
 /// Result of a streak computation.
 class StreakInfo {
+
+  const StreakInfo({
+    this.current = 0,
+    this.todayActive = false,
+    this.lastActiveDate,
+  });
   /// Number of consecutive days (ending today, or yesterday if today hasn't
   /// had a meal logged yet) on which the user logged at least one meal.
   final int current;
@@ -12,12 +18,6 @@ class StreakInfo {
 
   /// The last date ('yyyy-MM-dd') on which a meal was logged, if any.
   final String? lastActiveDate;
-
-  const StreakInfo({
-    this.current = 0,
-    this.todayActive = false,
-    this.lastActiveDate,
-  });
 }
 
 /// Computes the user's daily meal-tracking streak.

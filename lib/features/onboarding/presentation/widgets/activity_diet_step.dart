@@ -4,16 +4,13 @@ import 'onboarding_step_scaffold.dart';
 
 /// Step 4 — Activity Level & Diet Preference.
 class ActivityDietStep extends StatefulWidget {
+
+  const ActivityDietStep({
+    required this.isSubmitting, required this.onBack, required this.onSubmit, super.key,
+  });
   final bool isSubmitting;
   final VoidCallback onBack;
   final ValueChanged<Map<String, dynamic>> onSubmit;
-
-  const ActivityDietStep({
-    super.key,
-    required this.isSubmitting,
-    required this.onBack,
-    required this.onSubmit,
-  });
 
   @override
   State<ActivityDietStep> createState() => _ActivityDietStepState();
@@ -77,8 +74,7 @@ class _ActivityDietStepState extends State<ActivityDietStep> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return OnboardingStepScaffold(
+  Widget build(BuildContext context) => OnboardingStepScaffold(
       title: 'Activity & Diet',
       subtitle: 'Fuel your body the right way. We’ll tailor your daily targets.',
       showBack: true,
@@ -133,16 +129,14 @@ class _ActivityDietStepState extends State<ActivityDietStep> {
         ],
       ),
     );
-  }
 }
 
 class _FieldLabel extends StatelessWidget {
-  final String text;
   const _FieldLabel(this.text);
+  final String text;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
+  Widget build(BuildContext context) => Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
@@ -153,14 +147,9 @@ class _FieldLabel extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _ActivityOption {
-  final String id;
-  final String title;
-  final String subtitle;
-  final IconData icon;
 
   const _ActivityOption({
     required this.id,
@@ -168,22 +157,25 @@ class _ActivityOption {
     required this.subtitle,
     required this.icon,
   });
+  final String id;
+  final String title;
+  final String subtitle;
+  final IconData icon;
 }
 
 class _ActivityCard extends StatelessWidget {
-  final _ActivityOption option;
-  final bool isSelected;
-  final VoidCallback onTap;
 
   const _ActivityCard({
     required this.option,
     required this.isSelected,
     required this.onTap,
   });
+  final _ActivityOption option;
+  final bool isSelected;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -250,35 +242,33 @@ class _ActivityCard extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _DietOption {
-  final String id;
-  final String title;
-  final IconData icon;
 
   const _DietOption({
     required this.id,
     required this.title,
     required this.icon,
   });
+  final String id;
+  final String title;
+  final IconData icon;
 }
 
 class _DietChip extends StatelessWidget {
-  final _DietOption option;
-  final bool isSelected;
-  final VoidCallback onTap;
 
   const _DietChip({
     required this.option,
     required this.isSelected,
     required this.onTap,
   });
+  final _DietOption option;
+  final bool isSelected;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -323,14 +313,9 @@ class _DietChip extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _StepperField extends StatelessWidget {
-  final int value;
-  final String unit;
-  final VoidCallback onDecrement;
-  final VoidCallback onIncrement;
 
   const _StepperField({
     required this.value,
@@ -338,10 +323,13 @@ class _StepperField extends StatelessWidget {
     required this.onDecrement,
     required this.onIncrement,
   });
+  final int value;
+  final String unit;
+  final VoidCallback onDecrement;
+  final VoidCallback onIncrement;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.5),
@@ -398,5 +386,4 @@ class _StepperField extends StatelessWidget {
         ],
       ),
     );
-  }
 }

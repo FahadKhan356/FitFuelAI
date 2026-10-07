@@ -91,6 +91,15 @@ extension BmiCategoryInfo on BmiCategory {
 
 /// The outcome of a single BMI calculation.
 class BmiResult {
+
+  const BmiResult({
+    required this.bmi,
+    required this.category,
+    required this.bmiPrime,
+    required this.healthyWeightMinKg,
+    required this.healthyWeightMaxKg,
+    required this.deltaToHealthyKg,
+  });
   final double bmi;
   final BmiCategory category;
 
@@ -105,15 +114,6 @@ class BmiResult {
   /// to _gain_ weight, positive when they need to _lose_ weight, zero when
   /// already inside the healthy band.
   final double deltaToHealthyKg;
-
-  const BmiResult({
-    required this.bmi,
-    required this.category,
-    required this.bmiPrime,
-    required this.healthyWeightMinKg,
-    required this.healthyWeightMaxKg,
-    required this.deltaToHealthyKg,
-  });
 }
 
 class BmiCalculator {

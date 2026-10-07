@@ -18,7 +18,15 @@ const Color kGreen = Color(0xFF34C759);
 const Color kOrange = Color(0xFFFFA040);
 
 class CameraScanScreen extends StatefulWidget {
-  const CameraScanScreen({super.key});
+
+  const CameraScanScreen({super.key, this.embedded = false});
+  /// True when this screen is hosted inside the home bottom-navigation "Scan"
+  /// tab instead of being pushed as its own route.
+  ///
+  /// In that case it hides the back button and resets itself after logging a
+  /// meal, because there is no route to pop. Both entry points (the camera FAB
+  /// and the Scan tab) show this same screen.
+  final bool embedded;
 
   @override
   State<CameraScanScreen> createState() => _CameraScanScreenState();
@@ -118,7 +126,9 @@ class _CameraScanScreenState extends State<CameraScanScreen> {
           }).toList());
       final confidence = _results.isEmpty
           ? 0.0
-          : _results.fold(0.0, (sum, item) => sum + item.confidence) /
+          // Explicit <double> keeps the fold accumulator a double. A bare `0`
+          // with no type argument would make it an int and break the sum.
+          : _results.fold<double>(0, (sum, item) => sum + item.confidence) /
               _results.length;
       await client.from('food_scans').insert({
         'user_id': user.id,
@@ -130,22 +140,24 @@ class _CameraScanScreenState extends State<CameraScanScreen> {
       if (!mounted) return;
       HomeDataRefreshNotifier.instance.refresh();
       _showMessage('Meal logged successfully!');
-      Navigator.of(context).pop();
+      if (widget.embedded) {
+        // The Scan tab has no route to pop, so go back to the capture state.
+        _retake();
+      } else {
+        Navigator.of(context).pop();
+      }
     } catch (_) {
       if (mounted) _showMessage('Could not save meal. Try again.');
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          _capturedImage == null
-              ? const _CameraPlaceholder()
-              : Image.file(_capturedImage!, fit: BoxFit.cover),
+          if (_capturedImage == null) const _CameraPlaceholder() else Image.file(_capturedImage!, fit: BoxFit.cover),
           const DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -159,8 +171,13 @@ class _CameraScanScreenState extends State<CameraScanScreen> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
               child: Row(children: [
-                _roundButton(
-                    Icons.arrow_back_ios_new, () => Navigator.pop(context)),
+                if (widget.embedded)
+                  // Hosted in the Scan tab: there is nothing to pop back to, so
+                  // keep the title centred without a back button.
+                  const SizedBox(width: 44)
+                else
+                  _roundButton(
+                      Icons.arrow_back_ios_new, () => Navigator.pop(context)),
                 const Expanded(
                   child: Text('FitFuel Scan',
                       textAlign: TextAlign.center,
@@ -222,7 +239,6 @@ class _CameraScanScreenState extends State<CameraScanScreen> {
         ],
       ),
     );
-  }
 
   Widget _roundButton(IconData icon, VoidCallback onTap) => Material(
         color: const Color(0x44000000),

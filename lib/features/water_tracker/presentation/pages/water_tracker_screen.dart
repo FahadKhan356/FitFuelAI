@@ -1,12 +1,12 @@
+import 'package:fitfuel_ai/core/constants/app_colors.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/services/water_goal_resolver.dart';
 import '../bloc/water_tracker_bloc.dart';
-import 'package:intl/intl.dart';
-
-import 'package:fitfuel_ai/core/constants/app_colors.dart';
-import 'package:flutter/material.dart';
 
 const _bg = Color(0xFFF7F6FB);
 const _surface = Colors.white;
@@ -83,8 +83,7 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider.value(
+  Widget build(BuildContext context) => BlocProvider.value(
       value: _bloc,
       child: BlocListener<WaterTrackerBloc, WaterTrackerState>(
         listener: (context, state) {
@@ -128,8 +127,8 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
               Expanded(
                 child: BlocBuilder<WaterTrackerBloc, WaterTrackerState>(
                   builder: (context, state) {
-                    int waterIntake = 0;
-                    List<_HistoryRow> historyItems = [];
+                    var waterIntake = 0;
+                    var historyItems = <_HistoryRow>[];
 
                     if (state is WaterDataLoaded) {
                       waterIntake = state.totalMl;
@@ -376,9 +375,9 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
                     ],
                   ),
                         const SizedBox(height: 18),
-                        Row(
+                        const Row(
                           children: [
-                            const Text(
+                            Text(
                               "TODAY'S HISTORY",
                               style: TextStyle(
                                 fontSize: 12,
@@ -416,8 +415,6 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
         ),
       ),
     )));
-
-  }
 }
 
 class _IconButton extends StatelessWidget {
@@ -430,8 +427,7 @@ class _IconButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Material(
+  Widget build(BuildContext context) => Material(
       color: Colors.transparent,
       child: InkResponse(
         onTap: onTap,
@@ -443,7 +439,6 @@ class _IconButton extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _ModeButton extends StatelessWidget {
@@ -462,8 +457,7 @@ class _ModeButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -493,7 +487,6 @@ class _ModeButton extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _QuickLogCard extends StatelessWidget {
@@ -514,8 +507,7 @@ class _QuickLogCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
+  Widget build(BuildContext context) => GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.fromLTRB(10, 12, 10, 12),
@@ -566,7 +558,6 @@ class _QuickLogCard extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _HistoryCard extends StatelessWidget {
@@ -575,8 +566,7 @@ class _HistoryCard extends StatelessWidget {
   final List<_HistoryRow> items;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       decoration: BoxDecoration(
         color: _surface,
         borderRadius: BorderRadius.circular(16),
@@ -599,7 +589,6 @@ class _HistoryCard extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 class _HistoryTile extends StatelessWidget {
@@ -608,8 +597,7 @@ class _HistoryTile extends StatelessWidget {
   final _HistoryRow row;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
+  Widget build(BuildContext context) => Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
         children: [
@@ -658,7 +646,6 @@ class _HistoryTile extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 class _HistoryRow {
@@ -677,8 +664,7 @@ class _TipCard extends StatelessWidget {
   const _TipCard();
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       decoration: BoxDecoration(
         color: const Color(0xFFEAF2FF),
@@ -726,20 +712,18 @@ class _TipCard extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 // ─────────────────────────────────────────────
 //  Water Entry Bottom Sheet
 // ─────────────────────────────────────────────
 class WaterEntryBottomSheet extends StatefulWidget {
-  final void Function(int amount, bool isSubtract) onWaterAdded;
-  final bool initialSubtract;
 
-  const WaterEntryBottomSheet({
-    required this.onWaterAdded,
+  const WaterEntryBottomSheet({required this.onWaterAdded, super.key,
     this.initialSubtract = false,
   });
+  final void Function(int amount, bool isSubtract) onWaterAdded;
+  final bool initialSubtract;
 
   @override
   State<WaterEntryBottomSheet> createState() => _WaterEntryBottomSheetState();
@@ -775,8 +759,7 @@ class _WaterEntryBottomSheetState extends State<WaterEntryBottomSheet> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return AnimatedPadding(
+  Widget build(BuildContext context) => AnimatedPadding(
       duration: const Duration(milliseconds: 200),
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
@@ -990,26 +973,24 @@ class _WaterEntryBottomSheetState extends State<WaterEntryBottomSheet> {
         ),
       ),
     );
-  }
 }
 
 // ─────────────────────────────────────────────
 //  Quick Water Button
 // ─────────────────────────────────────────────
 class _QuickWaterButton extends StatelessWidget {
-  final int amount;
-  final bool isSelected;
-  final VoidCallback onTap;
 
   const _QuickWaterButton({
     required this.amount,
     required this.isSelected,
     required this.onTap,
   });
+  final int amount;
+  final bool isSelected;
+  final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Expanded(
+  Widget build(BuildContext context) => Expanded(
       child: GestureDetector(
         onTap: onTap,
         child: Container(
@@ -1034,5 +1015,4 @@ class _QuickWaterButton extends StatelessWidget {
         ),
       ),
     );
-  }
 }

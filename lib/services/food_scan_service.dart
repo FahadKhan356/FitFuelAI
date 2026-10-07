@@ -23,15 +23,6 @@ class ScannedFoodItem {
     this.imageUrl,
   });
 
-  final String name;
-  final double weightG;
-  final double calories;
-  final double proteinG;
-  final double carbsG;
-  final double fatG;
-  final double confidence;
-  final String? imageUrl;
-
   factory ScannedFoodItem.fromJson(Map<String, dynamic> json) {
     double number(dynamic value) => value is num
         ? value.toDouble()
@@ -48,6 +39,15 @@ class ScannedFoodItem {
       imageUrl: json['image_url']?.toString(),
     );
   }
+
+  final String name;
+  final double weightG;
+  final double calories;
+  final double proteinG;
+  final double carbsG;
+  final double fatG;
+  final double confidence;
+  final String? imageUrl;
 
   Map<String, dynamic> toJson() => {
         'name': name,
@@ -73,8 +73,6 @@ class VerifiedFoodItem extends ScannedFoodItem {
     super.imageUrl,
     this.dbVerified = false,
   });
-
-  final bool dbVerified;
 
   factory VerifiedFoodItem.fromDbValues(
     ScannedFoodItem geminiItem,
@@ -109,6 +107,8 @@ class VerifiedFoodItem extends ScannedFoodItem {
         imageUrl: item.imageUrl,
       );
 
+  final bool dbVerified;
+
   @override
   Map<String, dynamic> toJson() =>
       {...super.toJson(), 'db_verified': dbVerified};
@@ -119,7 +119,8 @@ class FoodScanService {
   static DateTime? _fatSecretTokenExpiry;
   String? lastError;
 
-  static const _prompt = '''You are a professional nutritionist AI.
+  static const _prompt = '''
+You are a professional nutritionist AI.
 Analyze this food image carefully.
 Identify every food item visible.
 For each item estimate portion weight using visual cues such as plate size and utensil size.
@@ -219,8 +220,9 @@ Rules:
     // declaring them JPEGs (the former source of the unreadable result).
     if (decoded == null) {
       final mimeType = _heifMimeType(bytes);
-      if (mimeType == null)
+      if (mimeType == null) {
         throw const FormatException('unsupported image format');
+      }
       return _GeminiImage(base64Encode(bytes), mimeType);
     }
     final normalized = decoded.width > 1600 || decoded.height > 1600
@@ -238,7 +240,9 @@ Rules:
 
   String? _heifMimeType(List<int> bytes) {
     if (bytes.length < 12 ||
-        String.fromCharCodes(bytes.sublist(4, 8)) != 'ftyp') return null;
+        String.fromCharCodes(bytes.sublist(4, 8)) != 'ftyp') {
+      return null;
+    }
     final brand = String.fromCharCodes(bytes.sublist(8, 12)).toLowerCase();
     if (const {'heic', 'heix', 'hevc', 'hevx'}.contains(brand)) {
       return 'image/heic';
@@ -306,7 +310,7 @@ Rules:
   }
 
   List<ScannedFoodItem> _parseFoodItems(String text) {
-    var cleaned = text
+    final cleaned = text
         .replaceAll(RegExp(r'^\s*```(?:json)?\s*', multiLine: true), '')
         .replaceAll(RegExp(r'\s*```\s*$', multiLine: true), '')
         .replaceAll(RegExp(r',\s*([}\]])'), r'$1')
@@ -321,10 +325,12 @@ Rules:
       decoded = jsonDecode(cleaned.substring(first, last + 1));
     }
     // Accept common valid wrapper shapes as a compatibility fallback.
-    if (decoded is Map)
+    if (decoded is Map) {
       decoded = decoded['foods'] ?? decoded['items'] ?? decoded['results'];
-    if (decoded is! List)
+    }
+    if (decoded is! List) {
       throw const FormatException('food result is not a list');
+    }
     return decoded
         .whereType<Map>()
         .map((item) => ScannedFoodItem.fromJson(
@@ -418,8 +424,9 @@ Rules:
       final fat = value(r'Fat:\s*([\d.]+)\s*g');
       final carbs = value(r'Carbs:\s*([\d.]+)\s*g');
       final protein = value(r'Protein:\s*([\d.]+)\s*g');
-      if ([calories, fat, carbs, protein].any((item) => item == null))
+      if ([calories, fat, carbs, protein].any((item) => item == null)) {
         return null;
+      }
       return {
         'name': food['food_name']?.toString() ?? foodName,
         'calories': calories,

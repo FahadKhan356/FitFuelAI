@@ -91,8 +91,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider.value(
+  Widget build(BuildContext context) => BlocProvider.value(
       value: _bloc,
       child: BlocBuilder<AchievementsBloc, AchievementsState>(
         builder: (context, state) {
@@ -497,7 +496,6 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
         },
       ),
     );
-  }
 }
 
 class _IconButton extends StatelessWidget {
@@ -510,8 +508,7 @@ class _IconButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Material(
+  Widget build(BuildContext context) => Material(
       color: Colors.transparent,
       child: InkResponse(
         onTap: onTap,
@@ -523,7 +520,6 @@ class _IconButton extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 /// The newest badge the user actually owns, or a prompt to start earning one.
@@ -623,8 +619,7 @@ class _EliteBadge extends StatelessWidget {
   final String label;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: _purpleSoft,
@@ -641,7 +636,6 @@ class _EliteBadge extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _StatCard extends StatelessWidget {
@@ -662,8 +656,7 @@ class _StatCard extends StatelessWidget {
   final String? badge;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
       decoration: BoxDecoration(
         color: _surface,
@@ -731,7 +724,6 @@ class _StatCard extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 /// One gallery tile, rendered straight from the badge's real progress.
@@ -1026,8 +1018,7 @@ class _LeaderboardSection extends StatelessWidget {
   final VoidCallback onRetry;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
+  Widget build(BuildContext context) => Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
@@ -1125,7 +1116,6 @@ class _LeaderboardSection extends StatelessWidget {
           ),
       ],
     );
-  }
 }
 
 
@@ -1141,8 +1131,7 @@ class _ScopeChip extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Material(
+  Widget build(BuildContext context) => Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
@@ -1166,7 +1155,6 @@ class _ScopeChip extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _LeaderboardRow extends StatelessWidget {
@@ -1337,8 +1325,7 @@ class _LeaderboardMessage extends StatelessWidget {
   final VoidCallback? onRetry;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
       decoration: BoxDecoration(
         color: _surface,
@@ -1374,7 +1361,6 @@ class _LeaderboardMessage extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 /// Shown when the sync itself failed. Retrying is always safe because the
@@ -1386,8 +1372,7 @@ class _ErrorView extends StatelessWidget {
   final VoidCallback onRetry;
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
+  Widget build(BuildContext context) => Center(
       child: Padding(
         padding: const EdgeInsets.all(28),
         child: Column(
@@ -1428,7 +1413,6 @@ class _ErrorView extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 /// XP reads grouped everywhere, e.g. 12450 renders as "12,450".

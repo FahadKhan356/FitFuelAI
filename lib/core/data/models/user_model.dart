@@ -2,30 +2,6 @@
 ///
 /// Maps to Supabase tables `user_profiles` and `goals`.
 class UserModel {
-  final String id;
-  final String? email;
-  final String? name;
-  final String? avatarUrl;
-
-  // ── user_profiles columns ──
-  final int? age;
-  final String? gender;
-  final double? heightCm;
-  final double? weightKg;
-  final String? activityLevel;
-  final String? dietPreference;
-  final int? workoutFrequency;
-
-  // ── goals columns ──
-  final String? goalType;
-  final double? targetWeightKg;
-  final double? weeklyPaceKg;
-  final DateTime? targetDate;
-  final int? targetCalories;
-  final double? targetProtein;
-  final double? targetCarbs;
-  final double? targetFat;
-  final int? dailyWaterMl;
 
   const UserModel({
     required this.id,
@@ -49,20 +25,6 @@ class UserModel {
     this.targetFat,
     this.dailyWaterMl,
   });
-
-  static double? _parseDouble(dynamic value) {
-    if (value == null) return null;
-    if (value is num) return value.toDouble();
-    if (value is String) return double.tryParse(value);
-    return null;
-  }
-
-  static int? _parseInt(dynamic value) {
-    if (value == null) return null;
-    if (value is num) return value.toInt();
-    if (value is String) return int.tryParse(value) ?? double.tryParse(value)?.toInt();
-    return null;
-  }
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     // Support both flat unified maps and nested {profile, goals} maps.
@@ -100,10 +62,47 @@ class UserModel {
       dailyWaterMl: _parseInt(goals['daily_water_ml']) ?? _parseInt(json['daily_water_ml']),
     );
   }
+  final String id;
+  final String? email;
+  final String? name;
+  final String? avatarUrl;
+
+  // ── user_profiles columns ──
+  final int? age;
+  final String? gender;
+  final double? heightCm;
+  final double? weightKg;
+  final String? activityLevel;
+  final String? dietPreference;
+  final int? workoutFrequency;
+
+  // ── goals columns ──
+  final String? goalType;
+  final double? targetWeightKg;
+  final double? weeklyPaceKg;
+  final DateTime? targetDate;
+  final int? targetCalories;
+  final double? targetProtein;
+  final double? targetCarbs;
+  final double? targetFat;
+  final int? dailyWaterMl;
+
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  static int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? double.tryParse(value)?.toInt();
+    return null;
+  }
 
   /// Map for the `user_profiles` Supabase table (Upsert).
-  Map<String, dynamic> toProfileJson() {
-    return {
+  Map<String, dynamic> toProfileJson() => {
       'user_id': id,
       if (name != null) 'name': name,
       if (avatarUrl != null) 'avatar_url': avatarUrl,
@@ -117,12 +116,10 @@ class UserModel {
       if (dietPreference != null) 'diet_preference': dietPreference,
       if (workoutFrequency != null) 'workout_frequency': workoutFrequency,
     };
-  }
 
 
   /// Map for the `goals` Supabase table (Upsert).
-  Map<String, dynamic> toGoalsJson() {
-    return {
+  Map<String, dynamic> toGoalsJson() => {
       'user_id': id,
       if (goalType != null) 'goal_type': goalType,
       if (targetWeightKg != null) 'target_weight_kg': targetWeightKg,
@@ -134,7 +131,6 @@ class UserModel {
       if (targetFat != null) 'target_fat': targetFat,
       if (dailyWaterMl != null) 'daily_water_ml': dailyWaterMl,
     };
-  }
 
   UserModel copyWith({
     String? id,
@@ -157,8 +153,7 @@ class UserModel {
     double? targetCarbs,
     double? targetFat,
     int? dailyWaterMl,
-  }) {
-    return UserModel(
+  }) => UserModel(
       id: id ?? this.id,
       email: email ?? this.email,
       name: name ?? this.name,
@@ -180,5 +175,4 @@ class UserModel {
       targetFat: targetFat ?? this.targetFat,
       dailyWaterMl: dailyWaterMl ?? this.dailyWaterMl,
     );
-  }
 }

@@ -102,8 +102,7 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: const Color(AppColors.authBackground),
       body: SafeArea(
         child: Column(
@@ -260,7 +259,6 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
       ),
     );
-  }
 
   Widget _buildTextField({
     required TextEditingController controller,
@@ -269,8 +267,7 @@ class _SignupScreenState extends State<SignupScreen> {
     TextInputType? keyboardType,
     bool obscureText = false,
     VoidCallback? onToggleObscure,
-  }) {
-    return TextField(
+  }) => TextField(
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
@@ -301,22 +298,22 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: const Color(AppColors.authBorder),
+          borderSide: const BorderSide(
+            color: Color(AppColors.authBorder),
             width: 1.2,
           ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: const Color(AppColors.authBorder),
+          borderSide: const BorderSide(
+            color: Color(AppColors.authBorder),
             width: 1.2,
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: const Color(AppColors.authPurple),
+          borderSide: const BorderSide(
+            color: Color(AppColors.authPurple),
             width: 1.8,
           ),
         ),
@@ -326,19 +323,17 @@ class _SignupScreenState extends State<SignupScreen> {
         ),
       ),
     );
-  }
 }
 
 // ── Auth Button ──
 class _AuthButton extends StatelessWidget {
+
+  const _AuthButton({required this.label, required this.onTap});
   final String label;
   final VoidCallback onTap;
 
-  const _AuthButton({required this.label, required this.onTap});
-
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       width: double.infinity,
       height: 56,
       decoration: BoxDecoration(
@@ -379,5 +374,4 @@ class _AuthButton extends StatelessWidget {
         ),
       ),
     );
-  }
 }

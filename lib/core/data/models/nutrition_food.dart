@@ -1,24 +1,6 @@
 /// Nutrition values per 100 g returned by the real food APIs
 /// (USDA / OpenFoodFacts / CalorieNinjas).
 class NutritionFood {
-  final String source; // 'USDA' | 'OpenFoodFacts' | 'CalorieNinjas' | 'Local'
-  final String externalId;
-  final String name;
-  final String? brand;
-  final String? imageUrl;
-
-  final double energyKcal;
-  final double protein;
-  final double carbs;
-  final double fat;
-  final double saturatedFatG;
-  final double fiber;
-  final double sugar;
-  final double sodiumMg;
-  final double potassiumMg;
-  final double calciumMg;
-  final double ironMg;
-  final double vitaminCMg;
 
   const NutritionFood({
     required this.source,
@@ -39,4 +21,22 @@ class NutritionFood {
     this.ironMg = 0,
     this.vitaminCMg = 0,
   });
+  final String source; // 'USDA' | 'OpenFoodFacts' | 'CalorieNinjas' | 'Local'
+  final String externalId;
+  final String name;
+  final String? brand;
+  final String? imageUrl;
+
+  final double energyKcal;
+  final double protein;
+  final double carbs;
+  final double fat;
+  final double saturatedFatG;
+  final double fiber;
+  final double sugar;
+  final double sodiumMg;
+  final double potassiumMg;
+  final double calciumMg;
+  final double ironMg;
+  final double vitaminCMg;
 }

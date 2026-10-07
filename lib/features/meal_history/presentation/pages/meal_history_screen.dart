@@ -1,12 +1,10 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fitfuel_ai/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 
 const _bg = Color(0xFFF7F6FB);
 const _surface = Colors.white;
 const _purple = Color(AppColors.authPurple);
-const _purpleLight = Color(0xFFEDEBFB);
-const _purpleSoft = Color(0xFFF3F0FF);
 const _textPrimary = Color(0xFF1F1F2E);
 const _textSecondary = Color(0xFF70707C);
 const _border = Color(0xFFE7E3EF);
@@ -16,8 +14,7 @@ class MealHistoryScreen extends StatelessWidget {
   const MealHistoryScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  Widget build(BuildContext context) => Scaffold(
       backgroundColor: _bg,
       body: SafeArea(
         child: Column(
@@ -47,19 +44,19 @@ class MealHistoryScreen extends StatelessWidget {
               child: ListView(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
-                children: [
-                  const _SearchBar(),
-                  const SizedBox(height: 16),
-                  const _FilterChips(),
-                  const SizedBox(height: 18),
+                children: const [
+                  _SearchBar(),
+                  SizedBox(height: 16),
+                  _FilterChips(),
+                  SizedBox(height: 18),
                   _DayHeader(
                     title: 'Today',
                     dateLabel: 'Oct 24',
                     totalLabel: 'TOTAL',
                     totalValue: '1,450 / 2,100 kcal',
                   ),
-                  const SizedBox(height: 12),
-                  const _MealEntryCard(
+                  SizedBox(height: 12),
+                  _MealEntryCard(
                     category: 'LUNCH',
                     time: '01:45 PM',
                     title: 'Grilled Salmon & more',
@@ -70,8 +67,8 @@ class MealHistoryScreen extends StatelessWidget {
                     fat: '22g',
                     thumbnail: _ThumbnailStyle.salmon,
                   ),
-                  const SizedBox(height: 18),
-                  const _MealEntryCard(
+                  SizedBox(height: 18),
+                  _MealEntryCard(
                     category: 'BREAKFAST',
                     time: '08:15 AM',
                     title: 'Greek Yogurt & more',
@@ -82,15 +79,15 @@ class MealHistoryScreen extends StatelessWidget {
                     fat: '8g',
                     thumbnail: _ThumbnailStyle.yogurt,
                   ),
-                  const SizedBox(height: 22),
+                  SizedBox(height: 22),
                   _DayHeader(
                     title: 'Yesterday',
                     dateLabel: 'Oct 23',
                     totalLabel: 'TOTAL',
                     totalValue: '2,050 / 2,100 kcal',
                   ),
-                  const SizedBox(height: 12),
-                  const _MealEntryCard(
+                  SizedBox(height: 12),
+                  _MealEntryCard(
                     category: 'DINNER',
                     time: '07:30 PM',
                     title: 'Stir-fry Tofu & more',
@@ -101,8 +98,8 @@ class MealHistoryScreen extends StatelessWidget {
                     fat: '12g',
                     thumbnail: _ThumbnailStyle.tofu,
                   ),
-                  const SizedBox(height: 18),
-                  const _MealEntryCard(
+                  SizedBox(height: 18),
+                  _MealEntryCard(
                     category: 'SNACK',
                     time: '04:00 PM',
                     title: 'Almonds & more',
@@ -120,7 +117,6 @@ class MealHistoryScreen extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _IconButton extends StatelessWidget {
@@ -133,8 +129,7 @@ class _IconButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return Material(
+  Widget build(BuildContext context) => Material(
       color: Colors.transparent,
       child: InkResponse(
         onTap: onTap,
@@ -146,15 +141,13 @@ class _IconButton extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _SearchBar extends StatelessWidget {
   const _SearchBar();
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       height: 54,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
@@ -186,15 +179,13 @@ class _SearchBar extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 class _FilterChips extends StatelessWidget {
   const _FilterChips();
 
   @override
-  Widget build(BuildContext context) {
-    return SizedBox(
+  Widget build(BuildContext context) => SizedBox(
       height: 40,
       child: ListView(
         scrollDirection: Axis.horizontal,
@@ -210,7 +201,6 @@ class _FilterChips extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 class _FilterChip extends StatelessWidget {
@@ -223,8 +213,7 @@ class _FilterChip extends StatelessWidget {
   final bool selected;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
       decoration: BoxDecoration(
         color: selected ? _purple : _surface,
@@ -252,7 +241,6 @@ class _FilterChip extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 class _DayHeader extends StatelessWidget {
@@ -269,8 +257,7 @@ class _DayHeader extends StatelessWidget {
   final String totalValue;
 
   @override
-  Widget build(BuildContext context) {
-    return Row(
+  Widget build(BuildContext context) => Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
@@ -324,7 +311,6 @@ class _DayHeader extends StatelessWidget {
         ),
       ],
     );
-  }
 }
 
 class _MealEntryCard extends StatelessWidget {
@@ -351,8 +337,7 @@ class _MealEntryCard extends StatelessWidget {
   final _ThumbnailStyle thumbnail;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       margin: const EdgeInsets.only(left: 14),
       decoration: BoxDecoration(
         color: _surface,
@@ -479,9 +464,9 @@ class _MealEntryCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 14),
-                Row(
+                const Row(
                   mainAxisAlignment: MainAxisAlignment.end,
-                  children: const [
+                  children: [
                     _ActionPill(icon: Icons.edit_outlined, label: 'Edit'),
                     SizedBox(width: 10),
                     _ActionPill(icon: Icons.add, label: 'Re-add'),
@@ -493,7 +478,6 @@ class _MealEntryCard extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 const _cyan = Color(0xFF35D1F2);
@@ -502,8 +486,7 @@ class _TimelineDot extends StatelessWidget {
   const _TimelineDot();
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
+  Widget build(BuildContext context) => Column(
       children: [
         const SizedBox(height: 18),
         Container(
@@ -530,7 +513,6 @@ class _TimelineDot extends StatelessWidget {
         ),
       ],
     );
-  }
 }
 
 class _MealThumb extends StatelessWidget {
@@ -552,8 +534,7 @@ class _MealThumb extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       width: 86,
       height: 86,
       decoration: BoxDecoration(
@@ -564,8 +545,8 @@ class _MealThumb extends StatelessWidget {
         child: CachedNetworkImage(
           imageUrl: _imageUrl,
           placeholder: (context, url) => Container(
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [Color(0xFFF2D6B5), Color(0xFFD79A6B)],
@@ -583,8 +564,8 @@ class _MealThumb extends StatelessWidget {
             ),
           ),
           errorWidget: (context, url, error) => Container(
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [Color(0xFFF2D6B5), Color(0xFFD79A6B)],
@@ -600,7 +581,6 @@ class _MealThumb extends StatelessWidget {
         ),
       ),
     );
-  }
 }
 
 enum _ThumbnailStyle { salmon, yogurt, tofu, almonds }
@@ -617,8 +597,7 @@ class _MacroItem extends StatelessWidget {
   final Color accent;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
+  Widget build(BuildContext context) => Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
@@ -651,7 +630,6 @@ class _MacroItem extends StatelessWidget {
         ),
       ],
     );
-  }
 }
 
 class _ActionPill extends StatelessWidget {
@@ -664,8 +642,7 @@ class _ActionPill extends StatelessWidget {
   final String label;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
+  Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
         color: const Color(0xFFFAFAFC),
@@ -688,7 +665,6 @@ class _ActionPill extends StatelessWidget {
         ],
       ),
     );
-  }
 }
 
 IconData _iconForCategory(String category) {

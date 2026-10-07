@@ -97,8 +97,7 @@ class AchievementsLoaded extends AchievementsState {
     bool? leaderboardLoading,
     String? leaderboardError,
     bool clearLeaderboardError = false,
-  }) {
-    return AchievementsLoaded(
+  }) => AchievementsLoaded(
       summary: summary ?? this.summary,
       newlyUnlocked: newlyUnlocked ?? this.newlyUnlocked,
       xpAwarded: xpAwarded ?? this.xpAwarded,
@@ -109,7 +108,6 @@ class AchievementsLoaded extends AchievementsState {
           ? null
           : (leaderboardError ?? this.leaderboardError),
     );
-  }
 
   @override
   List<Object?> get props => [

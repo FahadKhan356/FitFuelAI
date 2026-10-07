@@ -1,12 +1,4 @@
 class WeightModel {
-  final String id;
-  final String userId;
-  final DateTime date;
-  final double weightKg;
-  final double? bmi;
-  final double? bodyFat;
-  final String? notes;
-  final DateTime? createdAt;
 
   const WeightModel({
     required this.id,
@@ -19,8 +11,7 @@ class WeightModel {
     this.createdAt,
   });
 
-  factory WeightModel.fromJson(Map<String, dynamic> json) {
-    return WeightModel(
+  factory WeightModel.fromJson(Map<String, dynamic> json) => WeightModel(
       id: json['id'] as String,
       userId: json['user_id'] as String,
       date: DateTime.parse(json['date'] as String),
@@ -30,10 +21,16 @@ class WeightModel {
       notes: json['notes'] as String?,
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'] as String) : null,
     );
-  }
+  final String id;
+  final String userId;
+  final DateTime date;
+  final double weightKg;
+  final double? bmi;
+  final double? bodyFat;
+  final String? notes;
+  final DateTime? createdAt;
 
-  Map<String, dynamic> toJson() {
-    return {
+  Map<String, dynamic> toJson() => {
       'id': id,
       'user_id': userId,
       'date': date.toIso8601String().split('T').first,
@@ -43,5 +40,4 @@ class WeightModel {
       if (notes != null) 'notes': notes,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
     };
-  }
 }

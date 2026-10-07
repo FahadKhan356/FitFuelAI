@@ -3,10 +3,6 @@
 /// [waterByDate] and [caloriesByDate] map a `'yyyy-MM-dd'` date string to the
 /// total amount consumed that day. Targets are the user's daily goals.
 class CalendarTracking {
-  final Map<String, int> waterByDate;
-  final Map<String, int> caloriesByDate;
-  final int targetCalories;
-  final int targetWaterMl;
 
   const CalendarTracking({
     this.waterByDate = const {},
@@ -14,6 +10,10 @@ class CalendarTracking {
     this.targetCalories = 0,
     this.targetWaterMl = 0,
   });
+  final Map<String, int> waterByDate;
+  final Map<String, int> caloriesByDate;
+  final int targetCalories;
+  final int targetWaterMl;
 
   /// Simplifies today's (date-only) key.
   static String keyOf(DateTime date) =>

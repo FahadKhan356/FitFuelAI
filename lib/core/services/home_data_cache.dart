@@ -2,6 +2,33 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeCachedData {
+
+  HomeCachedData({
+    required this.targetCalories, required this.targetProtein, required this.targetCarbs, required this.targetFat, required this.targetWaterMl, this.name,
+    this.consumedCalories = 0,
+    this.burnedCalories = 0,
+    this.consumedProtein = 0.0,
+    this.consumedCarbs = 0.0,
+    this.consumedFat = 0.0,
+    this.consumedWaterMl = 0,
+    String? savedAt,
+  }) : savedAt = savedAt ?? '';
+
+  factory HomeCachedData.fromJson(Map<String, dynamic> json) => HomeCachedData(
+        name: json['name'] as String?,
+        targetCalories: _parseInt(json['target_calories']),
+        consumedCalories: _parseInt(json['consumed_calories']),
+        burnedCalories: _parseInt(json['burned_calories']),
+        targetProtein: _parseDouble(json['target_protein']),
+        consumedProtein: _parseDouble(json['consumed_protein']),
+        targetCarbs: _parseDouble(json['target_carbs']),
+        consumedCarbs: _parseDouble(json['consumed_carbs']),
+        targetFat: _parseDouble(json['target_fat']),
+        consumedFat: _parseDouble(json['consumed_fat']),
+        targetWaterMl: _parseInt(json['target_water_ml']),
+        consumedWaterMl: _parseInt(json['consumed_water_ml']),
+        savedAt: json['saved_at'] as String?,
+      );
   final String? name;
   final int targetCalories;
   final int consumedCalories;
@@ -19,22 +46,6 @@ class HomeCachedData {
   /// invalidate stale data so a previous day's totals (e.g. consumed calories)
   /// are never shown as today's.
   final String savedAt;
-
-  HomeCachedData({
-    this.name,
-    required this.targetCalories,
-    this.consumedCalories = 0,
-    this.burnedCalories = 0,
-    required this.targetProtein,
-    this.consumedProtein = 0.0,
-    required this.targetCarbs,
-    this.consumedCarbs = 0.0,
-    required this.targetFat,
-    this.consumedFat = 0.0,
-    required this.targetWaterMl,
-    this.consumedWaterMl = 0,
-    String? savedAt,
-  }) : savedAt = savedAt ?? '';
 
   /// True when this snapshot was saved for the current calendar day.
   bool get isCurrent => savedAt == HomeDataCache.todayStr();
@@ -56,10 +67,10 @@ class HomeCachedData {
       };
 
   static double _parseDouble(dynamic value) {
-    if (value == null) return 0.0;
+    if (value == null) return 0;
     if (value is num) return value.toDouble();
     if (value is String) return double.tryParse(value) ?? 0.0;
-    return 0.0;
+    return 0;
   }
 
   static int _parseInt(dynamic value) {
@@ -68,22 +79,6 @@ class HomeCachedData {
     if (value is String) return int.tryParse(value) ?? double.tryParse(value)?.toInt() ?? 0;
     return 0;
   }
-
-  factory HomeCachedData.fromJson(Map<String, dynamic> json) => HomeCachedData(
-        name: json['name'] as String?,
-        targetCalories: _parseInt(json['target_calories']),
-        consumedCalories: _parseInt(json['consumed_calories']),
-        burnedCalories: _parseInt(json['burned_calories']),
-        targetProtein: _parseDouble(json['target_protein']),
-        consumedProtein: _parseDouble(json['consumed_protein']),
-        targetCarbs: _parseDouble(json['target_carbs']),
-        consumedCarbs: _parseDouble(json['consumed_carbs']),
-        targetFat: _parseDouble(json['target_fat']),
-        consumedFat: _parseDouble(json['consumed_fat']),
-        targetWaterMl: _parseInt(json['target_water_ml']),
-        consumedWaterMl: _parseInt(json['consumed_water_ml']),
-        savedAt: json['saved_at'] as String?,
-      );
 }
 
 class HomeDataCache {

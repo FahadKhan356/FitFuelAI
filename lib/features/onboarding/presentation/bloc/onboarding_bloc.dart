@@ -14,8 +14,6 @@ import 'onboarding_state.dart';
 const int kMaxOnboardingStep = 3;
 
 class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
-  final OnboardingRepository _onboardingRepository;
-  final SupabaseRemoteDataSource _dataSource;
 
   OnboardingBloc({
     required OnboardingRepository onboardingRepository,
@@ -27,6 +25,8 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
     on<PreviousStepRequested>(_onPreviousStepRequested);
     on<SubmitOnboardingRequested>(_onSubmitOnboardingRequested);
   }
+  final OnboardingRepository _onboardingRepository;
+  final SupabaseRemoteDataSource _dataSource;
 
   Future<void> _onNextStepRequested(
     NextStepRequested event,

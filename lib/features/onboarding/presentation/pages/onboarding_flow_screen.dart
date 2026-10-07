@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../../../core/config/routes.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/di/service_locator.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../bloc/onboarding_bloc.dart';
 import '../bloc/onboarding_event.dart';
 import '../bloc/onboarding_state.dart';
@@ -49,8 +50,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return BlocProvider.value(
+  Widget build(BuildContext context) => BlocProvider.value(
       value: _onboardingBloc,
           child: BlocListener<OnboardingBloc, OnboardingState>(
         listener: (context, state) {
@@ -117,9 +117,7 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
                             controller: _pageController,
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: 4,
-                            itemBuilder: (context, index) {
-                              return _buildStep(index);
-                            },
+                            itemBuilder: (context, index) => _buildStep(index),
                           ),
                         ),
                       ],
@@ -132,7 +130,6 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
         ),
       ),
     );
-  }
 
   Widget _buildStep(int index) {
     switch (index) {
@@ -144,14 +141,14 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
         );
       case 1:
         return MetricsStep(
-          onBack: () => _onboardingBloc.add(PreviousStepRequested()),
+          onBack: () => _onboardingBloc.add(const PreviousStepRequested()),
           onContinue: (data) => _onboardingBloc.add(
             NextStepRequested(stepData: data),
           ),
         );
       case 2:
         return TargetTimelineStep(
-          onBack: () => _onboardingBloc.add(PreviousStepRequested()),
+          onBack: () => _onboardingBloc.add(const PreviousStepRequested()),
           onContinue: (data) => _onboardingBloc.add(
             NextStepRequested(stepData: data),
           ),
@@ -159,10 +156,10 @@ class _OnboardingFlowScreenState extends State<OnboardingFlowScreen> {
       case 3:
         return ActivityDietStep(
           isSubmitting: _isSubmitting,
-          onBack: () => _onboardingBloc.add(PreviousStepRequested()),
+          onBack: () => _onboardingBloc.add(const PreviousStepRequested()),
           onSubmit: (data) {
             _onboardingBloc.add(NextStepRequested(stepData: data));
-            _onboardingBloc.add(SubmitOnboardingRequested());
+            _onboardingBloc.add(const SubmitOnboardingRequested());
           },
         );
       default:

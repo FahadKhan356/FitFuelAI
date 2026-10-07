@@ -35,8 +35,7 @@ class LeaderboardEntry {
     this.isMe = false,
   });
 
-  factory LeaderboardEntry.fromJson(Map<String, dynamic> json) {
-    return LeaderboardEntry(
+  factory LeaderboardEntry.fromJson(Map<String, dynamic> json) => LeaderboardEntry(
       rank: _int(json['rank']),
       userId: json['user_id']?.toString() ?? '',
       displayName: _text(json['display_name'], fallback: 'FitFuel Athlete'),
@@ -47,7 +46,6 @@ class LeaderboardEntry {
       streakDays: _int(json['streak_days']),
       isMe: json['is_me'] == true,
     );
-  }
 
   final int rank;
   final String userId;

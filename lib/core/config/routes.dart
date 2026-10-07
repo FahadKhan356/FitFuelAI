@@ -1,6 +1,3 @@
-import '../../features/onboarding/presentation/pages/personalization_screen.dart';
-import '../../features/profile/presentation/pages/health_goals_screen.dart';
-import '../../features/profile/presentation/pages/personal_info_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -10,21 +7,24 @@ import '../../features/analytics/presentation/pages/analytics_screen.dart';
 import '../../features/auth/presentation/pages/login_screen.dart';
 import '../../features/auth/presentation/pages/signup_screen.dart';
 import '../../features/auth/presentation/pages/splash_screen.dart';
-import '../../features/food_scanner/presentation/pages/food_scanner_screen.dart';
-import '../../features/food_search/presentation/pages/food_search_screen.dart';
 import '../../features/barcode/presentation/pages/barcode_scanner_screen.dart';
-import '../../features/notifications/presentation/pages/notifications_screen.dart';
+import '../../features/calendar/presentation/pages/activity_calendar_screen.dart';
+import '../../features/food_search/presentation/pages/food_search_screen.dart';
+import '../../features/home/presentation/pages/home_screen.dart';
+import '../../features/home/presentation/pages/welcome_screen.dart';
 import '../../features/meal_tracking/presentation/pages/meal_tracking_screen.dart';
-import '../../features/onboarding/presentation/pages/onboarding_flow_screen.dart';
+import '../../features/notifications/presentation/pages/notifications_screen.dart';
 import '../../features/onboarding/presentation/pages/goal_selection_screen.dart';
+import '../../features/onboarding/presentation/pages/onboarding_flow_screen.dart';
+import '../../features/onboarding/presentation/pages/personalization_screen.dart';
+import '../../features/profile/presentation/pages/health_goals_screen.dart';
+import '../../features/profile/presentation/pages/personal_info_screen.dart';
 import '../../features/profile/presentation/pages/profile_screen.dart';
 import '../../features/subscription/presentation/pages/subscription_screen.dart';
 import '../../features/water_tracker/presentation/pages/water_tracker_screen.dart';
 import '../../features/weight_tracker/presentation/pages/bmi_screen.dart';
 import '../../features/weight_tracker/presentation/pages/weight_tracker_screen.dart';
-import '../../features/home/presentation/pages/home_screen.dart';
-import '../../features/home/presentation/pages/welcome_screen.dart';
-import '../../features/calendar/presentation/pages/activity_calendar_screen.dart';
+import '../../screens/camera_scan_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -74,7 +74,7 @@ final goRouter = GoRouter(
             parent: animation,
             curve: Curves.easeOutCubic,
           );
-          final scale = Tween<double>(begin: 0.96, end: 1.0).animate(
+          final scale = Tween<double>(begin: 0.96, end: 1).animate(
             CurvedAnimation(
               parent: animation,
               curve: Curves.easeOutCubic,
@@ -112,13 +112,13 @@ final goRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.foodScanner,
-      builder: (context, state) => const FoodScannerScreen(),
+      builder: (context, state) => const CameraScanScreen(),
     ),
     GoRoute(
       path: AppRoutes.foodSearch,
       builder: (context, state) => FoodSearchScreen(
         onFoodSelected: state.uri.queryParameters['onFoodSelected'] == 'true'
-            ? (String foodName, int calories, double protein, double carbs, double fat) {
+            ? (foodName, calories, protein, carbs, fat) {
                 // Handle food selection from meal tracking
               }
             : null,

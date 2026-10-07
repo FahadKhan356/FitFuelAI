@@ -1,29 +1,5 @@
 /// Combines user_profiles + goals table data into one model for the profile feature.
 class UserProfileModel {
-  final String userId;
-  final String? name;
-  final String? avatarUrl;
-  final int? age;
-  final String? gender;
-  final double? heightCm;
-  final double? weightKg;
-  final double? currentWeightKg;
-  final double? goalWeightKg;
-  final String? activityLevel;
-  final String? goalType;
-  final String? dietPreference;
-  final int? workoutFrequency;
-  final String? bio;
-  final DateTime? createdAt;
-
-  // Goals fields
-  final int targetCalories;
-  final double targetProtein;
-  final double targetCarbs;
-  final double targetFat;
-  final int dailyWaterMl;
-  final double? weeklyPaceKg;
-  final DateTime? targetDate;
 
   const UserProfileModel({
     required this.userId,
@@ -49,6 +25,30 @@ class UserProfileModel {
     this.weeklyPaceKg,
     this.targetDate,
   });
+  final String userId;
+  final String? name;
+  final String? avatarUrl;
+  final int? age;
+  final String? gender;
+  final double? heightCm;
+  final double? weightKg;
+  final double? currentWeightKg;
+  final double? goalWeightKg;
+  final String? activityLevel;
+  final String? goalType;
+  final String? dietPreference;
+  final int? workoutFrequency;
+  final String? bio;
+  final DateTime? createdAt;
+
+  // Goals fields
+  final int targetCalories;
+  final double targetProtein;
+  final double targetCarbs;
+  final double targetFat;
+  final int dailyWaterMl;
+  final double? weeklyPaceKg;
+  final DateTime? targetDate;
 
   /// Convert profile fields to map for user_profiles table
   Map<String, dynamic> toProfileJson() => {
@@ -105,8 +105,7 @@ class UserProfileModel {
     int? dailyWaterMl,
     double? weeklyPaceKg,
     DateTime? targetDate,
-  }) {
-    return UserProfileModel(
+  }) => UserProfileModel(
       userId: userId ?? this.userId,
       name: name ?? this.name,
       avatarUrl: avatarUrl ?? this.avatarUrl,
@@ -130,7 +129,6 @@ class UserProfileModel {
       weeklyPaceKg: weeklyPaceKg ?? this.weeklyPaceKg,
       targetDate: targetDate ?? this.targetDate,
     );
-  }
 
   /// User's current weight — prefers the dedicated `current_weight` column but
   /// falls back to the start `weight_kg` so older rows (where current_weight
