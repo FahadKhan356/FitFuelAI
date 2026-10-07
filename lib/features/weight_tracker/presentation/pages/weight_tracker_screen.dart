@@ -8,6 +8,7 @@ import 'package:fitfuel_ai/core/services/home_data_refresh_notifier.dart';
 import 'package:fitfuel_ai/core/utils/bmi_calculator.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -44,6 +45,13 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
   late final AnimationController _mainCtrl;
   late final AnimationController _pulseCtrl;
   bool isWeekly = true;
+
+  // ── In-memory static cache for instant 0ms screen opening ──
+  static double? _cachedCurrentWeight;
+  static double? _cachedStartWeight;
+  static double? _cachedGoalWeight;
+  static double? _cachedHeightCm;
+  static List<WeightEntry>? _cachedEntries;
 
   // ─── Weight Data State (real values loaded from Supabase, demo as fallback) ───
   double currentWeight = 72.4;
@@ -132,12 +140,23 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
   @override
   void initState() {
     super.initState();
+    // 0ms instant warm restore from static cache
+    if (_cachedCurrentWeight != null) {
+      currentWeight = _cachedCurrentWeight!;
+      if (_cachedStartWeight != null) startWeight = _cachedStartWeight!;
+      if (_cachedGoalWeight != null) goalWeight = _cachedGoalWeight!;
+      if (_cachedHeightCm != null) _heightCm = _cachedHeightCm!;
+      if (_cachedEntries != null && _cachedEntries!.isNotEmpty) {
+        _realEntries = _cachedEntries!;
+        weightEntries = _cachedEntries!;
+        _loadedRealData = true;
+      }
+      _loading = false;
+    }
+
     _mainCtrl = AnimationController(
       vsync: this,
-      // Entry reveal is intentionally short. With the old 3.8s duration the
-      // headline weight / BMI cards were still animating (showing a partial
-      // value) seconds after the screen opened, which looked like laggy data.
-      duration: const Duration(milliseconds: 1100),
+      duration: const Duration(milliseconds: 900),
     )..forward();
     _pulseCtrl = AnimationController(
       vsync: this,
@@ -212,6 +231,12 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
         weightEntries = _realEntries;
       }
 
+      _cachedCurrentWeight = currentWeight;
+      _cachedStartWeight = startWeight;
+      _cachedGoalWeight = goalWeight;
+      _cachedHeightCm = _heightCm;
+      _cachedEntries = _realEntries;
+
       _loading = false;
     });
   }
@@ -256,8 +281,10 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
   }
 
   void _addWeightEntry(double weight, DateTime date) {
+    HapticFeedback.lightImpact();
     setState(() {
       currentWeight = weight;
+      _cachedCurrentWeight = weight;
       weightEntries.add(WeightEntry(date: date, weight: weight));
       // Keep only last 7 days of demo data (real data keeps its own history).
       if (weightEntries.length > 7) {

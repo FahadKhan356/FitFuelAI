@@ -1,11 +1,13 @@
 import '../di/service_locator.dart';
 import '../domain/repositories/user_repository.dart';
+import '../services/home_data_cache.dart';
 import '../utils/fitness_calculator.dart';
 
 /// Single source of truth for the daily water goal.
 ///
 /// Home screen and water tracker both use this so they can never show a
 /// different target. Resolution order:
+///   0. In-memory cache snapshot (0ms latency, eliminates frame drops / lag).
 ///   1. The user's goal row (`daily_water_ml`) if present and > 0.
 ///   2. Weight-based estimate from the user profile (same formula everywhere).
 ///   3. A safe last-resort default of 2000 ml.
@@ -17,6 +19,12 @@ class WaterGoalResolver {
   static const int defaultWaterMl = 2000;
 
   static Future<int> resolve(String userId) async {
+    // 0) In-memory cache check (instant 0ms).
+    final cached = HomeDataCache.getCached(userId);
+    if (cached != null && cached.targetWaterMl > 0) {
+      return cached.targetWaterMl;
+    }
+
     final repo = sl<UserRepository>();
 
     // 1) DB goal row.

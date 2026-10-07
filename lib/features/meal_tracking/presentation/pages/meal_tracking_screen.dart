@@ -1,10 +1,12 @@
 import 'package:fitfuel_ai/features/food_search/presentation/pages/food_search_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/domain/repositories/meal_repository.dart';
 import '../../../../core/services/calorie_goal_resolver.dart';
+import '../../../../core/services/home_data_cache.dart';
 import '../../../../core/services/home_data_refresh_notifier.dart';
 import 'meal_entry_screen.dart';
 
@@ -58,7 +60,25 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
   @override
   void initState() {
     super.initState();
+    _initFromCache();
     _loadData();
+  }
+
+  /// Immediately applies cached daily totals so the progress bar and numbers
+  /// render on frame 0 without waiting for database network calls.
+  void _initFromCache() {
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      final cached = HomeDataCache.getCached(user.id);
+      if (cached != null) {
+        totalCalories = cached.consumedCalories;
+        calorieGoal = cached.targetCalories > 0 ? cached.targetCalories : 2000;
+        totalProtein = cached.consumedProtein;
+        totalCarbs = cached.consumedCarbs;
+        totalFat = cached.consumedFat;
+        _hasLoaded = true;
+      }
+    }
   }
 
   /// Loads today's real meals + goals from the database and recomputes the
@@ -66,9 +86,6 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
   Future<void> _loadData() async {
     final user = Supabase.instance.client.auth.currentUser;
     try {
-      // Use the same single source of truth for the calorie goal as the home
-      // screen (DB goal → profile-based estimate → 2000) so both screens always
-      // show an identical target (e.g. 2516).
       final goal = user != null
           ? await CalorieGoalResolver.resolve(user.id)
           : CalorieGoalResolver.defaultCalories;
@@ -109,6 +126,17 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
         todaysMeals = meals;
         _hasLoaded = true;
       });
+
+      if (user != null) {
+        HomeDataCache.updateNutrition(
+          user.id,
+          consumedCalories: cal,
+          consumedProtein: protein,
+          consumedCarbs: carbs,
+          consumedFat: fat,
+          targetCalories: goal,
+        );
+      }
     } catch (e) {
       debugPrint('MealTracking _loadData error: $e');
       if (mounted) {
@@ -136,6 +164,7 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
           );
         },
         onMealAdded: (foodName, calories, protein, carbs, fat, mealType) async {
+          HapticFeedback.lightImpact();
           final now = DateTime.now();
           final user = Supabase.instance.client.auth.currentUser;
 
@@ -156,6 +185,17 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
               ),
             );
           });
+
+          if (user != null) {
+            HomeDataCache.updateNutrition(
+              user.id,
+              consumedCalories: totalCalories,
+              consumedProtein: totalProtein,
+              consumedCarbs: totalCarbs,
+              consumedFat: totalFat,
+            );
+            HomeDataRefreshNotifier.instance.refresh();
+          }
 
           if (user == null) {
             return;
@@ -186,6 +226,7 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
   }
 
   Future<void> _addMealFromSearch(String foodName, int calories, double protein, double carbs, double fat) async {
+    HapticFeedback.lightImpact();
     final now = DateTime.now();
     final user = Supabase.instance.client.auth.currentUser;
 
@@ -206,6 +247,17 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
         ),
       );
     });
+
+    if (user != null) {
+      HomeDataCache.updateNutrition(
+        user.id,
+        consumedCalories: totalCalories,
+        consumedProtein: totalProtein,
+        consumedCarbs: totalCarbs,
+        consumedFat: totalFat,
+      );
+      HomeDataRefreshNotifier.instance.refresh();
+    }
 
     if (user == null) return;
     try {
@@ -231,16 +283,28 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
   /// Removes an item locally and from the DB, then recomputes totals from the
   /// source of truth and refreshes the home dashboard.
   Future<void> _removeMeal(MealLog meal) async {
+    HapticFeedback.mediumImpact();
     final user = Supabase.instance.client.auth.currentUser;
 
     // Optimistic UI update for instant feedback.
     setState(() {
-      totalCalories -= meal.calories;
-      totalProtein -= meal.protein;
-      totalCarbs -= meal.carbs;
-      totalFat -= meal.fat;
+      totalCalories = (totalCalories - meal.calories).clamp(0, 999999);
+      totalProtein = (totalProtein - meal.protein).clamp(0.0, 9999.0);
+      totalCarbs = (totalCarbs - meal.carbs).clamp(0.0, 9999.0);
+      totalFat = (totalFat - meal.fat).clamp(0.0, 9999.0);
       todaysMeals.removeWhere((m) => m.itemId == meal.itemId);
     });
+
+    if (user != null) {
+      HomeDataCache.updateNutrition(
+        user.id,
+        consumedCalories: totalCalories,
+        consumedProtein: totalProtein,
+        consumedCarbs: totalCarbs,
+        consumedFat: totalFat,
+      );
+      HomeDataRefreshNotifier.instance.refresh();
+    }
 
     if (user == null) {
       return;
@@ -364,13 +428,19 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
                     const SizedBox(height: 12),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(999),
-                      child: LinearProgressIndicator(
-                        minHeight: 8,
-                        value: calorieGoal > 0
-                            ? (totalCalories / calorieGoal).clamp(0.0, 1.0)
-                            : 0,
-                        backgroundColor: const Color(0xFFE7E3EF),
-                        valueColor: const AlwaysStoppedAnimation<Color>(_purple),
+                      child: TweenAnimationBuilder<double>(
+                        duration: const Duration(milliseconds: 350),
+                        curve: Curves.easeOutCubic,
+                        tween: Tween<double>(
+                          begin: 0,
+                          end: calorieGoal > 0 ? (totalCalories / calorieGoal).clamp(0.0, 1.0) : 0.0,
+                        ),
+                        builder: (context, val, _) => LinearProgressIndicator(
+                          minHeight: 8,
+                          value: val,
+                          backgroundColor: const Color(0xFFE7E3EF),
+                          valueColor: const AlwaysStoppedAnimation<Color>(_purple),
+                        ),
                       ),
                     ),
                   ],
@@ -380,18 +450,48 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
 
             // Meals List
             Expanded(
-              child: ListView.builder(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                itemCount: todaysMeals.length,
-                itemBuilder: (context, index) {
-                  final meal = todaysMeals[index];
-                  return _MealCard(
-                    meal: meal,
-                    onRemove: () => _removeMeal(meal),
-                  );
-                },
-              ),
+              child: todaysMeals.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.restaurant_outlined,
+                            size: 44,
+                            color: _textSecondary.withValues(alpha: 0.35),
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'No meals logged today yet',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: _textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Tap the + button to track your meals',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: _textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                      itemCount: todaysMeals.length,
+                      itemBuilder: (context, index) {
+                        final meal = todaysMeals[index];
+                        return _MealCard(
+                          meal: meal,
+                          onRemove: () => _removeMeal(meal),
+                        );
+                      },
+                    ),
             ),
           ],
         ),

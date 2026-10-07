@@ -1,10 +1,12 @@
 import 'package:fitfuel_ai/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/di/service_locator.dart';
+import '../../../../core/services/home_data_cache.dart';
 import '../../../../core/services/water_goal_resolver.dart';
 import '../bloc/water_tracker_bloc.dart';
 
@@ -28,6 +30,7 @@ class WaterTrackerScreen extends StatefulWidget {
 class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
   late final WaterTrackerBloc _bloc;
   int waterGoal = WaterGoalResolver.defaultWaterMl;
+  int _cachedIntake = 0;
   bool _isSubtract = false;
   bool _goalReady = false;
 
@@ -37,8 +40,17 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
     _bloc = sl<WaterTrackerBloc>();
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId != null) {
+      // 0ms Instant synchronous read from in-memory cache to eliminate loading lag
+      final cached = HomeDataCache.getCached(userId);
+      if (cached != null) {
+        _cachedIntake = cached.consumedWaterMl;
+        if (cached.targetWaterMl > 0) {
+          waterGoal = cached.targetWaterMl;
+        }
+        _goalReady = true;
+      }
       _loadWaterGoal(userId);
-      _bloc.add(LoadWaterData(userId, DateTime.now()));
+      _bloc.add(LoadWaterData(userId, DateTime.now(), initialTotalMl: _cachedIntake));
     }
   }
 
@@ -54,8 +66,9 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
     }
   }
 
-  /// Logs water, honouring the current add/subtract mode.
+  /// Logs water, honouring the current add/subtract mode with instant haptic feedback.
   void _logWater(int amount) {
+    HapticFeedback.lightImpact();
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId != null) {
       final signed = _isSubtract ? -amount : amount;
@@ -127,20 +140,28 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
               Expanded(
                 child: BlocBuilder<WaterTrackerBloc, WaterTrackerState>(
                   builder: (context, state) {
-                    var waterIntake = 0;
+                    var waterIntake = _cachedIntake;
                     var historyItems = <_HistoryRow>[];
 
                     if (state is WaterDataLoaded) {
                       waterIntake = state.totalMl;
+                      _cachedIntake = state.totalMl;
                       historyItems = state.entries.map((e) {
                         final time = e.createdAt ?? e.date;
                         return _HistoryRow(
                           time: DateFormat.jm().format(time),
                           label: e.amountMl >= 1000 ? 'Large Bottle' : e.amountMl >= 500 ? 'Bottle' : 'Glass',
-                          amount: '+${e.amountMl}ml',
+                          amount: e.amountMl >= 0 ? '+${e.amountMl}ml' : '${e.amountMl}ml',
                         );
                       }).toList();
                     }
+
+                    final double progress = _goalReady && waterGoal > 0
+                        ? (waterIntake / waterGoal).clamp(0.0, 1.0)
+                        : 0.0;
+                    final double percent = _goalReady && waterGoal > 0
+                        ? ((waterIntake / waterGoal) * 100).clamp(0.0, 999.0)
+                        : 0.0;
 
                     return ListView(
                       physics: const BouncingScrollPhysics(),
@@ -198,7 +219,7 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    _goalReady ? '${waterGoal - waterIntake}ml to go' : 'Loading…',
+                    _goalReady ? '${(waterGoal - waterIntake).clamp(0, 99999)}ml to go' : 'Loading…',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -231,13 +252,16 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(999),
-                                  child: LinearProgressIndicator(
-                                    minHeight: 16,
-                                    value: _goalReady
-                                        ? (waterIntake / waterGoal).clamp(0.0, 1.0)
-                                        : 0,
-                                    backgroundColor: const Color(0xFFF0F0F6),
-                                    valueColor: const AlwaysStoppedAnimation<Color>(_purple),
+                                  child: TweenAnimationBuilder<double>(
+                                    duration: const Duration(milliseconds: 350),
+                                    curve: Curves.easeOutCubic,
+                                    tween: Tween<double>(begin: 0, end: progress),
+                                    builder: (context, val, _) => LinearProgressIndicator(
+                                      minHeight: 16,
+                                      value: val,
+                                      backgroundColor: const Color(0xFFF0F0F6),
+                                      valueColor: const AlwaysStoppedAnimation<Color>(_purple),
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 34),
@@ -249,14 +273,17 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
-                                _goalReady
-                                    ? '${((waterIntake / waterGoal) * 100).toStringAsFixed(0)}%'
-                                    : '—',
-                                style: const TextStyle(
-                                  fontSize: 34,
-                                  fontWeight: FontWeight.w800,
-                                  color: _textPrimary,
+                              TweenAnimationBuilder<double>(
+                                duration: const Duration(milliseconds: 350),
+                                curve: Curves.easeOutCubic,
+                                tween: Tween<double>(begin: 0, end: percent),
+                                builder: (context, val, _) => Text(
+                                  _goalReady ? '${val.toStringAsFixed(0)}%' : '—',
+                                  style: const TextStyle(
+                                    fontSize: 34,
+                                    fontWeight: FontWeight.w800,
+                                    color: _textPrimary,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -389,8 +416,8 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen> {
                           ],
                         ),
                         const SizedBox(height: 10),
-                        if (state is WaterTrackerLoading)
-                          const Center(child: CircularProgressIndicator())
+                        if (state is WaterTrackerLoading && historyItems.isEmpty)
+                          const _HistorySkeletonCard()
                         else if (historyItems.isEmpty)
                           const Padding(
                             padding: EdgeInsets.symmetric(vertical: 20),
@@ -590,6 +617,83 @@ class _HistoryCard extends StatelessWidget {
       ),
     );
 }
+
+class _HistorySkeletonCard extends StatelessWidget {
+  const _HistorySkeletonCard();
+
+  @override
+  Widget build(BuildContext context) => Container(
+      decoration: BoxDecoration(
+        color: _surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          for (var i = 0; i < 2; i++) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: _purpleSoft,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 14,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1EFF8),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          width: 48,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF6F5FA),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 52,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1EFF8),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (i == 0)
+              const Divider(height: 1, thickness: 1, color: Color(0xFFEDEAF3)),
+          ],
+        ],
+      ),
+    );
+}
+
 
 class _HistoryTile extends StatelessWidget {
   const _HistoryTile({required this.row});

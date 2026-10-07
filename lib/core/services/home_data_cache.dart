@@ -150,6 +150,61 @@ class HomeDataCache {
     } catch (_) {}
   }
 
+  /// Optimistically update water intake in cache without losing other fields
+  static void updateWater(String userId, {required int consumedWaterMl, int? targetWaterMl}) {
+    final existing = getCached(userId);
+    if (existing != null) {
+      save(
+        userId,
+        HomeCachedData(
+          name: existing.name,
+          targetCalories: existing.targetCalories,
+          consumedCalories: existing.consumedCalories,
+          burnedCalories: existing.burnedCalories,
+          targetProtein: existing.targetProtein,
+          consumedProtein: existing.consumedProtein,
+          targetCarbs: existing.targetCarbs,
+          consumedCarbs: existing.consumedCarbs,
+          targetFat: existing.targetFat,
+          consumedFat: existing.consumedFat,
+          targetWaterMl: targetWaterMl ?? existing.targetWaterMl,
+          consumedWaterMl: consumedWaterMl,
+        ),
+      );
+    }
+  }
+
+  /// Optimistically update calories and macros in cache without losing other fields
+  static void updateNutrition(
+    String userId, {
+    required int consumedCalories,
+    required double consumedProtein,
+    required double consumedCarbs,
+    required double consumedFat,
+    int? targetCalories,
+  }) {
+    final existing = getCached(userId);
+    if (existing != null) {
+      save(
+        userId,
+        HomeCachedData(
+          name: existing.name,
+          targetCalories: targetCalories ?? existing.targetCalories,
+          consumedCalories: consumedCalories,
+          burnedCalories: existing.burnedCalories,
+          targetProtein: existing.targetProtein,
+          consumedProtein: consumedProtein,
+          targetCarbs: existing.targetCarbs,
+          consumedCarbs: consumedCarbs,
+          targetFat: existing.targetFat,
+          consumedFat: consumedFat,
+          targetWaterMl: existing.targetWaterMl,
+          consumedWaterMl: existing.consumedWaterMl,
+        ),
+      );
+    }
+  }
+
   /// Clear cache on sign out.
   static Future<void> clear(String userId) async {
     _memoryCache.remove(userId);

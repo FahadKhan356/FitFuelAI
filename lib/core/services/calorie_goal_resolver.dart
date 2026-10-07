@@ -1,5 +1,6 @@
 import '../di/service_locator.dart';
 import '../domain/repositories/user_repository.dart';
+import '../services/home_data_cache.dart';
 import '../utils/fitness_calculator.dart';
 
 /// Single source of truth for the daily calorie (and macro) goal.
@@ -9,6 +10,7 @@ import '../utils/fitness_calculator.dart';
 /// targets when the server-side `calculate_user_goals` RPC hasn't run. To keep
 /// the home, calendar and tracker screens from showing a broken `0` goal (which
 /// also breaks the calendar's goal-met tick/cross), we resolve in this order:
+///   0. In-memory cache snapshot (0ms latency, instant responsiveness).
 ///   1. The user's goal row (`targetCalories`) if present and > 0.
 ///   2. A profile-based estimate via FitnessCalculator (same as home screen).
 ///   3. A safe last-resort default of 2000 kcal.
@@ -18,6 +20,12 @@ class CalorieGoalResolver {
   static const int defaultCalories = 2000;
 
   static Future<int> resolve(String userId) async {
+    // 0) In-memory cache check (instant 0ms).
+    final cached = HomeDataCache.getCached(userId);
+    if (cached != null && cached.targetCalories > 0) {
+      return cached.targetCalories;
+    }
+
     final repo = sl<UserRepository>();
 
     // 1) DB goal row.

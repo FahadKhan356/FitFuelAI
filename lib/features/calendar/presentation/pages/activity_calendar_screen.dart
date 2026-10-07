@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -25,6 +26,10 @@ class ActivityCalendarScreen extends StatefulWidget {
 }
 
 class _ActivityCalendarScreenState extends State<ActivityCalendarScreen> {
+  // Static in-memory cache for 0ms instantaneous month switching
+  static final Map<String, CalendarTracking> _monthCache = {};
+  static int _cachedStreak = 0;
+
   late DateTime _month; // First day of the currently shown month
   CalendarTracking? _tracking;
   bool _loading = true;
@@ -39,6 +44,17 @@ class _ActivityCalendarScreenState extends State<ActivityCalendarScreen> {
     final now = DateTime.now();
     _month = DateTime(now.year, now.month);
     _selectedDay = DateTime(now.year, now.month, now.day);
+    _streak = _cachedStreak;
+
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId != null) {
+      final cacheKey = '$userId-${_month.year}-${_month.month}';
+      if (_monthCache.containsKey(cacheKey)) {
+        _tracking = _monthCache[cacheKey];
+        _loading = false;
+      }
+    }
+
     // Reload the visible month whenever a meal/water is logged elsewhere so the
     // calendar always reflects the latest daily totals.
     HomeDataRefreshNotifier.instance.addListener(_load);
@@ -61,10 +77,18 @@ class _ActivityCalendarScreenState extends State<ActivityCalendarScreen> {
       return;
     }
 
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    final cacheKey = '${user.id}-${_month.year}-${_month.month}';
+    if (_monthCache.containsKey(cacheKey)) {
+      setState(() {
+        _tracking = _monthCache[cacheKey];
+        _error = null;
+      });
+    } else if (_tracking == null) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
 
     final start = DateTime(_month.year, _month.month, 1);
     final end = DateTime(_month.year, _month.month + 1, 0);
@@ -76,35 +100,56 @@ class _ActivityCalendarScreenState extends State<ActivityCalendarScreen> {
         end: end,
       );
       if (!mounted) return;
+      _monthCache[cacheKey] = data;
       setState(() {
         _tracking = data;
         _loading = false;
       });
-      // Load the real streak (consecutive days with a logged meal) so the
-      // "Streak Tracker" pill in the header shows live data.
+      // Load the real streak so the "Streak Tracker" pill in the header shows live data.
       try {
         final info = await StreakService.compute(user.id);
         if (!mounted) return;
+        _cachedStreak = info.current;
         setState(() => _streak = info.current);
       } catch (_) {}
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _error = e.toString();
-        _loading = false;
-      });
+      if (_tracking == null) {
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+        });
+      }
     }
   }
 
   void _prevMonth() {
-    if (_loading) return;
-    setState(() => _month = DateTime(_month.year, _month.month - 1));
+    HapticFeedback.selectionClick();
+    setState(() {
+      _month = DateTime(_month.year, _month.month - 1);
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId != null) {
+        final cacheKey = '$userId-${_month.year}-${_month.month}';
+        if (_monthCache.containsKey(cacheKey)) {
+          _tracking = _monthCache[cacheKey];
+        }
+      }
+    });
     _load();
   }
 
   void _nextMonth() {
-    if (_loading) return;
-    setState(() => _month = DateTime(_month.year, _month.month + 1));
+    HapticFeedback.selectionClick();
+    setState(() {
+      _month = DateTime(_month.year, _month.month + 1);
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId != null) {
+        final cacheKey = '$userId-${_month.year}-${_month.month}';
+        if (_monthCache.containsKey(cacheKey)) {
+          _tracking = _monthCache[cacheKey];
+        }
+      }
+    });
     _load();
   }
 
@@ -115,12 +160,20 @@ class _ActivityCalendarScreenState extends State<ActivityCalendarScreen> {
         child: Column(
           children: [
             _buildHeader(),
+            if (_loading && _tracking != null)
+              const LinearProgressIndicator(
+                minHeight: 2,
+                backgroundColor: Colors.transparent,
+                valueColor: AlwaysStoppedAnimation<Color>(_purple),
+              ),
             Expanded(
-              child: _loading
-                  ? const Center(child: CircularProgressIndicator(color: _purple))
-                  : _error != null
-                      ? _buildError()
-                      : _buildContent(),
+              child: _tracking != null
+                  ? _buildContent()
+                  : _loading
+                      ? const Center(child: CircularProgressIndicator(color: _purple))
+                      : _error != null
+                          ? _buildError()
+                          : _buildContent(),
             ),
           ],
         ),
