@@ -177,53 +177,76 @@ class _SmoothCanvasFallbackPainter extends CustomPainter {
 
     final double pulse = 1.0 + 0.05 * math.sin(time * 3.0);
 
-    // Ethereal corona
+    // 1. Ethereal outer cosmic purple nebula
     final Paint nebulaPaint = Paint()
       ..blendMode = BlendMode.screen
       ..shader = RadialGradient(
         colors: [
-          const Color(0xFF6366F1).withValues(alpha: isThinking ? 0.35 : 0.22),
-          const Color(0xFF8B5CF6).withValues(alpha: isThinking ? 0.22 : 0.12),
-          const Color(0xFF00F2FE).withValues(alpha: isThinking ? 0.12 : 0.04),
+          const Color(0xFF8B5CF6).withValues(alpha: isThinking ? 0.38 : 0.22),
+          const Color(0xFF6B21A8).withValues(alpha: isThinking ? 0.22 : 0.12),
           Colors.transparent,
         ],
-        stops: const [0.0, 0.42, 0.72, 1.0],
-      ).createShader(Rect.fromCircle(center: center, radius: radius * 1.7 * pulse));
+        stops: const [0.0, 0.45, 1.0],
+      ).createShader(Rect.fromCircle(center: center, radius: radius * 1.6 * pulse));
 
-    canvas.drawCircle(center, radius * 1.7 * pulse, nebulaPaint);
+    canvas.drawCircle(center, radius * 1.6 * pulse, nebulaPaint);
 
-    // Fresnel Rim Ring
-    final Paint rimPaint = Paint()
+    // 2. Hyper-Intense Radiant Rim Halo (Exact match to reference image)
+    final double rimRadius = radius * 1.01 * pulse;
+    final Paint rimGlowPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.0
-      ..blendMode = BlendMode.screen
-      ..shader = SweepGradient(
-        colors: const [
-          Color(0xFF00F2FE),
-          Color(0xFF8B5CF6),
-          Color(0xFFEC4899),
-          Color(0xFF00F2FE),
-        ],
-        transform: GradientRotation(time * 0.8),
-      ).createShader(Rect.fromCircle(center: center, radius: radius * 1.02 * pulse))
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0);
-
-    canvas.drawCircle(center, radius * 1.02 * pulse, rimPaint);
-
-    // Plasma Core
-    final Paint corePaint = Paint()
+      ..strokeWidth = 3.5
       ..blendMode = BlendMode.screen
       ..shader = RadialGradient(
+        colors: const [
+          Color(0xFFE9D5FF),
+          Color(0xFFA855F7),
+        ],
+      ).createShader(Rect.fromCircle(center: center, radius: rimRadius))
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5);
+
+    canvas.drawCircle(center, rimRadius, rimGlowPaint);
+
+    // 3. Horizontal Anamorphic Lens Flare Streaks
+    final Paint flarePaint = Paint()
+      ..blendMode = BlendMode.screen
+      ..shader = LinearGradient(
         colors: [
-          Colors.white.withValues(alpha: isThinking ? 0.45 : 0.25),
-          const Color(0xFF00F2FE).withValues(alpha: 0.28),
-          const Color(0xFF8B5CF6).withValues(alpha: 0.15),
+          Colors.transparent,
+          const Color(0xFFC084FC).withValues(alpha: 0.5),
+          const Color(0xFFFFFFFF).withValues(alpha: 0.8),
+          const Color(0xFFC084FC).withValues(alpha: 0.5),
           Colors.transparent,
         ],
-        stops: const [0.0, 0.35, 0.70, 1.0],
-      ).createShader(Rect.fromCircle(center: center, radius: radius * 0.65 * pulse));
+        stops: const [0.0, 0.35, 0.50, 0.65, 1.0],
+      ).createShader(Rect.fromLTWH(center.dx - radius * 1.35, center.dy - 3, radius * 2.7, 6));
 
-    canvas.drawCircle(center, radius * 0.65 * pulse, corePaint);
+    canvas.drawRect(
+      Rect.fromLTWH(center.dx - radius * 1.35, center.dy - 2, radius * 2.7, 4),
+      flarePaint,
+    );
+
+    // 4. Volumetric Stardust Cloud inside the sphere
+    final particlePaint = Paint()
+      ..blendMode = BlendMode.screen
+      ..isAntiAlias = true;
+
+    final random = math.Random(42);
+    for (int i = 0; i < 220; i++) {
+      final double r = math.sqrt(random.nextDouble()) * (radius * 0.96);
+      final double angle = random.nextDouble() * 2 * math.pi + (time * 0.25 * (1 - r / radius));
+      final double px = center.dx + r * math.cos(angle);
+      final double py = center.dy + r * math.sin(angle);
+
+      final double twinkle = (math.sin(time * 4.0 + i) * 0.5 + 0.5);
+      final double pSize = 0.8 + random.nextDouble() * 1.5;
+      final Color pColor = (i % 3 == 0)
+          ? Colors.white
+          : (i % 3 == 1 ? const Color(0xFFE9D5FF) : const Color(0xFFA855F7));
+
+      particlePaint.color = pColor.withValues(alpha: 0.35 + twinkle * 0.55);
+      canvas.drawCircle(Offset(px, py), pSize, particlePaint);
+    }
   }
 
   @override
