@@ -50,6 +50,9 @@ import '../domain/repositories/subscription_repository.dart';
 import '../domain/repositories/user_repository.dart';
 import '../domain/repositories/water_repository.dart';
 import '../domain/repositories/weight_repository.dart';
+import '../domain/repositories/ai_quota_repository.dart';
+import '../data/repositories/ai_quota_repository_impl.dart';
+import '../../features/ai_coach/data/services/gemini_flash_service.dart';
 import '../domain/usecases/all_usecases.dart';
 
 final sl = GetIt.instance;
@@ -73,6 +76,10 @@ Future<void> initDependencies() async {
     () => AiContextService(sl<SupabaseClient>()),
   );
   sl.registerLazySingleton<GeminiService>(GeminiService.new);
+  sl.registerLazySingleton<GeminiFlashService>(GeminiFlashService.new);
+  sl.registerLazySingleton<AiQuotaRepository>(
+    () => AiQuotaRepositoryImpl(client: sl<SupabaseClient>()),
+  );
 
   // Repositories
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl(sl()));
@@ -173,6 +180,7 @@ Future<void> initDependencies() async {
       ));
   sl.registerFactory<SubscriptionBloc>(() => SubscriptionBloc(
         subscriptionRepository: sl(),
+        aiQuotaRepository: sl(),
       ));
   sl.registerFactory<AnalyticsBloc>(() => AnalyticsBloc(
         fetchCalendarTrackingUseCase: sl(),
@@ -182,6 +190,7 @@ Future<void> initDependencies() async {
       ));
   sl.registerFactory<AiCoachBloc>(() => AiCoachBloc(
         aiCoachRepository: sl(),
+        aiQuotaRepository: sl(),
       ));
   sl.registerFactory<FoodSearchBloc>(() => FoodSearchBloc(
         searchFoodUseCase: sl(),

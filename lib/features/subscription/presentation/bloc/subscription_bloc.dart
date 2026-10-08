@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/domain/repositories/ai_quota_repository.dart';
 import '../../../../core/domain/repositories/subscription_repository.dart';
 
 // ── Events ──
@@ -60,15 +61,19 @@ class SubscriptionError extends SubscriptionState {
 
 // ── BLoC ──
 class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
-
-  SubscriptionBloc({required SubscriptionRepository subscriptionRepository})
-      : _subscriptionRepository = subscriptionRepository,
+  SubscriptionBloc({
+    required SubscriptionRepository subscriptionRepository,
+    AiQuotaRepository? aiQuotaRepository,
+  })  : _subscriptionRepository = subscriptionRepository,
+        _aiQuotaRepository = aiQuotaRepository,
         super(SubscriptionInitial()) {
     on<CheckSubscriptionStatus>(_onCheckSubscriptionStatus);
     on<PurchasePlanRequested>(_onPurchasePlanRequested);
     on<RestorePurchasesRequested>(_onRestorePurchasesRequested);
   }
+
   final SubscriptionRepository _subscriptionRepository;
+  final AiQuotaRepository? _aiQuotaRepository;
 
   Future<void> _onCheckSubscriptionStatus(
       CheckSubscriptionStatus event, Emitter<SubscriptionState> emit) async {
@@ -88,6 +93,15 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     try {
       final subscription = await _subscriptionRepository.purchasePackage(
           userId: event.userId, plan: event.plan);
+      final quotaRepo = _aiQuotaRepository;
+      if (subscription.isActive && quotaRepo != null) {
+        try {
+          await quotaRepo.syncPlanTier(
+            userId: event.userId,
+            planType: subscription.plan ?? event.plan,
+          );
+        } catch (_) {}
+      }
       emit(SubscriptionStatusLoaded(subscription.isActive,
           plan: subscription.plan));
     } catch (e) {
@@ -101,6 +115,15 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     try {
       final subscription =
           await _subscriptionRepository.restorePurchases(event.userId);
+      final quotaRepo = _aiQuotaRepository;
+      if ((subscription?.isActive ?? false) && quotaRepo != null) {
+        try {
+          await quotaRepo.syncPlanTier(
+            userId: event.userId,
+            planType: subscription!.plan ?? 'monthly',
+          );
+        } catch (_) {}
+      }
       emit(SubscriptionStatusLoaded(subscription?.isActive ?? false,
           plan: subscription?.plan));
     } catch (e) {

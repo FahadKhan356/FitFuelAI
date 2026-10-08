@@ -93,6 +93,7 @@ dependencies:
 
   # HTTP Status Codes
   http: ^1.1.0
+  google_generative_ai: ^0.4.7
 
 dev_dependencies:
   flutter_test:

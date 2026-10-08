@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:fitfuel_ai/core/di/service_locator.dart';
+import 'package:fitfuel_ai/core/domain/repositories/ai_quota_repository.dart';
+import 'package:fitfuel_ai/features/coach/widgets/ai_quota_exceeded_dialog.dart';
 import 'package:fitfuel_ai/core/services/home_data_refresh_notifier.dart';
 import 'package:fitfuel_ai/services/food_scan_service.dart';
 import 'package:flutter/material.dart';
@@ -42,6 +45,29 @@ class _CameraScanScreenState extends State<CameraScanScreen> {
   Map<String, double> _editedWeights = {};
 
   Future<void> _pickAndScan(ImageSource source) async {
+    final userId = Supabase.instance.client.auth.currentUser?.id ?? 'guest';
+    final quotaRepo = sl.isRegistered<AiQuotaRepository>()
+        ? sl<AiQuotaRepository>()
+        : null;
+
+    if (quotaRepo != null) {
+      final quota = await quotaRepo.checkAndConsumeQuota(
+        userId: userId,
+        quotaType: 'scan',
+      );
+      if (!quota.allowed) {
+        if (!mounted) return;
+        await AiQuotaExceededDialog.show(
+          context,
+          quotaType: 'scan',
+          usedToday: quota.usedToday,
+          dailyLimit: quota.dailyLimit,
+          planType: quota.planType,
+        );
+        return;
+      }
+    }
+
     try {
       final image = await _picker.pickImage(
         source: source,

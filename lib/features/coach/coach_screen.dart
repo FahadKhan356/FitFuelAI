@@ -7,6 +7,7 @@ import 'models/coach_response.dart';
 import 'providers/coach_controller.dart';
 import 'providers/daily_summary_provider.dart';
 import 'widgets/ai_orb_background.dart';
+import 'widgets/ai_quota_exceeded_dialog.dart';
 import 'widgets/chat_input_bar.dart';
 import 'widgets/coach_message_card.dart';
 import 'widgets/quick_chips.dart';
@@ -32,6 +33,17 @@ class _CoachScreenState extends State<CoachScreen> {
   @override
   void initState() {
     super.initState();
+    _controller.onQuotaExceeded = (quota) {
+      if (mounted) {
+        AiQuotaExceededDialog.show(
+          context,
+          quotaType: 'chat',
+          usedToday: quota.usedToday,
+          dailyLimit: quota.dailyLimit,
+          planType: quota.planType,
+        );
+      }
+    };
     _controller.initialize();
   }
 

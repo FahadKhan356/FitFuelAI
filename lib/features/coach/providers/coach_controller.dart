@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/config/routes.dart';
+import '../../../core/di/service_locator.dart';
+import '../../../core/domain/entities/user_ai_limits_entity.dart';
+import '../../../core/domain/repositories/ai_quota_repository.dart';
 import '../data/coach_repository.dart';
 import '../models/coach_response.dart';
 import '../widgets/ai_orb_background.dart';
@@ -23,12 +28,17 @@ class ChatUiMessage {
 }
 
 class CoachController extends ChangeNotifier {
-  CoachController({CoachRepository? repository})
-      : _repository = repository ?? CoachRepository() {
+  CoachController({
+    CoachRepository? repository,
+    AiQuotaRepository? quotaRepository,
+  })  : _repository = repository ?? CoachRepository(),
+        _quotaRepository = quotaRepository {
     _initInitialState();
   }
 
   final CoachRepository _repository;
+  final AiQuotaRepository? _quotaRepository;
+  ValueChanged<QuotaCheckResult>? onQuotaExceeded;
   final List<ChatUiMessage> _messages = [];
   List<ChatUiMessage> get messages => List.unmodifiable(_messages);
 
@@ -105,6 +115,42 @@ class CoachController extends ChangeNotifier {
       ),
     );
 
+    // Check daily quota limits
+    final quotaRepo = _quotaRepository ??
+        (sl.isRegistered<AiQuotaRepository>() ? sl<AiQuotaRepository>() : null);
+    if (quotaRepo != null) {
+      final quota = await quotaRepo.checkAndConsumeQuota(
+        userId: userId,
+        quotaType: 'chat',
+      );
+      if (!quota.allowed) {
+        _messages.add(
+          ChatUiMessage(
+            isUser: false,
+            timestamp: DateTime.now(),
+            coachResponse: CoachResponse(
+              headline: 'Daily limit reached (${quota.dailyLimit}/${quota.dailyLimit} used).',
+              summary: 'Upgrade to Unlimited Access to get up to 100 queries daily and 24/7 personalized coaching.',
+              actions: const [
+                CoachActionItem(
+                  label: 'Upgrade to Unlimited',
+                  icon: 'workspace_premium',
+                  action: CoachAction.unknown,
+                  payload: {'route': '/subscription'},
+                ),
+              ],
+              followups: const ['Why upgrade to Premium?'],
+            ),
+            isLoading: false,
+          ),
+        );
+        _orbState = OrbState.idle;
+        notifyListeners();
+        onQuotaExceeded?.call(quota);
+        return;
+      }
+    }
+
     // 2. Add loading placeholder for coach
     final loadingMsg = ChatUiMessage(
       isUser: false,
@@ -175,6 +221,16 @@ class CoachController extends ChangeNotifier {
     CoachActionItem actionItem,
     BuildContext context,
   ) async {
+    final route = actionItem.payload['route'] as String?;
+    if (route == AppRoutes.subscription ||
+        route == '/subscription' ||
+        actionItem.label.toLowerCase().contains('upgrade')) {
+      if (context.mounted) {
+        context.push(AppRoutes.subscription);
+      }
+      return;
+    }
+
     await handleAction(
       actionItem,
       onLogWaterSuccess: () {

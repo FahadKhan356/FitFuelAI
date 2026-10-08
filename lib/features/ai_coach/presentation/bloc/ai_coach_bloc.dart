@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/domain/entities/ai_chat_message_entity.dart';
 import '../../../../core/domain/entities/coach_insight.dart';
 import '../../../../core/domain/repositories/ai_coach_repository.dart';
+import '../../../../core/domain/repositories/ai_quota_repository.dart';
 
 // Events
 abstract class AiCoachEvent extends Equatable {
@@ -37,6 +38,13 @@ class FetchInsight extends AiCoachEvent {
   List<Object?> get props => [userId, insight];
 }
 
+class CheckAiQuota extends AiCoachEvent {
+  const CheckAiQuota(this.userId);
+  final String userId;
+  @override
+  List<Object?> get props => [userId];
+}
+
 // States
 abstract class AiCoachState extends Equatable {
   const AiCoachState();
@@ -47,6 +55,49 @@ abstract class AiCoachState extends Equatable {
 class AiCoachInitial extends AiCoachState {}
 
 class AiCoachLoading extends AiCoachState {}
+
+/// Yielded when daily AI limits are reached to prompt the Paywall Screen.
+class AiQuotaExceededState extends AiCoachState {
+  const AiQuotaExceededState({
+    required this.quotaType,
+    required this.usedToday,
+    required this.dailyLimit,
+    required this.planType,
+  });
+
+  final String quotaType; // 'chat' or 'scan'
+  final int usedToday;
+  final int dailyLimit;
+  final String planType;
+
+  @override
+  List<Object?> get props => [quotaType, usedToday, dailyLimit, planType];
+}
+
+class AiQuotaLoaded extends AiCoachState {
+  const AiQuotaLoaded({
+    required this.chatsRemaining,
+    required this.dailyChatLimit,
+    required this.scansRemaining,
+    required this.dailyScanLimit,
+    required this.planType,
+  });
+
+  final int chatsRemaining;
+  final int dailyChatLimit;
+  final int scansRemaining;
+  final int dailyScanLimit;
+  final String planType;
+
+  @override
+  List<Object?> get props => [
+        chatsRemaining,
+        dailyChatLimit,
+        scansRemaining,
+        dailyScanLimit,
+        planType,
+      ];
+}
 
 class AiCoachMessageSent extends AiCoachState {
   const AiCoachMessageSent(this.userMessage, this.aiResponse);
@@ -90,20 +141,61 @@ class AiCoachError extends AiCoachState {
 
 // BLoC
 class AiCoachBloc extends Bloc<AiCoachEvent, AiCoachState> {
-
-  AiCoachBloc({required AiCoachRepository aiCoachRepository})
-      : _aiCoachRepository = aiCoachRepository,
+  AiCoachBloc({
+    required AiCoachRepository aiCoachRepository,
+    AiQuotaRepository? aiQuotaRepository,
+  })  : _aiCoachRepository = aiCoachRepository,
+        _aiQuotaRepository = aiQuotaRepository,
         super(AiCoachInitial()) {
     on<SendMessage>(_onSendMessage);
     on<LoadChatHistory>(_onLoadChatHistory);
     on<FetchInsight>(_onFetchInsight);
+    on<CheckAiQuota>(_onCheckAiQuota);
   }
+
   final AiCoachRepository _aiCoachRepository;
+  final AiQuotaRepository? _aiQuotaRepository;
+
+  Future<void> _onCheckAiQuota(
+    CheckAiQuota event,
+    Emitter<AiCoachState> emit,
+  ) async {
+    final quotaRepo = _aiQuotaRepository;
+    if (quotaRepo == null) return;
+    try {
+      final limits = await quotaRepo.getLimits(event.userId);
+      emit(AiQuotaLoaded(
+        chatsRemaining: limits.chatsRemaining,
+        dailyChatLimit: limits.dailyChatLimit,
+        scansRemaining: limits.scansRemaining,
+        dailyScanLimit: limits.dailyScanLimit,
+        planType: limits.planType,
+      ));
+    } catch (_) {}
+  }
 
   Future<void> _onSendMessage(
     SendMessage event,
     Emitter<AiCoachState> emit,
   ) async {
+    // 1. Check daily quota limits
+    final quotaRepo = _aiQuotaRepository;
+    if (quotaRepo != null) {
+      final quota = await quotaRepo.checkAndConsumeQuota(
+        userId: event.userId,
+        quotaType: 'chat',
+      );
+      if (!quota.allowed) {
+        emit(AiQuotaExceededState(
+          quotaType: 'chat',
+          usedToday: quota.usedToday,
+          dailyLimit: quota.dailyLimit,
+          planType: quota.planType,
+        ));
+        return;
+      }
+    }
+
     emit(AiCoachLoading());
     try {
       // Grounded reply: the repository pulls the user's read-only history
@@ -128,6 +220,24 @@ class AiCoachBloc extends Bloc<AiCoachEvent, AiCoachState> {
     FetchInsight event,
     Emitter<AiCoachState> emit,
   ) async {
+    // 1. Check daily quota limits
+    final quotaRepo = _aiQuotaRepository;
+    if (quotaRepo != null) {
+      final quota = await quotaRepo.checkAndConsumeQuota(
+        userId: event.userId,
+        quotaType: 'chat',
+      );
+      if (!quota.allowed) {
+        emit(AiQuotaExceededState(
+          quotaType: 'chat',
+          usedToday: quota.usedToday,
+          dailyLimit: quota.dailyLimit,
+          planType: quota.planType,
+        ));
+        return;
+      }
+    }
+
     emit(AiCoachInsightLoading(event.insight));
     try {
       final response = await _aiCoachRepository.generateCoachReply(
