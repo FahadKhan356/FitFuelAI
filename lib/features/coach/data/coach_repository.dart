@@ -181,55 +181,94 @@ class CoachRepository {
 
       if (functionRes.data != null) {
         final data = functionRes.data;
-        if (data is Map<String, dynamic>) {
-          return CoachResponse.fromJson(data);
-        } else if (data is String) {
-          return CoachResponse.parse(data);
+        if (data is Map<String, dynamic> &&
+            !data.containsKey('error') &&
+            !data.containsKey('message') &&
+            data['code'] != 'NOT_FOUND' &&
+            (data['headline'] != null || data['blocks'] != null)) {
+          final res = CoachResponse.fromJson(data);
+          if (res.headline.isNotEmpty && (res.summary.isNotEmpty || res.blocks.isNotEmpty)) {
+            return res;
+          }
+        } else if (data is String && !data.contains('NOT_FOUND') && !data.contains('"error"')) {
+          final res = CoachResponse.parse(data);
+          if (!res.isRawFallback && (res.summary.isNotEmpty || res.blocks.isNotEmpty)) {
+            return res;
+          }
         }
       }
     } catch (e) {
-      debugPrint('CoachRepository: Edge function unavailable: $e. Falling back to grounded Gemini / deterministic response.');
+      debugPrint('CoachRepository: Edge function unavailable: $e. Falling back to Gemini.');
     }
+
+    final remainingCals = math.max(0, daily.caloriesGoal - daily.caloriesConsumed);
+    final remainingProtein = math.max(0, daily.proteinGoalG - daily.proteinG).toInt();
 
     // 3. Direct Gemini call if configured
     if (_gemini.isConfigured) {
       try {
         final systemPrompt = '''
-You are FitFuel AI Coach. You must respond with JSON ONLY (no markdown fences, no backticks, no code blocks).
-Use ONLY the numbers provided in the user's context. Never invent data.
-Headline under 12 words. Summary under 25 words. Choose blocks relevant to the question.
-Schema:
+You are FitFuel AI Coach, an expert fitness & nutrition coach.
+You must respond with valid JSON ONLY (do not include markdown fences, backticks, or any explanations outside the JSON object).
+Provide real, actionable advice based on the user's logged intake today.
+- Headline: under 12 words, punchy and encouraging.
+- Summary: under 30 words, answering the user's specific question.
+- Choose 1 to 3 relevant visual blocks:
+  - "progress_bars": today's macros (Protein, Carbs)
+  - "ring": calorie or water goal
+  - "stat_row": items with label and value
+  - "bar_chart": weekly calories (if user asked about weekly trend)
+  - "line_chart": weekly water (if user asked about hydration)
+
+Example Schema:
 {
-  "headline": "Short title",
-  "summary": "Brief summary",
+  "headline": "Aim for 40 g protein for dinner.",
+  "summary": "You have $remainingCals kcal and ${remainingProtein}g protein remaining. Grilled chicken or salmon with quinoa fits perfectly.",
   "blocks": [
-    { "type": "progress_bars", "title": "Macros today", "items": [{"label":"Protein","value":${daily.proteinG},"target":${daily.proteinGoalG},"unit":"g","color":"protein"}] },
-    { "type": "bar_chart", "title": "Calories this week", "unit": "kcal", "target": ${daily.caloriesGoal}, "x": ["Fri","Sat","Sun","Mon","Tue","Wed","Thu"], "y": [0,0,0,0,0,0,${daily.caloriesConsumed}] },
-    { "type": "line_chart", "title": "Water, last 7 days", "unit": "L", "target": ${(daily.waterGoalMl / 1000).toStringAsFixed(1)}, "x": ["Fri","Sat","Sun","Mon","Tue","Wed","Thu"], "y": [0,0,0,0,0,0,${(daily.waterMl / 1000).toStringAsFixed(1)}] },
-    { "type": "ring", "title": "Calorie goal", "value": ${daily.caloriesConsumed}, "target": ${daily.caloriesGoal}, "unit": "kcal" },
-    { "type": "stat_row", "items": [{"label":"Remaining","value":"${daily.caloriesGoal - daily.caloriesConsumed} kcal"}] }
+    {
+      "type": "progress_bars",
+      "title": "Macros today",
+      "items": [
+        {"label": "Protein", "value": ${daily.proteinG}, "target": ${daily.proteinGoalG}, "unit": "g", "color": "protein"},
+        {"label": "Carbs", "value": ${daily.carbsG}, "target": ${daily.carbsGoalG}, "unit": "g", "color": "calories"}
+      ]
+    },
+    {
+      "type": "stat_row",
+      "items": [
+        {"label": "Remaining", "value": "$remainingCals kcal"},
+        {"label": "Protein Gap", "value": "${remainingProtein}g"}
+      ]
+    }
   ],
-  "actions": [{"label":"Log 250 ml","icon":"water_drop","action":"log_water","payload":{"ml":250}}],
-  "followups": ["What should I eat for dinner?", "Show my weekly protein"]
+  "actions": [
+    {"label": "Plan dinner", "icon": "restaurant", "action": "open_meal_planner", "payload": {"protein_g": ${remainingProtein > 0 ? remainingProtein : 40}}},
+    {"label": "Log 250 ml", "icon": "water_drop", "action": "log_water", "payload": {"ml": 250}}
+  ],
+  "followups": ["How is my calorie balance today?", "What snacks fit my macros?", "Show my weekly calories"]
 }
 ''';
 
         final userPrompt = '''
-Context:
-Calories Consumed: ${daily.caloriesConsumed} / Goal: ${daily.caloriesGoal}
-Water: ${daily.waterMl} ml / Goal: ${daily.waterGoalMl} ml
-Protein: ${daily.proteinG} g / Goal: ${daily.proteinGoalG} g
-Goal Type: $userGoalType
-Time: $localTimeStr
+User Context:
+- Consumed Calories: ${daily.caloriesConsumed} / ${daily.caloriesGoal} kcal ($remainingCals kcal remaining)
+- Consumed Protein: ${daily.proteinG}g / ${daily.proteinGoalG}g (${remainingProtein}g remaining)
+- Water: ${(daily.waterMl / 1000.0).toStringAsFixed(1)} L / ${(daily.waterGoalMl / 1000.0).toStringAsFixed(1)} L
+- User Goal: $userGoalType
+- Local Time: $localTimeStr
 
-Question: $question
+User Question: $question
 ''';
 
         final raw = await _gemini.generateContent(
           systemInstruction: systemPrompt,
           userPrompt: userPrompt,
         );
-        return CoachResponse.parse(raw);
+
+        final res = CoachResponse.parse(raw);
+        if (res.headline.isNotEmpty && (res.summary.isNotEmpty || res.blocks.isNotEmpty)) {
+          return res;
+        }
       } catch (e) {
         debugPrint('CoachRepository: Gemini call failed: $e');
       }
@@ -289,7 +328,133 @@ Question: $question
   ) {
     final q = question.toLowerCase();
     final remainingCals = math.max(0, daily.caloriesGoal - daily.caloriesConsumed);
+    final remainingProtein = math.max(0, daily.proteinGoalG - daily.proteinG).toInt();
 
+    // 1. Food / Meals / Dinner / Lunch / Snack questions
+    if (q.contains('dinner') ||
+        q.contains('lunch') ||
+        q.contains('breakfast') ||
+        q.contains('eat') ||
+        q.contains('food') ||
+        q.contains('meal') ||
+        q.contains('snack')) {
+      final mealName = q.contains('dinner')
+          ? 'dinner'
+          : (q.contains('lunch') ? 'lunch' : (q.contains('breakfast') ? 'breakfast' : 'meal'));
+      final targetProteinForMeal = remainingProtein > 50 ? 45 : (remainingProtein > 20 ? remainingProtein : 30);
+
+      return CoachResponse(
+        headline: 'Aim for ~$targetProteinForMeal g protein for $mealName.',
+        summary: '$remainingCals kcal and ${remainingProtein}g protein remaining today. High-protein choices like grilled chicken breast, salmon, or lentils fit best.',
+        blocks: [
+          CoachBlock(
+            type: 'progress_bars',
+            title: 'Macros remaining',
+            items: [
+              CoachProgressBarItem(
+                label: 'Protein',
+                value: daily.proteinG,
+                target: daily.proteinGoalG,
+                unit: 'g',
+                color: 'protein',
+              ),
+              CoachProgressBarItem(
+                label: 'Carbs',
+                value: daily.carbsG,
+                target: daily.carbsGoalG,
+                unit: 'g',
+                color: 'calories',
+              ),
+            ],
+          ),
+          CoachBlock(
+            type: 'stat_row',
+            items: [
+              CoachStatRowItem(label: 'Remaining', value: '$remainingCals kcal'),
+              CoachStatRowItem(label: 'Protein Needed', value: '${remainingProtein}g'),
+            ],
+          ),
+        ],
+        actions: [
+          CoachActionItem(
+            label: 'Plan $mealName',
+            icon: 'restaurant',
+            action: CoachAction.openMealPlanner,
+            payload: {'protein_g': targetProteinForMeal},
+          ),
+          const CoachActionItem(
+            label: 'Log 250 ml',
+            icon: 'water_drop',
+            action: CoachAction.logWater,
+            payload: {'ml': 250},
+          ),
+        ],
+        followups: const [
+          'How is my calorie balance today?',
+          'What are my macro gaps?',
+          'Show my weekly calories',
+        ],
+      );
+    }
+
+    // 2. Macro gaps / Protein questions
+    if (q.contains('macro') || q.contains('gap') || q.contains('protein')) {
+      return CoachResponse(
+        headline: remainingProtein > 30
+            ? 'Protein is behind target by ${remainingProtein}g.'
+            : 'Macros are well balanced today.',
+        summary: '${daily.proteinG.toInt()}g of ${daily.proteinGoalG.toInt()}g protein logged so far. Focus on lean protein to close the gap.',
+        blocks: [
+          CoachBlock(
+            type: 'progress_bars',
+            title: 'Macros today',
+            items: [
+              CoachProgressBarItem(
+                label: 'Protein',
+                value: daily.proteinG,
+                target: daily.proteinGoalG,
+                unit: 'g',
+                color: 'protein',
+              ),
+              CoachProgressBarItem(
+                label: 'Carbs',
+                value: daily.carbsG,
+                target: daily.carbsGoalG,
+                unit: 'g',
+                color: 'calories',
+              ),
+            ],
+          ),
+          CoachBlock(
+            type: 'stat_row',
+            items: [
+              CoachStatRowItem(label: 'Protein Target', value: '${daily.proteinGoalG.toInt()}g'),
+              CoachStatRowItem(label: 'Deficit', value: '${remainingProtein}g'),
+            ],
+          ),
+        ],
+        actions: const [
+          CoachActionItem(
+            label: 'Plan high-protein meal',
+            icon: 'restaurant',
+            action: CoachAction.openMealPlanner,
+            payload: {'protein_g': 40},
+          ),
+          CoachActionItem(
+            label: 'Log 250 ml',
+            icon: 'water_drop',
+            action: CoachAction.logWater,
+            payload: {'ml': 250},
+          ),
+        ],
+        followups: const [
+          'What should I eat for dinner?',
+          'How is my calorie balance today?',
+        ],
+      );
+    }
+
+    // 3. Weekly trend / Weekly calories
     if (q.contains('weekly') || q.contains('week') || q.contains('trend')) {
       final daysX = <String>[];
       final calsY = <double>[];
@@ -300,7 +465,7 @@ Question: $question
       }
       return CoachResponse(
         headline: "Here's your weekly calorie trajectory.",
-        summary: "Average intake is balanced with your goals.",
+        summary: 'Average intake is tracking well with your daily targets.',
         blocks: [
           CoachBlock(
             type: 'bar_chart',
@@ -313,10 +478,10 @@ Question: $question
           CoachBlock(
             type: 'stat_row',
             items: [
-              const CoachStatRowItem(label: 'Streak', value: '2 days'),
+              CoachStatRowItem(label: 'Streak', value: '${daily.streakDays} days'),
               CoachStatRowItem(label: 'Remaining today', value: '$remainingCals kcal'),
             ],
-          )
+          ),
         ],
         actions: const [
           CoachActionItem(label: 'Log 250 ml', icon: 'water_drop', action: CoachAction.logWater, payload: {'ml': 250}),
@@ -326,6 +491,7 @@ Question: $question
       );
     }
 
+    // 4. Hydration / Water questions
     if (q.contains('water') || q.contains('hydrat')) {
       final daysX = <String>[];
       final waterY = <double>[];
@@ -336,8 +502,8 @@ Question: $question
         waterY.add(double.parse((ml / 1000.0).toStringAsFixed(1)));
       }
       return CoachResponse(
-        headline: "Hydration is at ${daily.waterPercent}% of target.",
-        summary: "${(daily.waterMl / 1000).toStringAsFixed(1)} L consumed of ${(daily.waterGoalMl / 1000).toStringAsFixed(1)} L goal.",
+        headline: 'Hydration is at ${daily.waterPercent}% of target.',
+        summary: '${(daily.waterMl / 1000).toStringAsFixed(1)} L consumed of ${(daily.waterGoalMl / 1000).toStringAsFixed(1)} L goal.',
         blocks: [
           CoachBlock(
             type: 'line_chart',
@@ -353,16 +519,16 @@ Question: $question
             value: (daily.waterMl / 1000.0),
             target: (daily.waterGoalMl / 1000.0),
             unit: 'L',
-          )
+          ),
         ],
         actions: const [
           CoachActionItem(label: 'Log 250 ml', icon: 'water_drop', action: CoachAction.logWater, payload: {'ml': 250}),
         ],
-        followups: ['How is my calorie balance today?', 'Show my weekly calories'],
+        followups: const ['How is my calorie balance today?', 'Show my weekly calories'],
       );
     }
 
-    // Default balance / macros response (matches Image A)
+    // 5. Default balance / calorie question (matches Image A)
     return CoachResponse(
       headline: daily.proteinRatio < 0.4
           ? "You're on track, but protein is behind."
@@ -402,8 +568,8 @@ Question: $question
         CoachActionItem(label: 'Plan lunch', icon: 'restaurant', action: CoachAction.openMealPlanner, payload: {'protein_g': 40}),
       ],
       followups: const [
-        "What should I eat for dinner?",
-        "Show my weekly protein",
+        'What should I eat for dinner?',
+        'Show my weekly protein',
       ],
     );
   }

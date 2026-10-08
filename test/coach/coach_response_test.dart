@@ -120,5 +120,31 @@ void main() {
       expect(parsed.summary, contains("Here is some freeform advice"));
       expect(parsed.actions, isEmpty);
     });
+
+    test('rejects Supabase NOT_FOUND or error payloads in fromJson', () {
+      final notFoundPayload = {"code": "NOT_FOUND", "message": "Requested function was not found"};
+      expect(() => CoachResponse.fromJson(notFoundPayload), throwsFormatException);
+
+      final errorPayload = {"error": "Server error"};
+      expect(() => CoachResponse.fromJson(errorPayload), throwsFormatException);
+    });
+
+    test('flexibly parses AI action variants into CoachAction enum', () {
+      final drinkWater = CoachActionItem.fromJson({
+        'type': 'drink_water',
+        'prompt': 'Drink a glass of water',
+        'amount_ml': 300,
+      });
+      expect(drinkWater.action, CoachAction.logWater);
+      expect(drinkWater.payload['ml'], 300);
+
+      final logMeal = CoachActionItem.fromJson({
+        'type': 'log_meal',
+        'title': 'Plan a high-protein dinner',
+        'protein_g': 45,
+      });
+      expect(logMeal.action, CoachAction.openMealPlanner);
+      expect(logMeal.payload['protein_g'], 45);
+    });
   });
 }

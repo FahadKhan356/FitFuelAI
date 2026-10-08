@@ -7,14 +7,15 @@ enum CoachAction {
   unknown;
 
   static CoachAction fromString(String? value) {
-    switch (value) {
-      case 'log_water':
-        return CoachAction.logWater;
-      case 'open_meal_planner':
-        return CoachAction.openMealPlanner;
-      default:
-        return CoachAction.unknown;
+    if (value == null) return CoachAction.unknown;
+    final v = value.toLowerCase();
+    if (v.contains('water')) {
+      return CoachAction.logWater;
     }
+    if (v.contains('meal') || v.contains('plan') || v.contains('lunch') || v.contains('dinner')) {
+      return CoachAction.openMealPlanner;
+    }
+    return CoachAction.unknown;
   }
 }
 
@@ -96,11 +97,19 @@ class CoachResponse {
   }
 
   factory CoachResponse.fromJson(Map<String, dynamic> json) {
+    if (json.containsKey('error') ||
+        json['code'] == 'NOT_FOUND' ||
+        (json['headline'] == null && json['blocks'] == null && json['summary'] == null)) {
+      throw FormatException('Invalid coach response or error payload: $json');
+    }
+
     final blocksList = <CoachBlock>[];
     if (json['blocks'] is List) {
       for (final item in (json['blocks'] as List)) {
         if (item is Map<String, dynamic>) {
           blocksList.add(CoachBlock.fromJson(item));
+        } else if (item is Map) {
+          blocksList.add(CoachBlock.fromJson(item.cast<String, dynamic>()));
         }
       }
     }
@@ -110,6 +119,8 @@ class CoachResponse {
       for (final item in (json['actions'] as List)) {
         if (item is Map<String, dynamic>) {
           actionsList.add(CoachActionItem.fromJson(item));
+        } else if (item is Map) {
+          actionsList.add(CoachActionItem.fromJson(item.cast<String, dynamic>()));
         }
       }
     }
@@ -117,13 +128,27 @@ class CoachResponse {
     final followupsList = <String>[];
     if (json['followups'] is List) {
       for (final item in (json['followups'] as List)) {
-        if (item != null) followupsList.add(item.toString());
+        if (item is String) {
+          followupsList.add(item);
+        } else if (item is Map) {
+          final q = item['question'] ?? item['title'] ?? item['prompt'] ?? item['text'];
+          if (q != null) followupsList.add(q.toString());
+        } else if (item != null) {
+          followupsList.add(item.toString());
+        }
       }
     }
 
+    final rawHeadline = json['headline']?.toString() ?? '';
+    final rawSummary = json['summary']?.toString() ?? '';
+
+    final head = rawHeadline.isNotEmpty
+        ? rawHeadline
+        : (rawSummary.isNotEmpty ? 'Coach Insight' : 'Daily Nutrition Overview');
+
     return CoachResponse(
-      headline: _sanitizeText(json['headline']?.toString() ?? 'Daily Analysis'),
-      summary: _sanitizeText(json['summary']?.toString() ?? ''),
+      headline: _sanitizeText(head),
+      summary: _sanitizeText(rawSummary),
       blocks: blocksList,
       actions: actionsList,
       followups: followupsList,
@@ -269,12 +294,33 @@ class CoachActionItem {
   final CoachAction action;
   final Map<String, dynamic> payload;
 
-  factory CoachActionItem.fromJson(Map<String, dynamic> json) => CoachActionItem(
-        label: json['label']?.toString() ?? '',
-        icon: json['icon']?.toString() ?? '',
-        action: CoachAction.fromString(json['action']?.toString()),
-        payload: json['payload'] is Map<String, dynamic>
-            ? (json['payload'] as Map<String, dynamic>)
-            : const {},
-      );
+  factory CoachActionItem.fromJson(Map<String, dynamic> json) {
+    final actionStr = json['action']?.toString() ?? json['type']?.toString();
+    final action = CoachAction.fromString(actionStr);
+    var label = json['label']?.toString() ??
+        json['title']?.toString() ??
+        json['prompt']?.toString() ??
+        '';
+    if (label.isEmpty) {
+      label = action == CoachAction.logWater ? 'Log 250 ml' : 'Plan meal';
+    }
+    final icon = (json['icon']?.toString().isNotEmpty == true)
+        ? json['icon']!.toString()
+        : (action == CoachAction.logWater ? 'water_drop' : 'restaurant');
+
+    final payloadData = <String, dynamic>{};
+    if (json['payload'] is Map) {
+      payloadData.addAll((json['payload'] as Map).cast<String, dynamic>());
+    } else {
+      if (json['amount_ml'] != null) payloadData['ml'] = json['amount_ml'];
+      if (json['protein_g'] != null) payloadData['protein_g'] = json['protein_g'];
+    }
+
+    return CoachActionItem(
+      label: label,
+      icon: icon,
+      action: action,
+      payload: payloadData,
+    );
+  }
 }
