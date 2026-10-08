@@ -71,10 +71,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
       backgroundColor: kBg,
-      // The Scan tab already *is* the scanner, so the FAB would be a redundant
-      // duplicate of the screen sitting underneath it.
-      floatingActionButton:
-          _navIndex == 2 ? null : _CameraFAB(onTap: _openScan),
+      // The Scan tab is already the scanner, and the Coach tab has its own chat input bar.
+      floatingActionButton: (_navIndex == 2 || _navIndex == 3)
+          ? null
+          : _CameraFAB(onTap: _openScan),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: _BottomNav(
         currentIndex: _navIndex,

@@ -1,13 +1,18 @@
+import 'dart:math' as math;
+import 'dart:ui';
+
 import 'package:fitfuel_ai/core/di/service_locator.dart';
 import 'package:fitfuel_ai/core/domain/entities/ai_chat_message_entity.dart';
 import 'package:fitfuel_ai/core/domain/entities/coach_insight.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../bloc/ai_coach_bloc.dart';
 
 class AiCoachScreen extends StatefulWidget {
-  const AiCoachScreen({Key? key}) : super(key: key);
+  const AiCoachScreen({super.key});
 
   @override
   State<AiCoachScreen> createState() => _AiCoachScreenState();
@@ -30,6 +35,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
   late final AiCoachBloc _bloc;
   bool _isThinking = false;
   bool _historySeeded = false;
+  bool _insightsCollapsed = false;
   CoachInsight? _activeInsight;
 
   @override
@@ -39,6 +45,10 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId != null) {
       _bloc.add(LoadChatHistory(userId));
+    }
+    // If history already loaded (e.g., from cache), seed it now
+    if (_bloc.state is AiCoachHistoryLoaded) {
+      _seedHistory((_bloc.state as AiCoachHistoryLoaded).messages);
     }
   }
 
@@ -55,6 +65,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
     if (text.isEmpty) return;
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
+    HapticFeedback.lightImpact();
     _messageController.clear();
     setState(() {
       _isThinking = true;
@@ -70,6 +81,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
     if (_isThinking) return;
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
+    HapticFeedback.lightImpact();
     setState(() {
       _isThinking = true;
       _activeInsight = insight;
@@ -93,8 +105,8 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
       if (!_scrollController.hasClients) return;
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
       );
     });
   }
@@ -129,285 +141,249 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
     });
   }
 
-  /// `...` bubble shown while the coach is reading the logs / answering.
-  Widget _buildThinkingBubble() {
-    final pending = _activeInsight;
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1F1F2E),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(
-              width: 14,
-              height: 14,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Color(0xFF9B8CFF),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              pending == null
-                  ? 'Reading your logs...'
-                  : 'Checking ${pending.label.toLowerCase()}...',
-              style: const TextStyle(color: Color(0xFFE8E6F5), fontSize: 13),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Horizontal quick-insight action chips. Tapping one asks the coach for a
-  /// focused answer built from the user's own tracked data.
-  Widget _buildQuickInsights() => Container(
-      width: double.infinity,
-      color: Colors.white,
-      padding: const EdgeInsets.only(top: 10, bottom: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                Icon(Icons.insights_rounded, size: 14, color: Color(0xFF8A8A9A)),
-                SizedBox(width: 6),
-                Text(
-                  'Personalised from your logs',
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF8A8A9A),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 38,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: CoachInsight.values.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final insight = CoachInsight.values[index];
-                final isBusy = _activeInsight == insight;
-                return GestureDetector(
-                  onTap: () => _requestInsight(insight),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: isBusy ? const Color(0xFF5B4EE8) : Colors.white,
-                      borderRadius: BorderRadius.circular(19),
-                      border: Border.all(color: const Color(0xFF5B4EE8)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+  @override
+  Widget build(BuildContext context) => BlocProvider.value(
+        value: _bloc,
+        child: BlocListener<AiCoachBloc, AiCoachState>(
+          listener: (context, state) {
+            if (state is AiCoachHistoryLoaded) {
+              _seedHistory(state.messages);
+            } else if (state is AiCoachMessageSent) {
+              _appendAssistant(state.aiResponse);
+            } else if (state is AiCoachInsightLoaded) {
+              _appendAssistant(state.response);
+            } else if (state is AiCoachError) {
+              setState(() {
+                _isThinking = false;
+                _activeInsight = null;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Error: ${state.message}')),
+              );
+            }
+          },
+          child: Scaffold(
+            backgroundColor: const Color(0xFFF7F6FC),
+            body: SafeArea(
+              child: Column(
+                children: [
+                  _buildHeader(),
+                  Expanded(
+                    child: Stack(
                       children: [
-                        if (isBusy)
-                          const SizedBox(
-                            width: 13,
-                            height: 13,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        else
-                          Icon(
-                            _insightIcon(insight),
-                            size: 14,
-                            color: const Color(0xFF5B4EE8),
-                          ),
-                        const SizedBox(width: 6),
-                        Text(
-                          insight.label,
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
-                            color: isBusy
-                                ? Colors.white
-                                : const Color(0xFF5B4EE8),
-                          ),
+                        // Chat messages scroll view
+                        ListView.builder(
+                          controller: _scrollController,
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 140),
+                          itemCount: _messages.length + (_isThinking ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (index >= _messages.length) {
+                              return _ThinkingWaveBubble(
+                                statusText: _activeInsight == null
+                                    ? 'Analyzing your meals & logs...'
+                                    : 'Checking ${_activeInsight!.label.toLowerCase()}...',
+                              );
+                            }
+                            final message = _messages[index];
+                            return _AnimatedMessageBubble(
+                              message: message,
+                            );
+                          },
+                        ),
+
+                        // Bottom Floating Frosted Glass Panel (Quick Insights + Input Field)
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: _buildFrostedBottomPanel(),
                         ),
                       ],
                     ),
                   ),
-                );
-              },
+                ],
+              ),
             ),
           ),
-        ],
-      ),
-    );
+        ),
+      );
 
-  @override
-  Widget build(BuildContext context) => BlocProvider.value(
-      value: _bloc,
-      child: BlocListener<AiCoachBloc, AiCoachState>(
-        listener: (context, state) {
-          if (state is AiCoachHistoryLoaded) {
-            _seedHistory(state.messages);
-          } else if (state is AiCoachMessageSent) {
-            _appendAssistant(state.aiResponse);
-          } else if (state is AiCoachInsightLoaded) {
-            _appendAssistant(state.response);
-          } else if (state is AiCoachError) {
-            setState(() {
-              _isThinking = false;
-              _activeInsight = null;
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error: ${state.message}')),
-            );
-          }
-        },
-        child: Scaffold(
-          backgroundColor: const Color(0xFFF5F5FA),
-          body: SafeArea(
-            child: Column(
+  /// Sleek, frosted header with online indicator and clean back action
+  Widget _buildHeader() => Container(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.8),
+          border: const Border(
+            bottom: BorderSide(color: Color(0xFFEBE8F5), width: 1),
+          ),
+        ),
+        child: Row(
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.maybePop(context),
+              child: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1EFF8),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE3DFEF)),
+                ),
+                child: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  size: 16,
+                  color: Color(0xFF1E1E2E),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.35),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const Row(
+                  children: [
+                    Text(
+                      'AI Coach',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1E1E2E),
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    SizedBox(width: 6),
+                    _PulsingDot(),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Connected to live fitness & nutrition logs',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF757489).withValues(alpha: 0.9),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+  /// Modern Frosted Glass Panel combining flexible Quick Insights and Chat Input
+  Widget _buildFrostedBottomPanel() => ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.85),
+              border: Border(
+                top: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.8),
+                  width: 1.2,
+                ),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF1E1E2E).withValues(alpha: 0.05),
+                  blurRadius: 20,
+                  offset: const Offset(0, -6),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Flexible Quick Insights row
+                _buildFlexibleInsights(),
+
+                // Chat Input Row with prominent send button
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.maybePop(context),
-                        child: Container(
-                          width: 38,
-                          height: 38,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF5F5FA),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(
-                            Icons.arrow_back_ios_new_rounded,
-                            size: 16,
-                            color: Color(0xFF1F1F2E),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF5B4EE8),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.auto_awesome_rounded, color: Colors.white, size: 18),
-                      ),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'AI Coach',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1F1F2E),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1, thickness: 1, color: Color(0xFFE8E6F5)),
-                Expanded(
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _messages.length + (_isThinking ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index >= _messages.length) {
-                        return _buildThinkingBubble();
-                      }
-                      final message = _messages[index];
-                      return Align(
-                        alignment: message.isUser
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: message.isUser
-                                ? const Color(0xFF5B4EE8)
-                                : const Color(0xFF1F1F2E),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            message.text,
-                            style: TextStyle(
-                              color: message.isUser ? Colors.white : const Color(0xFFE8E6F5),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                _buildQuickInsights(),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5FA),
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 8,
-                        offset: const Offset(0, -2),
-                      ),
-                    ],
-                  ),
+                  padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
                   child: Row(
                     children: [
                       Expanded(
-                        child: TextField(
-                          controller: _messageController,
-                          decoration: InputDecoration(
-                            hintText: 'Ask anything about nutrition...',
-                            hintStyle: const TextStyle(color: Color(0xFF8A8A9A)),
-                            filled: true,
-                            fillColor: Colors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Color(0xFFE8E6F5)),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1EFF8).withValues(alpha: 0.8),
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(
+                              color: const Color(0xFFE2DFEE),
+                              width: 1.0,
                             ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Color(0xFFE8E6F5)),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Color(0xFF5B4EE8), width: 2),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           ),
-                          onSubmitted: (_) => _sendMessage(),
+                          child: TextField(
+                            controller: _messageController,
+                            style: const TextStyle(
+                              fontSize: 14.5,
+                              color: Color(0xFF1E1E2E),
+                              fontWeight: FontWeight.w500,
+                            ),
+                            decoration: const InputDecoration(
+                              hintText: 'Ask anything about nutrition...',
+                              hintStyle: TextStyle(
+                                color: Color(0xFF8F8E9E),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                            ),
+                            onSubmitted: (_) => _sendMessage(),
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 10),
                       GestureDetector(
                         onTap: _sendMessage,
                         child: Container(
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: const Color(0xFF5B4EE8),
-                            borderRadius: BorderRadius.circular(12),
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF6366F1), Color(0xFF7C3AED)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF6366F1).withValues(alpha: 0.38),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
-                          child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                          child: const Icon(
+                            Icons.send_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
                     ],
@@ -417,13 +393,457 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
             ),
           ),
         ),
-      ),
-    );
+      );
+
+  /// Flexible, compact horizontal insights bar that can be collapsed to maximize screen space
+  Widget _buildFlexibleInsights() => Container(
+        padding: const EdgeInsets.fromLTRB(14, 8, 14, 2),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 13,
+                  color: Color(0xFF6366F1),
+                ),
+                const SizedBox(width: 5),
+                const Text(
+                  'Quick Insights',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF6366F1),
+                    letterSpacing: 0.4,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '• from your logs',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: const Color(0xFF757489).withValues(alpha: 0.75),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _insightsCollapsed = !_insightsCollapsed);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    child: Text(
+                      _insightsCollapsed ? 'Show chips ▾' : 'Hide ▴',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF8B8A9E),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            AnimatedCrossFade(
+              duration: const Duration(milliseconds: 220),
+              crossFadeState: _insightsCollapsed
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
+              firstChild: Container(
+                margin: const EdgeInsets.only(top: 6),
+                height: 36,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: CoachInsight.values.length,
+                  separatorBuilder: (context, index) => const SizedBox(width: 8),
+                  itemBuilder: (context, index) {
+                    final insight = CoachInsight.values[index];
+                    final isBusy = _activeInsight == insight;
+                    return GestureDetector(
+                      onTap: () => _requestInsight(insight),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          gradient: isBusy
+                              ? const LinearGradient(
+                                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                                )
+                              : null,
+                          color: isBusy ? null : Colors.white.withValues(alpha: 0.85),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: isBusy
+                                ? Colors.transparent
+                                : const Color(0xFF6366F1).withValues(alpha: 0.28),
+                            width: 1.0,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF6366F1).withValues(
+                                alpha: isBusy ? 0.28 : 0.04,
+                              ),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isBusy)
+                              const SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            else
+                              Icon(
+                                _insightIcon(insight),
+                                size: 14,
+                                color: const Color(0xFF6366F1),
+                              ),
+                            const SizedBox(width: 6),
+                            Text(
+                              insight.label,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: isBusy
+                                    ? Colors.white
+                                    : const Color(0xFF4338CA),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              secondChild: const SizedBox(height: 2),
+            ),
+          ],
+        ),
+      );
+}
+
+// ─────────────────────────────────────────────
+//  Animated Glassmorphic Chat Bubble
+// ─────────────────────────────────────────────
+class _AnimatedMessageBubble extends StatelessWidget {
+  const _AnimatedMessageBubble({required this.message});
+
+  final ChatMessage message;
+
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+        tween: Tween<double>(begin: 0.0, end: 1.0),
+        builder: (context, val, child) => Opacity(
+          opacity: val,
+          child: Transform.translate(
+            offset: Offset(0, (1 - val) * 12),
+            child: child,
+          ),
+        ),
+        child: Align(
+          alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.82,
+            ),
+            margin: const EdgeInsets.only(bottom: 14),
+            padding: message.isUser
+                ? const EdgeInsets.fromLTRB(16, 12, 16, 12)
+                : const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            decoration: message.isUser
+                ? BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                      bottomLeft: Radius.circular(20),
+                      bottomRight: Radius.circular(6),
+                    ),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      width: 1.0,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.32),
+                        blurRadius: 16,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  )
+                : BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1E1E2E), Color(0xFF27263B)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
+                      bottomRight: Radius.circular(20),
+                      bottomLeft: Radius.circular(6),
+                    ),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      width: 1.2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF1E1E2E).withValues(alpha: 0.20),
+                        blurRadius: 16,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+            child: Column(
+              crossAxisAlignment: message.isUser
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
+              children: [
+                if (!message.isUser) ...[
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6366F1).withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: const Color(0xFF818CF8).withValues(alpha: 0.35),
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.auto_awesome_rounded, size: 10, color: Color(0xFFA5B4FC)),
+                            SizedBox(width: 4),
+                            Text(
+                              'AI COACH',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFFA5B4FC),
+                                letterSpacing: 0.7,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        DateFormat.jm().format(message.timestamp),
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          color: Colors.white.withValues(alpha: 0.4),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                ],
+                Text(
+                  message.text,
+                  style: TextStyle(
+                    color: message.isUser ? Colors.white : const Color(0xFFF1F1F8),
+                    fontSize: 14.5,
+                    height: 1.45,
+                    fontWeight: message.isUser ? FontWeight.w500 : FontWeight.w400,
+                  ),
+                ),
+                if (message.isUser) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    DateFormat.jm().format(message.timestamp),
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+// ─────────────────────────────────────────────
+//  Animated Thinking Bubble with Wave Effect
+// ─────────────────────────────────────────────
+class _ThinkingWaveBubble extends StatefulWidget {
+  const _ThinkingWaveBubble({required this.statusText});
+
+  final String statusText;
+
+  @override
+  State<_ThinkingWaveBubble> createState() => _ThinkingWaveBubbleState();
+}
+
+class _ThinkingWaveBubbleState extends State<_ThinkingWaveBubble>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF1E1E2E), Color(0xFF28273D)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: const Color(0xFF6366F1).withValues(alpha: 0.35),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF6366F1).withValues(alpha: 0.16),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedBuilder(
+                animation: _ctrl,
+                builder: (context, _) => Row(
+                  children: List.generate(3, (i) {
+                    final double phase = (i * 0.3);
+                    final double bounce = math.sin((_ctrl.value * 2 * math.pi) + phase);
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                      width: 6.5,
+                      height: 6.5 + (bounce * 2.5).abs(),
+                      decoration: BoxDecoration(
+                        color: Color.lerp(
+                          const Color(0xFF818CF8),
+                          const Color(0xFFC084FC),
+                          (bounce + 1) / 2,
+                        ),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                widget.statusText,
+                style: const TextStyle(
+                  color: Color(0xFFE8E6F5),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
+// ─────────────────────────────────────────────
+//  Pulsing Online Dot
+// ─────────────────────────────────────────────
+class _PulsingDot extends StatefulWidget {
+  const _PulsingDot();
+
+  @override
+  State<_PulsingDot> createState() => _PulsingDotState();
+}
+
+class _PulsingDotState extends State<_PulsingDot> with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+        animation: _ctrl,
+        builder: (context, _) {
+          final double opacity = 0.5 + (_ctrl.value * 0.5);
+          return Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFF10B981).withValues(alpha: opacity),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF10B981).withValues(alpha: opacity * 0.6),
+                  blurRadius: 6,
+                ),
+              ],
+            ),
+          );
+        },
+      );
 }
 
 class ChatMessage {
+  ChatMessage({
+    required this.text,
+    required this.isUser,
+    DateTime? timestamp,
+  }) : timestamp = timestamp ?? DateTime.now();
 
-  ChatMessage({required this.text, required this.isUser});
   final String text;
   final bool isUser;
+  final DateTime timestamp;
 }
