@@ -10,6 +10,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../bloc/ai_coach_bloc.dart';
+import '../widgets/ai_3d_intelligence_orb.dart';
 
 class AiCoachScreen extends StatefulWidget {
   const AiCoachScreen({super.key});
@@ -163,7 +164,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
             }
           },
           child: Scaffold(
-            backgroundColor: const Color(0xFFF7F6FC),
+            backgroundColor: const Color(0xFF090814),
             body: SafeArea(
               child: Column(
                 children: [
@@ -171,7 +172,17 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
                   Expanded(
                     child: Stack(
                       children: [
-                        // Chat messages scroll view
+                        // 3D Moving Intelligence Core Orb (Real-time animated in 3D space)
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: Ai3dIntelligenceOrb(
+                              isThinking: _isThinking,
+                              radiusScale: 0.38,
+                            ),
+                          ),
+                        ),
+
+                        // Chat messages scroll view floating above the 3D orb
                         ListView.builder(
                           controller: _scrollController,
                           physics: const BouncingScrollPhysics(),
@@ -213,9 +224,12 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
   Widget _buildHeader() => Container(
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.8),
-          border: const Border(
-            bottom: BorderSide(color: Color(0xFFEBE8F5), width: 1),
+          color: const Color(0xFF0E0D1F).withValues(alpha: 0.88),
+          border: Border(
+            bottom: BorderSide(
+              color: Colors.white.withValues(alpha: 0.08),
+              width: 1,
+            ),
           ),
         ),
         child: Row(
@@ -226,14 +240,16 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1EFF8),
+                  color: const Color(0xFF18172E),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE3DFEF)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.12),
+                  ),
                 ),
                 child: const Icon(
                   Icons.arrow_back_ios_new_rounded,
                   size: 16,
-                  color: Color(0xFF1E1E2E),
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -250,7 +266,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF6366F1).withValues(alpha: 0.35),
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.45),
                     blurRadius: 10,
                     offset: const Offset(0, 3),
                   ),
@@ -269,7 +285,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF1E1E2E),
+                        color: Colors.white,
                         letterSpacing: -0.3,
                       ),
                     ),
@@ -283,7 +299,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w500,
-                    color: const Color(0xFF757489).withValues(alpha: 0.9),
+                    color: const Color(0xFF94A3B8),
                   ),
                 ),
               ],
@@ -298,16 +314,16 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
           filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.85),
+              color: const Color(0xFF0E0D1F).withValues(alpha: 0.88),
               border: Border(
                 top: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  width: 1.2,
+                  color: Colors.white.withValues(alpha: 0.10),
+                  width: 1.0,
                 ),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF1E1E2E).withValues(alpha: 0.05),
+                  color: Colors.black.withValues(alpha: 0.35),
                   blurRadius: 20,
                   offset: const Offset(0, -6),
                 ),
@@ -327,10 +343,10 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
                       Expanded(
                         child: Container(
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF1EFF8).withValues(alpha: 0.8),
+                            color: const Color(0xFF18172E).withValues(alpha: 0.85),
                             borderRadius: BorderRadius.circular(22),
                             border: Border.all(
-                              color: const Color(0xFFE2DFEE),
+                              color: Colors.white.withValues(alpha: 0.12),
                               width: 1.0,
                             ),
                           ),
@@ -338,13 +354,13 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
                             controller: _messageController,
                             style: const TextStyle(
                               fontSize: 14.5,
-                              color: Color(0xFF1E1E2E),
+                              color: Colors.white,
                               fontWeight: FontWeight.w500,
                             ),
                             decoration: const InputDecoration(
                               hintText: 'Ask anything about nutrition...',
                               hintStyle: TextStyle(
-                                color: Color(0xFF8F8E9E),
+                                color: Color(0xFF717088),
                                 fontSize: 14,
                                 fontWeight: FontWeight.w400,
                               ),
@@ -373,7 +389,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
                             borderRadius: BorderRadius.circular(14),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF6366F1).withValues(alpha: 0.38),
+                                color: const Color(0xFF6366F1).withValues(alpha: 0.45),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
@@ -406,7 +422,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
                 const Icon(
                   Icons.auto_awesome_rounded,
                   size: 13,
-                  color: Color(0xFF6366F1),
+                  color: Color(0xFF818CF8),
                 ),
                 const SizedBox(width: 5),
                 const Text(
@@ -414,7 +430,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
                   style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF6366F1),
+                    color: Color(0xFFA5B4FC),
                     letterSpacing: 0.4,
                   ),
                 ),
@@ -423,7 +439,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
                   '• from your logs',
                   style: TextStyle(
                     fontSize: 11,
-                    color: const Color(0xFF757489).withValues(alpha: 0.75),
+                    color: const Color(0xFF94A3B8).withValues(alpha: 0.75),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -440,7 +456,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF8B8A9E),
+                        color: Color(0xFF94A3B8),
                       ),
                     ),
                   ),
@@ -474,18 +490,18 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
                                   colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
                                 )
                               : null,
-                          color: isBusy ? null : Colors.white.withValues(alpha: 0.85),
+                          color: isBusy ? null : const Color(0xFF18172E).withValues(alpha: 0.85),
                           borderRadius: BorderRadius.circular(18),
                           border: Border.all(
                             color: isBusy
                                 ? Colors.transparent
-                                : const Color(0xFF6366F1).withValues(alpha: 0.28),
+                                : const Color(0xFF6366F1).withValues(alpha: 0.35),
                             width: 1.0,
                           ),
                           boxShadow: [
                             BoxShadow(
                               color: const Color(0xFF6366F1).withValues(
-                                alpha: isBusy ? 0.28 : 0.04,
+                                alpha: isBusy ? 0.35 : 0.08,
                               ),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
@@ -508,7 +524,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
                               Icon(
                                 _insightIcon(insight),
                                 size: 14,
-                                color: const Color(0xFF6366F1),
+                                color: const Color(0xFFA5B4FC),
                               ),
                             const SizedBox(width: 6),
                             Text(
@@ -518,7 +534,7 @@ class _AiCoachScreenState extends State<AiCoachScreen> {
                                 fontWeight: FontWeight.w700,
                                 color: isBusy
                                     ? Colors.white
-                                    : const Color(0xFF4338CA),
+                                    : const Color(0xFFC7D2FE),
                               ),
                             ),
                           ],
