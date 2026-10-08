@@ -920,8 +920,9 @@ class _CalorieCard extends StatelessWidget {
     final remaining = (dailyGoal - consumed).clamp(0, dailyGoal);
     final progress =
         dailyGoal <= 0 ? 0.0 : (consumed / dailyGoal).clamp(0.0, 1.0);
-    final percentLeft =
-        dailyGoal <= 0 ? 0 : ((remaining / dailyGoal) * 100).clamp(0, 100);
+    final percentLeft = dailyGoal <= 0
+        ? 0
+        : ((remaining / dailyGoal) * 100).clamp(0, 100).round();
 
     return AnimatedBuilder(
       animation: animation,
