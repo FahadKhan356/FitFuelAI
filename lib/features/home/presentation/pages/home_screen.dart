@@ -1,5 +1,11 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:fitfuel_ai/core/config/routes.dart';
 import 'package:fitfuel_ai/core/di/service_locator.dart';
@@ -13,9 +19,6 @@ import 'package:fitfuel_ai/core/services/home_data_refresh_notifier.dart';
 import 'package:fitfuel_ai/core/services/streak_service.dart';
 import 'package:fitfuel_ai/core/services/water_goal_resolver.dart';
 import 'package:fitfuel_ai/core/utils/fitness_calculator.dart';
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../screens/camera_scan_screen.dart';
 import '../../../ai_coach/presentation/pages/ai_coach_screen.dart';
@@ -83,7 +86,10 @@ class _HomeScreenState extends State<HomeScreen> {
       body: IndexedStack(
         index: _navIndex,
         children: [
-          _HomeContent(onNavigateToProfile: () => _switchTab(4)),
+          _HomeContent(
+            onNavigateToProfile: () => _switchTab(4),
+            onNavigateToCoach: () => _switchTab(3),
+          ),
           const AnalyticsScreen(),
           const CameraScanScreen(embedded: true),
           const AiCoachScreen(),
@@ -97,9 +103,13 @@ class _HomeScreenState extends State<HomeScreen> {
 //  Home Tab Content
 // ─────────────────────────────────────────────
 class _HomeContent extends StatefulWidget {
-  const _HomeContent({this.onNavigateToProfile});
+  const _HomeContent({
+    this.onNavigateToProfile,
+    this.onNavigateToCoach,
+  });
 
   final VoidCallback? onNavigateToProfile;
+  final VoidCallback? onNavigateToCoach;
 
   @override
   State<_HomeContent> createState() => _HomeContentState();
@@ -513,7 +523,18 @@ class _HomeContentState extends State<_HomeContent>
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Expanded(child: _AICoachCard(animation: _entryController)),
+                  Expanded(
+                    child: _AICoachCard(
+                      animation: _entryController,
+                      onTap: () {
+                        if (widget.onNavigateToCoach != null) {
+                          widget.onNavigateToCoach!();
+                        } else {
+                          context.push(AppRoutes.aiCoach);
+                        }
+                      },
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -1500,141 +1521,467 @@ class _WaterCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-//  AI Coach Card
+//  AI Coach Card (Interactive & Living Micro-Animations)
 // ─────────────────────────────────────────────
-class _AICoachCard extends StatelessWidget {
-  const _AICoachCard({required this.animation});
+class _AICoachCard extends StatefulWidget {
+  const _AICoachCard({
+    required this.animation,
+    this.onTap,
+  });
 
   final Animation<double> animation;
+  final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(
-      animation: animation,
-      builder: (context, child) {
+  State<_AICoachCard> createState() => _AICoachCardState();
+}
+
+class _AICoachCardState extends State<_AICoachCard>
+    with TickerProviderStateMixin {
+  late final AnimationController _idleController;
+  late final AnimationController _pressController;
+
+  @override
+  void initState() {
+    super.initState();
+    // Continuous subtle breathing loop
+    _idleController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )..repeat(reverse: true);
+
+    // Fast, responsive touch scale spring
+    _pressController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+  }
+
+  @override
+  void dispose() {
+    _idleController.dispose();
+    _pressController.dispose();
+    super.dispose();
+  }
+
+  void _handleTap() {
+    HapticFeedback.lightImpact();
+    if (widget.onTap != null) {
+      widget.onTap!();
+    } else {
+      context.push(AppRoutes.aiCoach);
+    }
+  }
+
+  String _getCoachPrompt() {
+    final hour = DateTime.now().hour;
+    if (hour < 11) {
+      return '"Ready to plan your breakfast?"';
+    }
+    if (hour < 15) {
+      return '"Need healthy lunch ideas?"';
+    }
+    if (hour < 18) {
+      return '"Time for an afternoon snack?"';
+    }
+    if (hour < 22) {
+      return '"Ready to plan your dinner?"';
+    }
+    return '"Review today\'s nutrition?"';
+  }
+
+  void _showInfoSheet(BuildContext context) {
+    HapticFeedback.lightImpact();
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.96),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.8),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF5B4BDB).withValues(alpha: 0.14),
+                blurRadius: 30,
+                offset: const Offset(0, -8),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 38,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE3DEFF),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF7E70F6), Color(0xFF5B4BDB)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(13),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF5B4BDB).withValues(alpha: 0.35),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.bolt_rounded,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'AI Nutrition Coach',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1E1B3A),
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Powered by Google Gemini Flash',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF7A7699),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'FitFuel AI Coach continuously synchronizes with your logged meals, calories, macro goals, and hydration to offer personalized coaching, deficit adjustments, and instant recipe suggestions 24/7.',
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 13.5,
+                  color: Color(0xFF4A4670),
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 22),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    _handleTap();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF5B4BDB),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                  label: const Text(
+                    'Chat with AI Coach',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: Listenable.merge([widget.animation, _idleController, _pressController]),
+      builder: (context, _) {
         final t = _clamp01(CurvedAnimation(
-          parent: animation,
+          parent: widget.animation,
           curve: const Interval(0.54, 0.74, curve: Curves.easeOutCubic),
         ).value);
+        final idle = _idleController.value;
+        final pressScale = 1.0 - (0.04 * _pressController.value);
+
         return Transform.translate(
           offset: Offset(0, 22 * (1 - t)),
-          child: Opacity(opacity: t, child: child),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: kCardBg,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: kBorder, width: 1),
-        ),
-        child: AnimatedBuilder(
-          animation: animation,
-          builder: (context, child) {
-            final t = _clamp01(CurvedAnimation(
-              parent: animation,
-              curve: const Interval(0.54, 0.74, curve: Curves.easeOutCubic),
-            ).value);
-            final pulse =
-                1.0 + (math.sin(animation.value * math.pi * 2) * 0.08);
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Transform.scale(
-                      scale: pulse,
-                      child: Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color: kPurpleLight,
-                          borderRadius: BorderRadius.circular(9),
-                        ),
-                        child: const Icon(
-                          Icons.bolt_rounded,
-                          size: 18,
-                          color: kPurple,
-                        ),
-                      ),
+          child: Opacity(
+            opacity: t,
+            child: Transform.scale(
+              scale: pressScale,
+              child: GestureDetector(
+                onTapDown: (_) => _pressController.forward(),
+                onTapUp: (_) {
+                  _pressController.reverse();
+                  _handleTap();
+                },
+                onTapCancel: () => _pressController.reverse(),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.white,
+                        Color.lerp(
+                          Colors.white,
+                          const Color(0xFFF6F3FF),
+                          idle * 0.75,
+                        )!,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: kBg,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: kBorder, width: 1),
-                      ),
-                      child: const Center(
-                        child: Icon(Icons.info_outline_rounded,
-                            size: 14, color: kBody),
-                      ),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: Color.lerp(
+                        const Color(0xFFE8E5FB),
+                        const Color(0xFFC7BFF8),
+                        idle,
+                      )!,
+                      width: 1.2,
                     ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'AI COACH',
-                  style: TextStyle(
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w700,
-                    color: kBody,
-                    letterSpacing: 1.2,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF5B4BDB).withValues(
+                          alpha: 0.05 + (0.07 * idle),
+                        ),
+                        blurRadius: 16 + (8 * idle),
+                        offset: const Offset(0, 4),
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.02),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 5),
-                const Text(
-                  '"Ready to plan your dinner?"',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: kHeadline,
-                    height: 1.35,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                GestureDetector(
-                  onTap: () {},
-                  child: Stack(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
+                      // Top Row: Animated Badge + Info Button
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'ASK NOW',
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
-                              color: kPurple,
-                              letterSpacing: 0.5,
+                          // Breathing Glow Bolt Badge
+                          Transform.scale(
+                            scale: 1.0 + (0.07 * idle),
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFF7E70F6),
+                                    Color(0xFF5B4BDB),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF5B4BDB).withValues(
+                                      alpha: 0.28 + (0.24 * idle),
+                                    ),
+                                    blurRadius: 8 + (5 * idle),
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.bolt_rounded,
+                                  size: 20,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
                           ),
-                          SizedBox(width: 3),
-                          Text(
-                            '→',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: kPurple,
-                              fontWeight: FontWeight.w600,
+                          // Info Button
+                          GestureDetector(
+                            onTap: () => _showInfoSheet(context),
+                            child: Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF6F4FF),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: const Color(0xFFE5E1FA),
+                                  width: 1,
+                                ),
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.info_outline_rounded,
+                                  size: 14,
+                                  color: Color(0xFF7A7699),
+                                ),
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      Positioned.fill(
-                        child: Opacity(
-                          opacity: 0.18 + (0.22 * t),
-                          child: const _ShineSweep(),
+                      const SizedBox(height: 10),
+
+                      // Label with live pulsing status dot
+                      Row(
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: Color.lerp(
+                                const Color(0xFF16A34A),
+                                const Color(0xFF5B4BDB),
+                                idle,
+                              ),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          const Text(
+                            'AI COACH',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF7A7699),
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+
+                      // Dynamic Context-Aware Prompt
+                      Text(
+                        _getCoachPrompt(),
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1E1B3A),
+                          height: 1.35,
+                          letterSpacing: -0.2,
                         ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Animated "ASK NOW →" button with bounce & shimmer
+                      Row(
+                        children: [
+                          Stack(
+                            alignment: Alignment.centerLeft,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 5.5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEDE9FF),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: Color.lerp(
+                                      const Color(0xFFDFD9FF),
+                                      const Color(0xFFC7BFF8),
+                                      idle,
+                                    )!,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Text(
+                                      'ASK NOW',
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFF5B4BDB),
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Transform.translate(
+                                      offset: Offset(3.0 * idle, 0),
+                                      child: const Text(
+                                        '→',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Color(0xFF5B4BDB),
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Positioned.fill(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Opacity(
+                                    opacity: 0.25 + (0.35 * idle),
+                                    child: const _ShineSweep(),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-              ],
-            );
-          },
-        ),
-      ),
+              ),
+            ),
+          ),
+        );
+      },
     );
+  }
 }
 
 // ─────────────────────────────────────────────
