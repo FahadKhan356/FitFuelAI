@@ -20,7 +20,7 @@ class FoodSearchService {
   // countryCode: 'PK', 'IN', 'US', 'GB', etc.
   static Future<List<FoodResult>> search(
     String query, {
-    String countryCode = 'GLOBAL',
+    String countryCode = 'PK',
   }) async {
     final key = _normalizeKey(query);
     if (key.isEmpty) {
@@ -84,12 +84,14 @@ class FoodSearchService {
     String countryCode,
   ) async {
     try {
+      final safeCountryCode =
+          countryCode.length > 5 ? countryCode.substring(0, 5) : countryCode;
       // Prevent duplicate row for same search_key and country_code
       final existing = await _db
           .from('food_items')
           .select('id')
           .eq('search_key', searchKey)
-          .eq('country_code', countryCode)
+          .eq('country_code', safeCountryCode)
           .limit(1);
 
       if ((existing as List).isNotEmpty) {
@@ -97,7 +99,7 @@ class FoodSearchService {
       }
 
       await _db.from('food_items').insert(
-            result.toSupabaseMap(searchKey, countryCode),
+            result.toSupabaseMap(searchKey, safeCountryCode),
           );
     } on Object catch (e) {
       // Don't crash if cache write fails — just log
