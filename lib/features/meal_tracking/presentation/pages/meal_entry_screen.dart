@@ -114,8 +114,8 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
   void _filterFoods(String query) {
     _debounce?.cancel();
 
-    // Empty query → clear results; show search prompt state.
-    if (query.trim().isEmpty) {
+    // Incomplete short query → clear results; show search prompt state.
+    if (query.trim().length < 2) {
       _searchRequestId++;
       setState(() {
         _isSearching = false;
@@ -125,7 +125,7 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
     }
 
     final requestId = ++_searchRequestId;
-    _debounce = Timer(const Duration(milliseconds: 350), () async {
+    _debounce = Timer(const Duration(milliseconds: 600), () async {
       setState(() => _isSearching = true);
       List<NutritionFood> results;
       try {

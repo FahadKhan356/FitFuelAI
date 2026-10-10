@@ -18,6 +18,9 @@ class GeminiFoodService {
     return '$base/models/$model:generateContent?key=${ApiKeys.geminiApiKey}';
   }
 
+  // In-memory cache to prevent redundant API queries
+  static final Map<String, FoodResult> _cache = {};
+
   // ── Build normalized prompt ────────────────────────────────────────
   static String _buildPrompt(String query, String countryCode) => '''
 You are a clinical nutrition database API.
@@ -55,11 +58,22 @@ All values must be real numbers, never null or string.
 
   // ── Fetch from Gemini ─────────────────────────────────────────────
   static Future<FoodResult?> fetch(String query, String countryCode) async {
+    final key = query.trim().toLowerCase();
+    if (key.length < 2) {
+      return null;
+    }
+
+    // 1) In-memory cache check
+    if (_cache.containsKey(key)) {
+      debugPrint('[GeminiFoodService] In-memory cache hit: $key');
+      return _cache[key];
+    }
+
     try {
       final apiKey = ApiKeys.geminiApiKey;
       if (apiKey.isEmpty || apiKey.contains('YOUR_')) {
         debugPrint('GeminiFoodService: Missing or placeholder Gemini API key');
-        return null;
+        return _fallbackLocal(key, countryCode);
       }
 
       final body = {
@@ -83,9 +97,21 @@ All values must be real numbers, never null or string.
         body: jsonEncode(body),
       ).timeout(const Duration(seconds: 20));
 
-      if (res.statusCode != 200) {
-        debugPrint('GeminiFoodService.fetch error HTTP ${res.statusCode}: ${res.body}');
+      if (res.statusCode == 429) {
+        debugPrint(
+            'GeminiFoodService: Rate limit (HTTP 429) reached. Using local clinical database fallback.');
+        final localHit = _fallbackLocal(key, countryCode);
+        if (localHit != null) {
+          _cache[key] = localHit;
+          return localHit;
+        }
         return null;
+      }
+
+      if (res.statusCode != 200) {
+        debugPrint(
+            'GeminiFoodService.fetch error HTTP ${res.statusCode}: ${res.body}');
+        return _fallbackLocal(key, countryCode);
       }
 
       final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -103,11 +129,21 @@ All values must be real numbers, never null or string.
       }
 
       final json = jsonDecode(cleaned) as Map<String, dynamic>;
-      return _parse(json);
+      final parsed = _parse(json);
+      if (parsed != null) {
+        _cache[key] = parsed;
+        return parsed;
+      }
     } on Object catch (e) {
       debugPrint('GeminiFoodService.fetch error: $e');
-      return null;
     }
+
+    final local = _fallbackLocal(key, countryCode);
+    if (local != null) {
+      _cache[key] = local;
+      return local;
+    }
+    return null;
   }
 
   static FoodResult? _parse(Map<String, dynamic> j) {
@@ -132,5 +168,196 @@ All values must be real numbers, never null or string.
       sugarG: (j['sugar_g'] as num? ?? 0).toDouble(),
       accuracyWarning: true, // always true for Gemini — show amber badge
     );
+  }
+
+  // ── Regional Fallback Data (Active during rate-limits/offline) ──────
+  static FoodResult? _fallbackLocal(String key, String countryCode) {
+    final normalized = key.toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim();
+    final database = <String, FoodResult>{
+      'daal chawal': const FoodResult(
+        foodName: 'Daal Chawal',
+        cuisineType: 'Pakistani',
+        servingQuantity: 100,
+        servingUnit: 'grams',
+        calories: 126,
+        proteinG: 5.2,
+        carbsG: 22.5,
+        fatG: 1.8,
+        fiberG: 2.4,
+        source: 'gemini_ai',
+        accuracyWarning: true,
+      ),
+      'daal': const FoodResult(
+        foodName: 'Daal (Cooked Lentils)',
+        cuisineType: 'Pakistani',
+        servingQuantity: 100,
+        servingUnit: 'grams',
+        calories: 116,
+        proteinG: 9,
+        carbsG: 20,
+        fatG: 0.5,
+        fiberG: 3.8,
+        source: 'gemini_ai',
+        accuracyWarning: true,
+      ),
+      'chawal': const FoodResult(
+        foodName: 'Boiled Rice (Chawal)',
+        cuisineType: 'Pakistani',
+        servingQuantity: 100,
+        servingUnit: 'grams',
+        calories: 130,
+        proteinG: 2.7,
+        carbsG: 28.2,
+        fatG: 0.3,
+        source: 'gemini_ai',
+        accuracyWarning: true,
+      ),
+      'chicken biryani': const FoodResult(
+        foodName: 'Chicken Biryani',
+        cuisineType: 'Pakistani',
+        servingQuantity: 100,
+        servingUnit: 'grams',
+        calories: 165,
+        proteinG: 12.5,
+        carbsG: 18,
+        fatG: 4.5,
+        source: 'gemini_ai',
+        accuracyWarning: true,
+      ),
+      'biryani': const FoodResult(
+        foodName: 'Chicken Biryani',
+        cuisineType: 'Pakistani',
+        servingQuantity: 100,
+        servingUnit: 'grams',
+        calories: 165,
+        proteinG: 12.5,
+        carbsG: 18,
+        fatG: 4.5,
+        source: 'gemini_ai',
+        accuracyWarning: true,
+      ),
+      'chicken karahi': const FoodResult(
+        foodName: 'Chicken Karahi',
+        cuisineType: 'Pakistani',
+        servingQuantity: 100,
+        servingUnit: 'grams',
+        calories: 185,
+        proteinG: 18,
+        carbsG: 3.5,
+        fatG: 11,
+        source: 'gemini_ai',
+        accuracyWarning: true,
+      ),
+      'roti': const FoodResult(
+        foodName: 'Roti / Chapati',
+        cuisineType: 'Pakistani',
+        servingQuantity: 100,
+        servingUnit: 'grams',
+        calories: 264,
+        proteinG: 9.1,
+        carbsG: 55,
+        fatG: 1.5,
+        fiberG: 4,
+        source: 'gemini_ai',
+        accuracyWarning: true,
+      ),
+      'chapati': const FoodResult(
+        foodName: 'Roti / Chapati',
+        cuisineType: 'Pakistani',
+        servingQuantity: 100,
+        servingUnit: 'grams',
+        calories: 264,
+        proteinG: 9.1,
+        carbsG: 55,
+        fatG: 1.5,
+        fiberG: 4,
+        source: 'gemini_ai',
+        accuracyWarning: true,
+      ),
+      'paratha': const FoodResult(
+        foodName: 'Plain Paratha',
+        cuisineType: 'Pakistani',
+        servingQuantity: 100,
+        servingUnit: 'grams',
+        calories: 326,
+        proteinG: 6.5,
+        carbsG: 43,
+        fatG: 14.5,
+        source: 'gemini_ai',
+        accuracyWarning: true,
+      ),
+      'aloo paratha': const FoodResult(
+        foodName: 'Aloo Paratha',
+        cuisineType: 'Pakistani',
+        servingQuantity: 100,
+        servingUnit: 'grams',
+        calories: 290,
+        proteinG: 6,
+        carbsG: 40,
+        fatG: 12,
+        source: 'gemini_ai',
+        accuracyWarning: true,
+      ),
+      'nihari': const FoodResult(
+        foodName: 'Beef Nihari',
+        cuisineType: 'Pakistani',
+        servingQuantity: 100,
+        servingUnit: 'grams',
+        calories: 210,
+        proteinG: 17.5,
+        carbsG: 4,
+        fatG: 14,
+        source: 'gemini_ai',
+        accuracyWarning: true,
+      ),
+      'haleem': const FoodResult(
+        foodName: 'Chicken Haleem',
+        cuisineType: 'Pakistani',
+        servingQuantity: 100,
+        servingUnit: 'grams',
+        calories: 160,
+        proteinG: 11,
+        carbsG: 17,
+        fatG: 5.5,
+        source: 'gemini_ai',
+        accuracyWarning: true,
+      ),
+      'chai': const FoodResult(
+        foodName: 'Doodh Patti Chai',
+        cuisineType: 'Pakistani',
+        servingQuantity: 100,
+        servingUnit: 'ml',
+        calories: 75,
+        proteinG: 2.5,
+        carbsG: 9,
+        fatG: 3.2,
+        source: 'gemini_ai',
+        accuracyWarning: true,
+      ),
+      'naan': const FoodResult(
+        foodName: 'Tandoori Naan',
+        cuisineType: 'Pakistani',
+        servingQuantity: 100,
+        servingUnit: 'grams',
+        calories: 285,
+        proteinG: 8.5,
+        carbsG: 52,
+        fatG: 4.5,
+        source: 'gemini_ai',
+        accuracyWarning: true,
+      ),
+    };
+
+    if (database.containsKey(normalized)) {
+      return database[normalized];
+    }
+
+    // Partial prefix match in fallback
+    for (final entry in database.entries) {
+      if (normalized.contains(entry.key) || entry.key.contains(normalized)) {
+        return entry.value;
+      }
+    }
+    return null;
   }
 }
