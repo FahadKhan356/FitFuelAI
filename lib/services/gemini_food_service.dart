@@ -4,12 +4,19 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_keys.dart';
+import '../core/constants/app_constants.dart';
 import '../models/food_result.dart';
 
 class GeminiFoodService {
-  static String get _url =>
-      'https://generativelanguage.googleapis.com/v1beta/models/'
-      'gemini-1.5-flash:generateContent?key=${ApiKeys.geminiApiKey}';
+  static String get _url {
+    final model = AppConstants.geminiModel.isNotEmpty
+        ? AppConstants.geminiModel
+        : 'gemini-2.5-flash';
+    final base = AppConstants.geminiApiBase.isNotEmpty
+        ? AppConstants.geminiApiBase
+        : 'https://generativelanguage.googleapis.com/v1beta';
+    return '$base/models/$model:generateContent?key=${ApiKeys.geminiApiKey}';
+  }
 
   // ── Build normalized prompt ────────────────────────────────────────
   static String _buildPrompt(String query, String countryCode) => '''
@@ -65,7 +72,8 @@ All values must be real numbers, never null or string.
         ],
         'generationConfig': {
           'temperature': 0.1,
-          'maxOutputTokens': 512,
+          'maxOutputTokens': 2048,
+          'responseMimeType': 'application/json',
         },
       };
 

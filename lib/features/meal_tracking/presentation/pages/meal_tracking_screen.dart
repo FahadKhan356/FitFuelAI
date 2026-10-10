@@ -1,4 +1,4 @@
-import 'package:fitfuel_ai/features/food_search/presentation/pages/food_search_screen.dart';
+import 'package:fitfuel_ai/screens/food_search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

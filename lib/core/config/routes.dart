@@ -9,7 +9,7 @@ import '../../features/auth/presentation/pages/signup_screen.dart';
 import '../../features/auth/presentation/pages/splash_screen.dart';
 import '../../features/barcode/presentation/pages/barcode_scanner_screen.dart';
 import '../../features/calendar/presentation/pages/activity_calendar_screen.dart';
-import '../../features/food_search/presentation/pages/food_search_screen.dart';
+import '../../screens/food_search_screen.dart';
 import '../../features/home/presentation/pages/home_screen.dart';
 import '../../features/home/presentation/pages/welcome_screen.dart';
 import '../../features/meal_tracking/presentation/pages/meal_tracking_screen.dart';

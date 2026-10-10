@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/data/models/nutrition_food.dart';
+import '../../../../services/food_search_service.dart';
 
 /// Remote food data source backed by four nutrition providers:
 /// - FatSecret -> broad branded/restaurant food search through a secure proxy.
@@ -75,6 +76,36 @@ class NutritionApiDataSource {
     // that has a source bonus. This matters most for Open Food Facts, whose
     // broad product search can otherwise return weak matches.
     results = results.where((f) => _matchesQuery(f, query)).toList();
+
+    // If external sources returned no results (e.g. regional South Asian/Pakistani
+    // dishes like "daal chawal", "karahi", "biryani"), invoke the 3-tier hybrid
+    // FoodSearchService (Supabase cache -> FatSecret -> Gemini AI fallback).
+    if (results.isEmpty) {
+      try {
+        final hybridResults =
+            await FoodSearchService.search(query, countryCode: 'PK');
+        if (hybridResults.isNotEmpty) {
+          results = hybridResults
+              .map(
+                (r) => NutritionFood(
+                  source: r.source == 'gemini_ai' ? 'AI Gemini' : r.source,
+                  externalId: r.foodName,
+                  name: r.foodName,
+                  brand: r.cuisineType,
+                  energyKcal: r.calories,
+                  protein: r.proteinG,
+                  carbs: r.carbsG,
+                  fat: r.fatG,
+                  fiber: r.fiberG,
+                  sugar: r.sugarG,
+                  sodiumMg: r.sodiumMg,
+                  potassiumMg: r.potassiumMg,
+                ),
+              )
+              .toList();
+        }
+      } on Object catch (_) {}
+    }
 
     // Store in cache (cap size to avoid unbounded growth).
     if (results.isNotEmpty) {
