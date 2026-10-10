@@ -459,37 +459,59 @@ class FoodNutritionDetailSheet extends StatefulWidget {
 }
 
 class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
-  double servingGrams = 100;
+  double servingGrams = 50;
+  late final TextEditingController _gramsController;
   late String selectedMealType;
 
   @override
   void initState() {
     super.initState();
+    _gramsController = TextEditingController(text: '50');
     selectedMealType = 'breakfast';
   }
 
-  int get calories =>
-      (widget.food.caloriesPer100g * servingGrams / 100).round();
-  int get protein => (widget.food.proteinPer100g * servingGrams / 100).round();
-  int get carbs => (widget.food.carbsPer100g * servingGrams / 100).round();
-  int get fat => (widget.food.fatPer100g * servingGrams / 100).round();
-  int get fiber => (widget.food.fiberPer100g * servingGrams / 100).round();
+  @override
+  void dispose() {
+    _gramsController.dispose();
+    super.dispose();
+  }
+
+  void _setGrams(double grams) {
+    final clamped = grams.clamp(1.0, 2000.0);
+    setState(() {
+      servingGrams = clamped;
+      _gramsController.text = clamped == clamped.roundToDouble()
+          ? clamped.round().toString()
+          : clamped.toStringAsFixed(1);
+    });
+  }
+
+  double get _multiplier => servingGrams / 100.0;
+  int get calories => (widget.food.caloriesPer100g * _multiplier).round();
+  double get protein => double.parse(
+      (widget.food.proteinPer100g * _multiplier).toStringAsFixed(1));
+  double get carbs => double.parse(
+      (widget.food.carbsPer100g * _multiplier).toStringAsFixed(1));
+  double get fat => double.parse(
+      (widget.food.fatPer100g * _multiplier).toStringAsFixed(1));
+  double get fiber => double.parse(
+      (widget.food.fiberPer100g * _multiplier).toStringAsFixed(1));
   int get potassium =>
-      (widget.food.potassiumMgPer100g * servingGrams / 100).round();
+      (widget.food.potassiumMgPer100g * _multiplier).round();
   int get calcium =>
-      (widget.food.calciumMgPer100g * servingGrams / 100).round();
-  int get iron => (widget.food.ironMgPer100g * servingGrams / 100).round();
+      (widget.food.calciumMgPer100g * _multiplier).round();
+  int get iron => (widget.food.ironMgPer100g * _multiplier).round();
   int get vitaminC =>
-      (widget.food.vitaminCMgPer100g * servingGrams / 100).round();
-  int get sodium => (widget.food.sodiumMgPer100g * servingGrams / 100).round();
+      (widget.food.vitaminCMgPer100g * _multiplier).round();
+  int get sodium => (widget.food.sodiumMgPer100g * _multiplier).round();
 
   void _handleLogMeal() {
     widget.onMealAdded(
       widget.food.name,
       calories,
-      protein.toDouble(),
-      carbs.toDouble(),
-      fat.toDouble(),
+      protein,
+      carbs,
+      fat,
       selectedMealType,
     );
     Navigator.pop(context, true);
@@ -643,24 +665,15 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
-                'Serving Size',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: _textSecondary,
-                ),
-              ),
-              const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    '${servingGrams.round()} g',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: _textPrimary,
+                  const Text(
+                    'Serving Size / Amount',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: _textSecondary,
                     ),
                   ),
                   Text(
@@ -673,14 +686,171 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
                   ),
                 ],
               ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  // Minus 5g
+                  GestureDetector(
+                    onTap: () => _setGrams(servingGrams - 5),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: _purpleSoft,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.remove_rounded,
+                          color: _purple, size: 20),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Minus 1g
+                  GestureDetector(
+                    onTap: () => _setGrams(servingGrams - 1),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _purpleSoft,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        '-1g',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: _purple,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // Direct Editable Input Box
+                  Expanded(
+                    child: Container(
+                      height: 44,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: _purple, width: 1.6),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _gramsController,
+                              keyboardType: const TextInputType.numberWithOptions(
+                                  decimal: true),
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: _textPrimary,
+                              ),
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              onChanged: (val) {
+                                final parsed = double.tryParse(val);
+                                if (parsed != null && parsed > 0) {
+                                  setState(() {
+                                    servingGrams = parsed.clamp(1.0, 2000.0);
+                                  });
+                                }
+                              },
+                            ),
+                          ),
+                          const Text(
+                            'g',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: _purple,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  // Plus 1g
+                  GestureDetector(
+                    onTap: () => _setGrams(servingGrams + 1),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _purpleSoft,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        '+1g',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: _purple,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Plus 5g
+                  GestureDetector(
+                    onTap: () => _setGrams(servingGrams + 5),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: _purpleSoft,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.add_rounded,
+                          color: _purple, size: 20),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              // Quick amount presets
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: [2.0, 5.0, 10.0, 30.0, 50.0, 100.0, 200.0].map((preset) {
+                  final isSelected = (servingGrams - preset).abs() < 0.5;
+                  return GestureDetector(
+                    onTap: () => _setGrams(preset),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: isSelected ? _purple : const Color(0xFFF0EEF8),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${preset.round()}g',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: isSelected ? Colors.white : _textPrimary,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 8),
+              // Smooth continuous slider
               Slider(
-                value: servingGrams,
-                min: 50,
-                max: 300,
-                divisions: 5,
+                value: servingGrams.clamp(1.0, 500.0),
+                min: 1,
+                max: 500,
                 label: '${servingGrams.round()} g',
                 activeColor: _purple,
-                onChanged: (value) => setState(() => servingGrams = value),
+                onChanged: _setGrams,
               ),
               const SizedBox(height: 12),
               const Text(

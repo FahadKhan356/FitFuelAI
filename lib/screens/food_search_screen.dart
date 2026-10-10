@@ -179,7 +179,35 @@ class _FoodResultCard extends StatefulWidget {
 }
 
 class _FoodResultCardState extends State<_FoodResultCard> {
-  double _quantity = 100;
+  late double _quantity;
+  late final TextEditingController _qtyController;
+
+  @override
+  void initState() {
+    super.initState();
+    _quantity = widget.item.servingUnit == 'piece' ? 1.0 : 50.0;
+    _qtyController = TextEditingController(
+      text: _quantity == _quantity.roundToDouble()
+          ? _quantity.round().toString()
+          : _quantity.toStringAsFixed(1),
+    );
+  }
+
+  @override
+  void dispose() {
+    _qtyController.dispose();
+    super.dispose();
+  }
+
+  void _setQuantity(double q) {
+    final clamped = q.clamp(1.0, 2000.0);
+    setState(() {
+      _quantity = clamped;
+      _qtyController.text = clamped == clamped.roundToDouble()
+          ? clamped.round().toString()
+          : clamped.toStringAsFixed(1);
+    });
+  }
 
   FoodResult get _scaled => widget.item.scaleToQuantity(_quantity);
 
@@ -366,35 +394,99 @@ class _FoodResultCardState extends State<_FoodResultCard> {
             children: [
               const Text(
                 'Amount:',
-                style: TextStyle(fontSize: 12.5, color: kBody),
-              ),
-              const Spacer(),
-              // Minus
-              _QtyBtn(
-                icon: Icons.remove_rounded,
-                onTap: () => setState(() {
-                  _quantity = (_quantity - 10).clamp(10, 2000);
-                }),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Text(
-                  '${_quantity.round()}${widget.item.servingUnit == "piece" ? " pc" : "g"}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: kHeadline,
-                  ),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: kBody,
                 ),
               ),
-              // Plus
+              const Spacer(),
+              // Minus 5
+              _QtyBtn(
+                icon: Icons.remove_rounded,
+                onTap: () => _setQuantity(_quantity - 5),
+              ),
+              const SizedBox(width: 6),
+              // Direct Editable Input Box
+              Container(
+                width: 72,
+                height: 34,
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                decoration: BoxDecoration(
+                  color: kWhite,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: kPurple, width: 1.4),
+                ),
+                child: TextField(
+                  controller: _qtyController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: kHeadline,
+                  ),
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                    suffixText: widget.item.servingUnit == 'piece' ? 'pc' : 'g',
+                    suffixStyle: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: kPurple,
+                    ),
+                  ),
+                  onChanged: (val) {
+                    final parsed = double.tryParse(val);
+                    if (parsed != null && parsed > 0) {
+                      setState(() {
+                        _quantity = parsed.clamp(1.0, 2000.0);
+                      });
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: 6),
+              // Plus 5
               _QtyBtn(
                 icon: Icons.add_rounded,
-                onTap: () => setState(() {
-                  _quantity = (_quantity + 10).clamp(10, 2000);
-                }),
+                onTap: () => _setQuantity(_quantity + 5),
               ),
             ],
+          ),
+
+          const SizedBox(height: 8),
+
+          // Quick presets
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [2.0, 5.0, 10.0, 30.0, 50.0, 100.0].map((preset) {
+              final isSelected = (_quantity - preset).abs() < 0.5;
+              final unitLabel =
+                  widget.item.servingUnit == 'piece' ? 'pc' : 'g';
+              return GestureDetector(
+                onTap: () => _setQuantity(preset),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isSelected ? kPurple : kPurpleLight,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '${preset.round()}$unitLabel',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: isSelected ? kWhite : kPurple,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
           ),
 
           const SizedBox(height: 12),
