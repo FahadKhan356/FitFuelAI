@@ -8,10 +8,6 @@ import '../../../../core/data/models/nutrition_food.dart';
 
 /// Remote food data source backed by four nutrition providers:
 /// - FatSecret -> broad branded/restaurant food search through a secure proxy.
-/// - USDA FoodData Central  -> complete macros + micronutrients
-///   (KEY FIX: we now pass `dataType=Foundation,SR Legacy` AND the explicit
-///   `nutrients=` id list so raw foods return full nutrition, not the sparse
-///   Branded-only rows).
 /// - OpenFoodFacts -> packaged foods + real product **images**, no key needed.
 /// - CalorieNinjas -> natural-language queries ("2 eggs and toast",
 ///   "100g chicken"), active only when a key is configured.
@@ -26,15 +22,9 @@ class NutritionApiDataSource {
   final Map<String, List<NutritionFood>> _cache = {};
   static const int _cacheMax = 30;
 
-  // USDA nutrient IDs requested so results are complete.
-  // 203=Protein 204=Total fat 205=Carbs 208=Energy kcal 269=Sugar 291=Fiber
-  // 307=Sodium 301=Calcium 303=Iron 306=Potassium 401=VitC 606=Sat. fat
-  static const String _usdaNutrientFilter =
-      '203,204,205,208,269,291,307,301,306,303,401,606';
-
   // ---- Main public APIs ------------------------------------------------
 
-  /// Searches a food query using the triple-API pipeline (USDA -> Open Food
+  /// Searches a food query using the hybrid API pipeline (FatSecret -> Open Food
   /// Facts -> CalorieNinjas) and returns de-duplicated, normalized results.
   /// Results are cached by query.
   Future<List<NutritionFood>> searchFoods(String query) async {
@@ -54,7 +44,6 @@ class NutritionApiDataSource {
     final futures = <Future<List<NutritionFood>>>[];
     for (final searchQuery in queries) {
       futures.add(_searchFatSecret(searchQuery));
-      futures.add(_searchUsda(searchQuery));
       futures.add(_searchOpenFoodFacts(searchQuery));
       if (AppConstants.calorieNinjasApiKey.isNotEmpty) {
         futures.add(_searchCalorieNinjas(searchQuery));
@@ -149,84 +138,6 @@ class NutritionApiDataSource {
     } catch (_) {
       return null;
     }
-  }
-// ---- 1. USDA FoodData Central (Foundation + SR Legacy) -----------
-
-  Future<List<NutritionFood>> _searchUsda(String query) async {
-    // KEY FIX: constrain to Foundation/SR Legacy so we get academic-grade,
-    // complete nutrition instead of sparse Branded rows, and pass the
-    // `nutrients` filter so every macro + micro we need is returned.
-    final uri = Uri.parse('${AppConstants.usdaApiBase}/foods/search').replace(
-      queryParameters: {
-        'api_key': AppConstants.usdaApiKey,
-        'query': query,
-        'pageSize': '25',
-        'dataType': 'Foundation,SR Legacy',
-        'nutrients': _usdaNutrientFilter,
-      },
-    );
-
-    final res = await http.get(uri).timeout(const Duration(seconds: _timeout));
-    if (res.statusCode != 200) {
-      return const [];
-    }
-
-    final json = jsonDecode(res.body) as Map<String, dynamic>;
-    final foods =
-        (json['foods'] as List? ?? const []).whereType<Map<String, dynamic>>();
-    final results = <NutritionFood>[];
-    for (final food in foods) {
-      final nutrients = _usdaNutrientMap(food['foodNutrients']);
-      final id = (food['fdcId'] ?? '').toString();
-      if (id.isEmpty) continue;
-      results.add(NutritionFood(
-        source: 'USDA',
-        externalId: id,
-        name: (food['description'] as String?)?.isNotEmpty == true
-            ? food['description'] as String
-            : query,
-        brand: food['brandOwner'] as String?,
-        energyKcal: nutrients[208] ?? 0,
-        protein: nutrients[203] ?? 0,
-        carbs: nutrients[205] ?? 0,
-        fat: nutrients[204] ?? 0,
-        saturatedFatG: nutrients[606] ?? 0,
-        fiber: nutrients[291] ?? 0,
-        sugar: nutrients[269] ?? 0,
-        sodiumMg: nutrients[307] ?? 0,
-        potassiumMg: nutrients[306] ?? 0,
-        calciumMg: nutrients[301] ?? 0,
-        ironMg: nutrients[303] ?? 0,
-        vitaminCMg: nutrients[401] ?? 0,
-      ));
-    }
-    return results;
-  }
-
-  /// Maps USDA FDC nutrient arrays (id -> value per 100g) to a simple map.
-  Map<int, double> _usdaNutrientMap(dynamic raw) {
-    final map = <int, double>{};
-    final list = raw as List? ?? const [];
-    for (final item in list) {
-      final typed = item as Map<String, dynamic>;
-      final nutrient = typed['nutrient'];
-      // USDA search responses expose the food nutrient database id (1003),
-      // while the API nutrient filter uses the nutrient number (203).
-      // Detailed responses may instead expose a nested nutrient.id.
-      final idValue = nutrient is Map
-          ? (nutrient['number'] ?? nutrient['id'])
-          : (typed['nutrientNumber'] ?? typed['nutrientId']);
-      final id = idValue is num ? idValue.toInt() : int.tryParse('$idValue');
-      // Search results use `value`; detailed food responses use `amount`.
-      final rawAmount = typed['amount'] ?? typed['value'];
-      final amount = rawAmount is num
-          ? rawAmount.toDouble()
-          : double.tryParse('$rawAmount');
-      if (id != null && amount != null) {
-        map[id] = amount;
-      }
-    }
-    return map;
   }
 // ---- 2. OpenFoodFacts (packaged foods + real images) ------------
 
@@ -440,8 +351,8 @@ class NutritionApiDataSource {
   }
 
   /// Ranks a food against the search query. The name matching the query is the
-  /// dominant signal; source & nutrition are tie-breakers. Whole academic foods
-  /// (USDA) beat branded packaged items when relevance is otherwise equal.
+  /// dominant signal; source & nutrition are tie-breakers. Whole reference foods
+  /// beat branded packaged items when relevance is otherwise equal.
   int _relevanceScore(NutritionFood f, String query) {
     final q = _normalize(query);
     final name = _normalize(f.name);
@@ -462,7 +373,7 @@ class NutritionApiDataSource {
     }
 
     // Whole-food sources are more relevant for plain ingredient queries.
-    if (f.source == 'USDA') score += 3;
+    if (f.source == 'FatSecret') score += 3;
     if (f.source == 'CalorieNinjas') score += 1;
 
     // Nutrition completeness as a mild final tie-breaker.

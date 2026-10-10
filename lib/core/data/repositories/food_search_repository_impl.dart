@@ -13,7 +13,7 @@ class FoodSearchRepositoryImpl implements FoodSearchRepository {
 
   @override
   Future<List<FoodItemEntity>> searchFoodItems(String query) async {
-    // 1) Live triple-API search (USDA + OpenFoodFacts + CalorieNinjas) gives
+    // 1) Live triple-API search (FatSecret + OpenFoodFacts + CalorieNinjas) gives
     //    complete macros + micronutrients + product images.
     try {
       final live = await _nutritionApi.searchFoods(query);

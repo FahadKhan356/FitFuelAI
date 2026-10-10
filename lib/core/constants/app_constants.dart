@@ -33,10 +33,6 @@ class AppConstants {
       'true';
 
   // Nutrition APIs (from .env file)
-  // USDA FoodData Central — free API key from https://fdc.nal.usda.gov/api-key-signup.html
-  static String get usdaApiKey => envValue('USDA_API_KEY', '');
-  static String get usdaApiBase =>
-      envValue('USDA_API_BASE', 'https://api.nal.usda.gov/fdc/v1');
   // OpenFoodFacts — free, no key required
   static const String openFoodFactsSearchBase =
       'https://us.openfoodfacts.org/api/v2/search';

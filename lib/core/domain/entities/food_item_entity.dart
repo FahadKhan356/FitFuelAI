@@ -4,7 +4,7 @@ class FoodItemEntity {
     required this.id,
     required this.name,
     required this.calories, this.brand,
-    this.source = 'USDA',
+    this.source = 'FatSecret',
     this.protein = 0,
     this.carbs = 0,
     this.fat = 0,

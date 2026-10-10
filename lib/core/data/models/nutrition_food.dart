@@ -1,5 +1,5 @@
 /// Nutrition values per 100 g returned by the real food APIs
-/// (USDA / OpenFoodFacts / CalorieNinjas).
+/// (FatSecret / OpenFoodFacts / CalorieNinjas).
 class NutritionFood {
 
   const NutritionFood({
@@ -21,7 +21,7 @@ class NutritionFood {
     this.ironMg = 0,
     this.vitaminCMg = 0,
   });
-  final String source; // 'USDA' | 'OpenFoodFacts' | 'CalorieNinjas' | 'Local'
+  final String source; // 'FatSecret' | 'OpenFoodFacts' | 'CalorieNinjas' | 'Local'
   final String externalId;
   final String name;
   final String? brand;

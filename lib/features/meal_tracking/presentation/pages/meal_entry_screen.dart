@@ -54,7 +54,7 @@ class FoodItem {
 }
 
 /// Maps a real API food result onto the screen's local `FoodItem` model so the
-/// existing nutrition UI can render USDA / OpenFoodFacts data unchanged.
+/// existing nutrition UI can render FatSecret / OpenFoodFacts data unchanged.
 FoodItem _fromNutritionFood(NutritionFood n) => FoodItem(
     id: n.externalId.isEmpty ? n.name : n.externalId,
     name: n.brand != null && n.brand!.isNotEmpty
