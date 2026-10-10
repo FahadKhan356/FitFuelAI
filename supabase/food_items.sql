@@ -29,17 +29,17 @@ CREATE INDEX IF NOT EXISTS idx_food_name   ON public.food_items (food_name);
 -- RLS
 ALTER TABLE public.food_items ENABLE ROW LEVEL SECURITY;
 
--- All logged-in users can read
+-- All users can read cached foods
 DROP POLICY IF EXISTS "Anyone can read food_items" ON public.food_items;
 CREATE POLICY "Anyone can read food_items"
   ON public.food_items FOR SELECT
-  TO authenticated
+  TO authenticated, anon
   USING (true);
 
--- Authenticated users can insert cached items
+-- Authenticated and guest users can insert cached items
 DROP POLICY IF EXISTS "Service role can insert food_items" ON public.food_items;
 DROP POLICY IF EXISTS "Users can insert food_items" ON public.food_items;
 CREATE POLICY "Users can insert food_items"
   ON public.food_items FOR INSERT
-  TO authenticated
+  TO authenticated, anon
   WITH CHECK (true);
