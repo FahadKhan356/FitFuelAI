@@ -24,14 +24,13 @@ import '../../../../core/utils/weight_progress_calculator.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../data/models/user_profile_model.dart';
 
-const _bg = Color(0xFFF5F5FA);
-const _surface = Colors.white;
-const _purple = Color(AppColors.authPurple);
-const _purpleLight = Color(AppColors.authPurpleBg);
-const _purpleSoft = Color(0xFFEAE6FF);
-const _textPrimary = Color(0xFF1F1F2E);
-const _textSecondary = Color(0xFF6F6F7C);
-const _border = Color(0xFFE6E4EE);
+const Color _kPrimary = Color(0xFF6366F1);
+const Color _bg = Color(0xFFF8F9FE);
+const Color _surface = Colors.white;
+const Color _textPrimary = Color(0xFF0F172A);
+const Color _textSecondary = Color(0xFF64748B);
+const Color _border = Color(0xFFE2E8F0);
+
 
 double _clamp01(double v) => v.clamp(0.0, 1.0);
 
@@ -365,12 +364,17 @@ class _ProfileScreenState extends State<ProfileScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF141824) : _surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        backgroundColor: isDark ? const Color(0xFF141824) : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: isDark ? const Color(0xFF282D4A) : const Color(0xFFE2E8F0),
+          ),
+        ),
         title: Text(
           'Logout Account?',
           style: TextStyle(
-            fontSize: 17,
+            fontSize: 18,
             fontWeight: FontWeight.w800,
             color: isDark ? const Color(0xFFF8FAFC) : _textPrimary,
           ),
@@ -395,13 +399,21 @@ class _ProfileScreenState extends State<ProfileScreen>
               ),
             ),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
             child: const Text(
               'Logout',
               style: TextStyle(
                 fontWeight: FontWeight.w800,
-                color: Color(0xFFCB6670),
               ),
             ),
           ),
@@ -412,6 +424,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     // AuthBloc -> Unauthenticated -> _listenToAuthState redirects to splash.
     context.read<AuthBloc>().add(SignOutRequested());
   }
+
 
   void _showThemeSheet(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -682,7 +695,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     final textPrimary = isDark ? const Color(0xFFF8FAFC) : _textPrimary;
     final textSecondary = isDark ? const Color(0xFF94A3B8) : _textSecondary;
     final bgColor = isDark ? const Color(0xFF0B0E14) : _bg;
-    final dividerColor = isDark ? const Color(0xFF1E2436) : const Color(0xFFEDEAF3);
+    final surfaceAlt = isDark ? const Color(0xFF1B2237) : const Color(0xFFF1F5F9);
+    final borderColor = isDark ? const Color(0xFF282D4A) : _border;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -692,17 +706,33 @@ class _ProfileScreenState extends State<ProfileScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // ── Header Bar ──
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 12, 14),
+                padding: const EdgeInsets.fromLTRB(20, 12, 16, 12),
                 child: Row(
                   children: [
-                    Text(
-                      'Profile',
-                      style: textTheme.headlineSmall?.copyWith(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: textPrimary,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Profile',
+                          style: textTheme.headlineSmall?.copyWith(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                            color: textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Account & Preferences',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w500,
+                            color: textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
                     const Spacer(),
                     _TopIconButton(
@@ -712,12 +742,13 @@ class _ProfileScreenState extends State<ProfileScreen>
                         setState(() {});
                       },
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     _TopIconButton(
-                      icon: Icons.workspace_premium_outlined,
+                      icon: Icons.workspace_premium_rounded,
+                      color: _isPremium ? const Color(0xFFF59E0B) : null,
                       onTap: () => context.push(AppRoutes.subscription),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     _TopIconButton(
                       icon: Icons.settings_outlined,
                       onTap: _scrollToSettings,
@@ -725,12 +756,12 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ],
                 ),
               ),
-              Container(height: 1, color: dividerColor),
-              const SizedBox(height: 30),
+              const SizedBox(height: 12),
+
+              // ── Hero Profile Section ──
               Center(
                 child: Column(
                   children: [
-                    // ── A. Avatar with Halo Pulse & Floating Physics ──
                     _AvatarWithBadge(
                       floatCtrl: _floatCtrl,
                       rotateCtrl: _rotateCtrl,
@@ -739,28 +770,47 @@ class _ProfileScreenState extends State<ProfileScreen>
                       changing: _changingPhoto,
                       onTap: _changeAvatar,
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 16),
                     Text(
                       _displayName,
                       style: TextStyle(
-                        fontSize: 30,
-                        height: 1,
+                        fontSize: 26,
+                        height: 1.15,
                         fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
                         color: textPrimary,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      _levelLine,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: textSecondary,
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: surfaceAlt,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: borderColor),
                       ),
-                      textAlign: TextAlign.center,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.military_tech_rounded,
+                            size: 16,
+                            color: _kPrimary,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            _levelLine,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 12),
                     _PremiumPill(
                       mainCtrl: _mainCtrl,
                       shimmerCtrl: _shimmerCtrl,
@@ -770,8 +820,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ],
                 ),
               ),
-              const SizedBox(height: 34),
-              // ── B. Metric Cards ──
+              const SizedBox(height: 26),
+
+              // ── Metric Cards (Streak & Weight Progress) ──
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
@@ -780,29 +831,44 @@ class _ProfileScreenState extends State<ProfileScreen>
                       child: _MetricCard(
                         mainCtrl: _mainCtrl,
                         flameCtrl: _flameCtrl,
-                        icon: Icons.local_fire_department_outlined,
-                        iconBackground: const Color(0xFFFFF0DE),
-                        iconColor: const Color(0xFFF4A340),
+                        icon: Icons.local_fire_department_rounded,
+                        iconColor: const Color(0xFFF59E0B),
+                        iconBackground: isDark
+                            ? const Color(0xFF78350F).withValues(alpha: 0.35)
+                            : const Color(0xFFFEF3C7),
+                        iconBorder: isDark
+                            ? const Color(0xFFB45309).withValues(alpha: 0.3)
+                            : const Color(0xFFFDE68A),
                         label: 'STREAK',
                         targetValue: '$_streak',
                         suffix: ' Days',
-                        subtitle:
-                            _streakTodayActive ? 'Keep it up, today!' : 'Log a meal today to keep it going',
+                        subtitle: _streakTodayActive
+                            ? 'Keep it up, today!'
+                            : 'Log a meal today to continue',
+                        isActive: _streakTodayActive,
                         index: 0,
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: _MetricCard(
                         mainCtrl: _mainCtrl,
                         flameCtrl: _flameCtrl,
-                        icon: Icons.trending_down_rounded,
-                        iconBackground: const Color(0xFFE1F8E9),
-                        iconColor: const Color(0xFF44B97A),
+                        icon: _weightLabel.contains('GAINED')
+                            ? Icons.trending_up_rounded
+                            : Icons.trending_down_rounded,
+                        iconColor: const Color(0xFF10B981),
+                        iconBackground: isDark
+                            ? const Color(0xFF064E3B).withValues(alpha: 0.35)
+                            : const Color(0xFFD1FAE5),
+                        iconBorder: isDark
+                            ? const Color(0xFF047857).withValues(alpha: 0.3)
+                            : const Color(0xFFA7F3D0),
                         label: _weightLabel,
                         targetValue: _weightValue,
                         suffix: ' kg',
                         subtitle: _weightSubtitle,
+                        isActive: false,
                         index: 1,
                       ),
                     ),
@@ -810,41 +876,64 @@ class _ProfileScreenState extends State<ProfileScreen>
                 ),
               ),
               const SizedBox(height: 22),
+
+              // ── Achievements Showcase ──
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.emoji_events_outlined,
-                      size: 21,
-                      color: _textPrimary,
+                    Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.emoji_events_rounded,
+                        size: 17,
+                        color: Color(0xFFF59E0B),
+                      ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Text(
                       'Achievements',
                       style: textTheme.headlineSmall?.copyWith(
                         fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: _textPrimary,
+                        fontWeight: FontWeight.w800,
+                        color: textPrimary,
                       ),
                     ),
                     const Spacer(),
-                    GestureDetector(
+                    InkWell(
                       onTap: () => context.push(AppRoutes.achievements),
-                      child: Text(
-                        'View All',
-                        style: textTheme.titleSmall?.copyWith(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: _purple,
+                      borderRadius: BorderRadius.circular(8),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                        child: Row(
+                          children: [
+                            Text(
+                              'View All',
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: _kPrimary,
+                              ),
+                            ),
+                            SizedBox(width: 4),
+                            Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              size: 11,
+                              color: _kPrimary,
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
-              // ── C. Achievement Badges ──
+              const SizedBox(height: 14),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(
@@ -855,31 +944,38 @@ class _ProfileScreenState extends State<ProfileScreen>
                         index: 0,
                         icon: Icons.bolt_rounded,
                         label: 'Early Riser',
+                        subtitle: 'Streak',
+                        onTap: () => context.push(AppRoutes.achievements),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: _AchievementItem(
                         mainCtrl: _mainCtrl,
                         index: 1,
-                        icon: Icons.water_drop_outlined,
+                        icon: Icons.water_drop_rounded,
                         label: 'H2O Master',
+                        subtitle: 'Hydration',
+                        onTap: () => context.push(AppRoutes.achievements),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: _AchievementItem(
                         mainCtrl: _mainCtrl,
                         index: 2,
-                        icon: Icons.center_focus_strong,
+                        icon: Icons.center_focus_strong_rounded,
                         label: 'Macro King',
+                        subtitle: 'Nutrition',
+                        onTap: () => context.push(AppRoutes.achievements),
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 22),
-              // ── D. Today's Goals Card ──
+
+              // ── Today's Goals Card ──
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: _GoalsCard(
@@ -893,22 +989,35 @@ class _ProfileScreenState extends State<ProfileScreen>
                   proteinConsumed: _proteinConsumed,
                 ),
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 24),
+
+              // ── Account Settings Header ──
               Padding(
                 key: _settingsKey,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'ACCOUNT SETTINGS',
-                  style: textTheme.labelLarge?.copyWith(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.2,
-                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF77757E),
-                  ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.tune_rounded,
+                      size: 16,
+                      color: textSecondary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'ACCOUNT SETTINGS',
+                      style: textTheme.labelLarge?.copyWith(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.6,
+                        color: textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 14),
-              // ── E. Settings Menu ──
+              const SizedBox(height: 12),
+
+              // ── Settings Menu ──
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
@@ -916,16 +1025,17 @@ class _ProfileScreenState extends State<ProfileScreen>
                     _SettingTile(
                       mainCtrl: _mainCtrl,
                       index: 0,
-                      icon: Icons.shield_outlined,
+                      icon: Icons.person_outline_rounded,
+                      iconColor: const Color(0xFF6366F1),
                       title: 'Personal Information',
                       trailingText: 'View & edit',
                       onTap: () async {
                         final updated =
                             await context.push<dynamic>(AppRoutes.personalInfo);
-                        if (!mounted) return;
+                        if (!mounted) {
+                          return;
+                        }
                         if (updated is UserProfileModel) {
-                          // Apply the recalculated profile the editor popped so
-                          // the greeting, avatar and targets refresh instantly.
                           setState(() {
                             _profileName = updated.name;
                             _avatarUrl = updated.avatarUrl ?? _avatarUrl;
@@ -940,8 +1050,6 @@ class _ProfileScreenState extends State<ProfileScreen>
                             }
                           });
                         }
-                        // Re-read today's totals so the card reflects the new
-                        // targets (and anything logged while we were away).
                         await _loadTodayGoals();
                       },
                     ),
@@ -950,6 +1058,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       mainCtrl: _mainCtrl,
                       index: 1,
                       icon: Icons.palette_outlined,
+                      iconColor: const Color(0xFF8B5CF6),
                       title: 'App Appearance',
                       trailingText: AppThemeController.instance.themeModeLabel,
                       onTap: () => _showThemeSheet(context),
@@ -958,16 +1067,19 @@ class _ProfileScreenState extends State<ProfileScreen>
                     _SettingTile(
                       mainCtrl: _mainCtrl,
                       index: 2,
-                      icon: Icons.credit_card_outlined,
+                      icon: Icons.workspace_premium_outlined,
+                      iconColor: const Color(0xFFF59E0B),
                       title: 'Premium Subscription',
                       trailingText: _isPremium ? 'Active' : 'Upgrade',
+                      isHighlight: _isPremium,
                       onTap: () => context.push(AppRoutes.subscription),
                     ),
                     const SizedBox(height: 10),
                     _SettingTile(
                       mainCtrl: _mainCtrl,
                       index: 3,
-                      icon: Icons.notifications_none_outlined,
+                      icon: Icons.notifications_none_rounded,
+                      iconColor: const Color(0xFFF43F5E),
                       title: 'Notifications',
                       trailingText: 'Daily Reminders',
                       onTap: () => context.push(AppRoutes.notifications),
@@ -976,7 +1088,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                     _SettingTile(
                       mainCtrl: _mainCtrl,
                       index: 4,
-                      icon: Icons.adjust_outlined,
+                      icon: Icons.track_changes_rounded,
+                      iconColor: const Color(0xFF10B981),
                       title: 'Health Goals',
                       trailingText: _goalTypeTitle ?? 'Not set',
                       onTap: () => context.push(AppRoutes.healthGoals),
@@ -985,7 +1098,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                     _SettingTile(
                       mainCtrl: _mainCtrl,
                       index: 5,
-                      icon: Icons.monitor_weight_rounded,
+                      icon: Icons.monitor_weight_outlined,
+                      iconColor: const Color(0xFF0EA5E9),
                       title: 'BMI Calculator',
                       trailingText: 'Quick check',
                       onTap: () => context.push(AppRoutes.bmi),
@@ -993,30 +1107,46 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ],
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 14),
+
+              // ── Logout Button ──
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: _SettingTile(
                   mainCtrl: _mainCtrl,
                   index: 6,
                   icon: Icons.logout_rounded,
+                  iconColor: const Color(0xFFEF4444),
                   title: 'Logout Account',
                   isLogout: true,
                   onTap: _confirmLogout,
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 18),
+
+              // ── Footer ──
               Center(
-                child: Text(
-                  'FitFuel AI v2.4.0 • Crafted for Health',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF8B8797),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'FitFuel AI v2.4.0 • Crafted for Health',
+                      style: TextStyle(
+                        color: textSecondary,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.bolt_rounded,
+                      size: 14,
+                      color: _kPrimary,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 28),
             ],
           ),
         ),
@@ -1029,26 +1159,44 @@ class _ProfileScreenState extends State<ProfileScreen>
 //  Top Icon Button
 // ─────────────────────────────────────────────
 class _TopIconButton extends StatelessWidget {
-  const _TopIconButton({required this.icon, required this.onTap});
+  const _TopIconButton({
+    required this.icon,
+    required this.onTap,
+    this.color,
+  });
+
   final IconData icon;
   final VoidCallback onTap;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconColor = color ?? (isDark ? const Color(0xFFF1F5F9) : const Color(0xFF334155));
+
     return Material(
       color: Colors.transparent,
-      child: InkResponse(
+      child: InkWell(
         onTap: onTap,
-        radius: 24,
-        child: SizedBox(
-          width: 38,
-          height: 38,
-          child: Icon(
-            icon,
-            size: 24,
-            color: isDark ? const Color(0xFFF1F5F9) : const Color(0xFF4C4A59),
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF141824) : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isDark ? const Color(0xFF282D4A) : const Color(0xFFE2E8F0),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.03),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
+          child: Icon(icon, size: 20, color: iconColor),
         ),
       ),
     );
@@ -1059,7 +1207,6 @@ class _TopIconButton extends StatelessWidget {
 //  A. Avatar With Badge – Floating + Rotating Ring + Spring Badge
 // ─────────────────────────────────────────────
 class _AvatarWithBadge extends StatelessWidget {
-
   const _AvatarWithBadge({
     required this.floatCtrl,
     required this.rotateCtrl,
@@ -1068,6 +1215,7 @@ class _AvatarWithBadge extends StatelessWidget {
     this.onTap,
     this.changing = false,
   });
+
   final Animation<double> floatCtrl;
   final Animation<double> rotateCtrl;
   final Animation<double> mainCtrl;
@@ -1076,7 +1224,10 @@ class _AvatarWithBadge extends StatelessWidget {
   final bool changing;
 
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return AnimatedBuilder(
       animation: floatCtrl,
       builder: (context, child) {
         final floatY = math.sin(floatCtrl.value * math.pi * 2) * 3.0;
@@ -1086,8 +1237,8 @@ class _AvatarWithBadge extends StatelessWidget {
         );
       },
       child: SizedBox(
-        width: 116,
-        height: 116,
+        width: 120,
+        height: 120,
         child: Stack(
           clipBehavior: Clip.none,
           children: [
@@ -1099,18 +1250,20 @@ class _AvatarWithBadge extends StatelessWidget {
                 return Transform.rotate(
                   angle: angle,
                   child: Container(
-                    width: 124,
-                    height: 124,
+                    width: 120,
+                    height: 120,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: const Color(0xFFD8D3F7),
-                        width: 2,
+                        color: isDark
+                            ? const Color(0xFF384364)
+                            : const Color(0xFFD8D3F7),
+                        width: 1.8,
                         strokeAlign: BorderSide.strokeAlignInside,
                       ),
                     ),
                     child: CustomPaint(
-                      painter: _DottedBorderPainter(),
+                      painter: _DottedBorderPainter(isDark: isDark),
                     ),
                   ),
                 );
@@ -1128,16 +1281,16 @@ class _AvatarWithBadge extends StatelessWidget {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.06),
-                            blurRadius: 18,
+                            color: _kPrimary.withValues(alpha: isDark ? 0.30 : 0.15),
+                            blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
                         ],
                       ),
                       child: ClipOval(
                         child: SizedBox(
-                          width: 108,
-                          height: 108,
+                          width: 104,
+                          height: 104,
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
@@ -1159,13 +1312,17 @@ class _AvatarWithBadge extends StatelessWidget {
                                   fit: BoxFit.cover,
                                   alignment: Alignment.center,
                                 ),
-                              Container(color: const Color(0x2AFFFFFF)),
+                              Container(
+                                color: isDark
+                                    ? Colors.black.withValues(alpha: 0.1)
+                                    : const Color(0x1AFFFFFF),
+                              ),
                             ],
                           ),
                         ),
                       ),
                     ),
-                    // Camera / edit badge at bottom-left to hint tap-to-change
+                    // Camera / edit badge at bottom-left
                     Positioned(
                       left: 0,
                       bottom: 0,
@@ -1174,18 +1331,32 @@ class _AvatarWithBadge extends StatelessWidget {
                         height: 32,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: _purple,
-                          border: Border.all(color: Colors.white, width: 2),
+                          color: _kPrimary,
+                          border: Border.all(
+                            color: isDark ? const Color(0xFF141824) : Colors.white,
+                            width: 2.2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _kPrimary.withValues(alpha: 0.35),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: changing
                             ? const Padding(
-                                padding: EdgeInsets.all(8),
+                                padding: EdgeInsets.all(7),
                                 child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white),
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
                               )
-                            : const Icon(Icons.camera_alt_rounded,
-                                size: 16, color: Colors.white),
+                            : const Icon(
+                                Icons.camera_alt_rounded,
+                                size: 16,
+                                color: Colors.white,
+                              ),
                       ),
                     ),
                   ],
@@ -1194,8 +1365,8 @@ class _AvatarWithBadge extends StatelessWidget {
             ),
             // Level badge with spring entrance
             Positioned(
-              right: 4,
-              bottom: 6,
+              right: 2,
+              bottom: 4,
               child: AnimatedBuilder(
                 animation: mainCtrl,
                 builder: (context, child) {
@@ -1203,7 +1374,7 @@ class _AvatarWithBadge extends StatelessWidget {
                     parent: mainCtrl,
                     curve: const Interval(0.04, 0.18, curve: Curves.elasticOut),
                   ).value);
-                  final scale = 0.0 + (t * 1.15).clamp(0.0, 1.15);
+                  final scale = (t * 1.12).clamp(0.0, 1.12);
                   return Transform.scale(
                     scale: scale,
                     child: child,
@@ -1213,19 +1384,22 @@ class _AvatarWithBadge extends StatelessWidget {
                   width: 34,
                   height: 34,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF5B4EE8),
+                    color: _kPrimary,
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2.5),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF141824) : Colors.white,
+                      width: 2.5,
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF5B4EE8).withValues(alpha: 0.28),
+                        color: _kPrimary.withValues(alpha: 0.40),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: const Icon(
-                    Icons.workspace_premium,
+                    Icons.workspace_premium_rounded,
                     color: Colors.white,
                     size: 18,
                   ),
@@ -1236,16 +1410,20 @@ class _AvatarWithBadge extends StatelessWidget {
         ),
       ),
     );
+  }
 }
 
 // ─────────────────────────────────────────────
 //  Dotted Border Painter for Avatar Ring
 // ─────────────────────────────────────────────
 class _DottedBorderPainter extends CustomPainter {
+  const _DottedBorderPainter({required this.isDark});
+  final bool isDark;
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF5B4EE8)
+      ..color = isDark ? const Color(0xFF818CF8) : _kPrimary
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.8;
     const dashWidth = 4.0;
@@ -1265,132 +1443,178 @@ class _DottedBorderPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _DottedBorderPainter oldDelegate) =>
+      oldDelegate.isDark != isDark;
 }
 
 // ─────────────────────────────────────────────
 //  Premium Pill – Shimmer sweep
 // ─────────────────────────────────────────────
 class _PremiumPill extends StatelessWidget {
-
   const _PremiumPill({
     required this.mainCtrl,
     required this.shimmerCtrl,
     this.isPremium = false,
     this.onTap,
   });
+
   final Animation<double> mainCtrl;
   final Animation<double> shimmerCtrl;
   final bool isPremium;
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
       onTap: onTap,
       child: AnimatedBuilder(
-      animation: mainCtrl,
-      builder: (context, child) {
-        final t = _clamp01(CurvedAnimation(
-          parent: mainCtrl,
-          curve: const Interval(0.06, 0.22, curve: Curves.easeOutBack),
-        ).value);
-        return Transform.scale(
-          scale: 0.9 + (t * 0.1),
-          child: Opacity(
-            opacity: t,
-            child: Stack(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: isPremium ? _purpleLight : const Color(0xFFF0EFF5),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(
+        animation: mainCtrl,
+        builder: (context, child) {
+          final t = _clamp01(CurvedAnimation(
+            parent: mainCtrl,
+            curve: const Interval(0.06, 0.22, curve: Curves.easeOutBack),
+          ).value);
+          return Transform.scale(
+            scale: 0.9 + (t * 0.1),
+            child: Opacity(
+              opacity: t,
+              child: Stack(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                    decoration: BoxDecoration(
+                      gradient: isPremium
+                          ? const LinearGradient(
+                              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                            )
+                          : null,
                       color: isPremium
-                          ? const Color(0xFFD8D3F7)
-                          : const Color(0xFFE2E1EA),
+                          ? null
+                          : (isDark ? const Color(0xFF1B2237) : const Color(0xFFF1F5F9)),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: isPremium
+                            ? const Color(0xFF818CF8)
+                            : (isDark ? const Color(0xFF282D4A) : const Color(0xFFE2E8F0)),
+                      ),
+                      boxShadow: isPremium
+                          ? [
+                              BoxShadow(
+                                color: _kPrimary.withValues(alpha: 0.35),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isPremium ? Icons.workspace_premium_rounded : Icons.stars_rounded,
+                          size: 15,
+                          color: isPremium
+                              ? Colors.white
+                              : const Color(0xFFF59E0B),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          isPremium ? 'Pro Member' : 'Free Plan • Upgrade',
+                          style: TextStyle(
+                            color: isPremium
+                                ? Colors.white
+                                : (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569)),
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        if (!isPremium) ...[
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 10,
+                            color: _kPrimary,
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                  child: Text(
-                    isPremium ? 'Premium Member' : 'Free Plan',
-                    style: TextStyle(
-                      color: isPremium ? _purple : _textSecondary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                // Shimmer sweep (premium only)
-                if (isPremium)
-                AnimatedBuilder(
-                  animation: shimmerCtrl,
-                  builder: (context, child) {
-                    final shimmerX = -0.8 + (shimmerCtrl.value * 1.8);
-                    return Positioned.fill(
+                  // Shimmer sweep (premium only)
+                  if (isPremium)
+                    Positioned.fill(
                       child: IgnorePointer(
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(999),
-                          child: Transform.translate(
-                            offset: Offset(shimmerX * 140, 0),
-                            child: Transform.rotate(
-                              angle: -0.2,
-                              child: Container(
-                                width: 80,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.centerLeft,
-                                    end: Alignment.centerRight,
-                                    colors: [
-                                      Colors.transparent,
-                                      Colors.white.withValues(alpha: 0.45),
-                                      Colors.transparent,
-                                    ],
+                          child: AnimatedBuilder(
+                            animation: shimmerCtrl,
+                            builder: (context, child) {
+                              final shimmerX = -0.8 + (shimmerCtrl.value * 1.8);
+                              return Transform.translate(
+                                offset: Offset(shimmerX * 140, 0),
+                                child: Transform.rotate(
+                                  angle: -0.2,
+                                  child: Container(
+                                    width: 70,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Colors.transparent,
+                                          Colors.white.withValues(alpha: 0.40),
+                                          Colors.transparent,
+                                        ],
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
+                              );
+                            },
                           ),
                         ),
                       ),
-                    );
-                  },
-                ),
-              ],
+                    ),
+                ],
+              ),
             ),
-          ),
-        );
-      },
-    ),
+          );
+        },
+      ),
     );
+  }
 }
 
 // ─────────────────────────────────────────────
 //  B. Metric Card – Number Roll + Streak Flame
 // ─────────────────────────────────────────────
 class _MetricCard extends StatelessWidget {
-
   const _MetricCard({
     required this.mainCtrl,
     required this.flameCtrl,
     required this.icon,
     required this.iconBackground,
+    required this.iconBorder,
     required this.iconColor,
     required this.label,
     required this.targetValue,
     required this.suffix,
     required this.subtitle,
+    required this.isActive,
     required this.index,
   });
+
   final Animation<double> mainCtrl;
   final Animation<double> flameCtrl;
   final IconData icon;
   final Color iconBackground;
+  final Color iconBorder;
   final Color iconColor;
   final String label;
   final String targetValue;
   final String suffix;
   final String subtitle;
+  final bool isActive;
   final int index;
 
   @override
@@ -1416,93 +1640,101 @@ class _MetricCard extends StatelessWidget {
       child: Builder(
         builder: (context) {
           final isDark = Theme.of(context).brightness == Brightness.dark;
+
           return Container(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF141824) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isDark ? const Color(0xFF22283A) : const Color(0xFFE8E6EE),
+                color: isDark ? const Color(0xFF282D4A) : const Color(0xFFE2E8F0),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
+                  color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.03),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Icon with flame flicker on streak
-                AnimatedBuilder(
-                  animation: flameCtrl,
-                  builder: (context, child) {
-                    final glow = index == 0
-                        ? 0.7 + (flameCtrl.value * 0.3)
-                        : 1.0;
-                    return Opacity(
-                      opacity: glow,
-                      child: Container(
-                        width: 34,
-                        height: 34,
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? iconColor.withValues(alpha: 0.16)
-                              : iconBackground,
-                          borderRadius: BorderRadius.circular(11),
-                        ),
-                        child: Icon(icon, color: iconColor, size: 20),
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.6,
-                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF7C7580),
-                    height: 1.1,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                // Real value rendered directly — the old count-up multiplier sat on
-                // a partial number (e.g. "2.7" instead of "4.2") for well over a
-                // second after the tab was opened, which read as a stale/late
-                // value. Only the fade is animated now, and the Text is passed as
-                // `child` so it isn't rebuilt on every animation tick.
-                AnimatedBuilder(
-                  animation: mainCtrl,
-                  builder: (context, child) {
-                    final fade = _clamp01(CurvedAnimation(
-                      parent: mainCtrl,
-                      curve: Interval(stagger + 0.04, stagger + 0.24,
-                          curve: Curves.easeOutCubic),
-                    ).value);
-                    return Opacity(opacity: fade, child: child);
-                  },
-                  child: Text(
-                    '$targetValue$suffix',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1F1F2E),
-                      height: 1,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Icon badge
+                    AnimatedBuilder(
+                      animation: flameCtrl,
+                      builder: (context, child) {
+                        final glow = index == 0
+                            ? 0.75 + (flameCtrl.value * 0.25)
+                            : 1.0;
+                        return Opacity(
+                          opacity: glow,
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: iconBackground,
+                              borderRadius: BorderRadius.circular(11),
+                              border: Border.all(color: iconBorder),
+                            ),
+                            child: Icon(icon, color: iconColor, size: 20),
+                          ),
+                        );
+                      },
                     ),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.6,
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                // Target Value
+                Text(
+                  '$targetValue$suffix',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                    color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                    height: 1,
                   ),
                 ),
-                const SizedBox(height: 7),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w500,
-                    color: isDark ? const Color(0xFF64748B) : const Color(0xFF777580),
-                  ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    if (isActive) ...[
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Color(0xFF10B981),
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                    ],
+                    Expanded(
+                      child: Text(
+                        subtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -1517,21 +1749,26 @@ class _MetricCard extends StatelessWidget {
 //  C. Achievement Badge – Radial pop-in + glow
 // ─────────────────────────────────────────────
 class _AchievementItem extends StatelessWidget {
-
   const _AchievementItem({
     required this.mainCtrl,
     required this.index,
     required this.icon,
     required this.label,
+    required this.subtitle,
+    this.onTap,
   });
+
   final Animation<double> mainCtrl;
   final int index;
   final IconData icon;
   final String label;
+  final String subtitle;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final stagger = 0.20 + (index * 0.09);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AnimatedBuilder(
       animation: mainCtrl,
@@ -1546,40 +1783,61 @@ class _AchievementItem extends StatelessWidget {
           child: Opacity(opacity: t, child: child),
         );
       },
-      child: Column(
-        children: [
-          Container(
-            width: 66,
-            height: 66,
-            decoration: BoxDecoration(
-              color: _purpleSoft,
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFC9C1F2), width: 1.8),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF5B4EE8).withValues(alpha: 0.12),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1B2237) : const Color(0xFFEEF2FF),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF282D4A) : const Color(0xFFE0E7FF),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _kPrimary.withValues(alpha: isDark ? 0.20 : 0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Icon(
-              icon,
-              color: const Color(0xFF5B4EE8),
-              size: 29,
-            ),
+                child: Icon(
+                  icon,
+                  color: _kPrimary,
+                  size: 26,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 13.5,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF2A2934),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1589,7 +1847,6 @@ class _AchievementItem extends StatelessWidget {
 //  D. Today's Goals Card – Animated Progress + Percentage Fade
 // ─────────────────────────────────────────────
 class _GoalsCard extends StatelessWidget {
-
   const _GoalsCard({
     required this.textTheme,
     required this.mainCtrl,
@@ -1600,6 +1857,7 @@ class _GoalsCard extends StatelessWidget {
     this.proteinGoal = 120,
     this.proteinConsumed = 0,
   });
+
   final TextTheme textTheme;
   final Animation<double> mainCtrl;
   final int waterGoal;
@@ -1610,7 +1868,11 @@ class _GoalsCard extends StatelessWidget {
   final double proteinConsumed;
 
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final overall = _goalPercent(calorieConsumed, calorieGoal);
+
+    return AnimatedBuilder(
       animation: mainCtrl,
       builder: (context, child) {
         final t = _clamp01(CurvedAnimation(
@@ -1622,129 +1884,147 @@ class _GoalsCard extends StatelessWidget {
           child: Opacity(opacity: t, child: child),
         );
       },
-      child: Builder(
-        builder: (context) {
-          final isDark = Theme.of(context).brightness == Brightness.dark;
-          return Container(
-            padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF141824) : const Color(0xFFF6F4FF),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDark ? const Color(0xFF22283A) : const Color(0xFFECE8FF),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF141824) : Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: isDark ? const Color(0xFF282D4A) : const Color(0xFFE2E8F0),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.03),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Today's Goals",
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Daily nutrition & hydration targets',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E2438) : const Color(0xFFEEF2FF),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF2E3856) : const Color(0xFFE0E7FF),
+                    ),
+                  ),
+                  child: Text(
+                    '$overall% Done',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: _kPrimary,
+                    ),
+                  ),
                 ),
               ],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Today's Goals",
-                  style: textTheme.titleLarge?.copyWith(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF242333),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                // Percentage text cross-fade
-                AnimatedBuilder(
-                  animation: mainCtrl,
-                  builder: (context, child) {
-                    final fadeT = _clamp01(CurvedAnimation(
-                      parent: mainCtrl,
-                      curve: const Interval(0.54, 0.70),
-                    ).value);
-                    final overall = _goalPercent(calorieConsumed, calorieGoal);
-                    return Opacity(
-                      opacity: fadeT,
-                      child: Text(
-                        "You're $overall% through your daily calorie target!",
-                        style: textTheme.bodyMedium?.copyWith(
-                          fontSize: 13.5,
-                          color: isDark
-                              ? const Color(0xFF94A3B8)
-                              : const Color(0xFF7C798A),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             _GoalRow(
               mainCtrl: mainCtrl,
               index: 0,
-              icon: Icons.bolt_rounded,
-              iconColor: const Color(0xFF5B4EE8),
+              icon: Icons.local_fire_department_rounded,
+              iconColor: const Color(0xFF6366F1),
+              gradientColors: const [Color(0xFF6366F1), Color(0xFF818CF8)],
               label: 'Calories',
               progress: _goalProgress(calorieConsumed, calorieGoal),
-              value: '$calorieConsumed / $calorieGoal',
+              value: '$calorieConsumed / $calorieGoal kcal',
               onTap: () => context.push(AppRoutes.mealTracking),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             _GoalRow(
               mainCtrl: mainCtrl,
               index: 1,
-              icon: Icons.water_drop_outlined,
-              iconColor: const Color(0xFF52C7D8),
+              icon: Icons.water_drop_rounded,
+              iconColor: const Color(0xFF06B6D4),
+              gradientColors: const [Color(0xFF06B6D4), Color(0xFF38BDF8)],
               label: 'Water Intake',
               progress: _goalProgress(waterConsumed, waterGoal),
               value: '$waterConsumed / $waterGoal ml',
               onTap: () => context.push(AppRoutes.waterTracker),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             _GoalRow(
               mainCtrl: mainCtrl,
               index: 2,
-              icon: Icons.adjust_outlined,
-              iconColor: const Color(0xFF8B4DE8),
+              icon: Icons.fitness_center_rounded,
+              iconColor: const Color(0xFF10B981),
+              gradientColors: const [Color(0xFF10B981), Color(0xFF34D399)],
               label: 'Protein',
               progress: _goalProgress(proteinConsumed.toInt(), proteinGoal.toInt()),
               value:
-                  '${proteinConsumed.toStringAsFixed(0)} / ${proteinGoal.toStringAsFixed(0)}',
+                  '${proteinConsumed.toStringAsFixed(0)} / ${proteinGoal.toStringAsFixed(0)} g',
               onTap: () => context.push(AppRoutes.mealTracking),
             ),
           ],
         ),
-      );
-    },
-  ),
-);
+      ),
+    );
+  }
 
   static double _goalProgress(int consumed, int target) {
-    if (target <= 0) return 0;
+    if (target <= 0) {
+      return 0;
+    }
     return (consumed / target).clamp(0.0, 1.0);
   }
 
   static int _goalPercent(int consumed, int target) {
-    if (target <= 0) return 0;
+    if (target <= 0) {
+      return 0;
+    }
     return ((consumed / target) * 100).round().clamp(0, 999);
   }
 }
 
 class _GoalRow extends StatelessWidget {
-
   const _GoalRow({
     required this.mainCtrl,
     required this.index,
     required this.icon,
     required this.iconColor,
+    required this.gradientColors,
     required this.label,
     required this.progress,
     required this.value,
     this.onTap,
   });
+
   final Animation<double> mainCtrl;
   final int index;
   final IconData icon;
   final Color iconColor;
+  final List<Color> gradientColors;
   final String label;
   final double progress;
   final String value;
@@ -1753,6 +2033,7 @@ class _GoalRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stagger = 0.36 + (index * 0.06);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return InkWell(
       onTap: onTap,
@@ -1769,20 +2050,27 @@ class _GoalRow extends StatelessWidget {
             curve: Interval(stagger, stagger + 0.26, curve: Curves.fastOutSlowIn),
           ).value);
 
-          final isDark = Theme.of(context).brightness == Brightness.dark;
           return Column(
             children: [
               Row(
                 children: [
-                  Icon(icon, color: iconColor, size: 18),
-                  const SizedBox(width: 8),
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: iconColor.withValues(alpha: isDark ? 0.20 : 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(icon, color: iconColor, size: 16),
+                  ),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       label,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF2C2940),
+                        color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
                       ),
                     ),
                   ),
@@ -1793,20 +2081,35 @@ class _GoalRow extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF6F6C7D),
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                       ),
                     ),
                   ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 16,
+                    color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1),
+                  ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               ClipRRect(
                 borderRadius: BorderRadius.circular(999),
-                child: LinearProgressIndicator(
-                  minHeight: 8,
-                  value: animatedProgress,
-                  backgroundColor: isDark ? const Color(0xFF22283A) : const Color(0xFFE7E1FF),
-                  valueColor: const AlwaysStoppedAnimation<Color>(_purple),
+                child: Container(
+                  height: 7,
+                  width: double.infinity,
+                  color: isDark ? const Color(0xFF1E2436) : const Color(0xFFF1F5F9),
+                  child: FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: animatedProgress.clamp(0.0, 1.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(colors: gradientColors),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -1818,30 +2121,35 @@ class _GoalRow extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-//  E. Setting Tile – Cascading slide + touch scale
+//  E. Setting Tile – Modern Card Style
 // ─────────────────────────────────────────────
 class _SettingTile extends StatelessWidget {
-
   const _SettingTile({
     required this.mainCtrl,
     required this.index,
     required this.icon,
+    required this.iconColor,
     required this.title,
     this.trailingText,
-    this.onTap,
+    this.isHighlight = false,
     this.isLogout = false,
+    this.onTap,
   });
+
   final Animation<double> mainCtrl;
   final int index;
   final IconData icon;
+  final Color iconColor;
   final String title;
   final String? trailingText;
-  final VoidCallback? onTap;
+  final bool isHighlight;
   final bool isLogout;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final stagger = 0.50 + (index * 0.05);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AnimatedBuilder(
       animation: mainCtrl,
@@ -1856,98 +2164,152 @@ class _SettingTile extends StatelessWidget {
         );
       },
       child: isLogout
-          ? OutlinedButton(
-              onPressed: onTap ?? () {},
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(52),
-                side: const BorderSide(color: Color(0xFFF0C6C6)),
-                backgroundColor: Colors.transparent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-              child: const Text(
-                'Logout Account',
-                style: TextStyle(
-                  color: Color(0xFFCB6670),
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
+          ? Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFFEF4444).withValues(alpha: 0.10)
+                        : const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFFEF4444).withValues(alpha: 0.25)
+                          : const Color(0xFFFECACA),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.logout_rounded,
+                        size: 19,
+                        color: Color(0xFFEF4444),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Logout Account',
+                        style: TextStyle(
+                          color: Color(0xFFEF4444),
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             )
-          : Builder(
-              builder: (context) {
-                final isDark = Theme.of(context).brightness == Brightness.dark;
-                return Material(
-                  color: isDark ? const Color(0xFF141824) : _surface,
-                  elevation: 1.5,
-                  shadowColor: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-                  borderRadius: BorderRadius.circular(16),
-                  clipBehavior: Clip.antiAlias,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: isDark ? const Color(0xFF22283A) : _border,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
+          : Material(
+              color: isDark ? const Color(0xFF141824) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF282D4A) : const Color(0xFFE2E8F0),
                     ),
-                    child: ListTile(
-                      onTap: onTap,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                      leading: Container(
-                        width: 32,
-                        height: 32,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.20 : 0.02),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
                         decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF1E2438)
-                              : const Color(0xFFF6F4FB),
-                          borderRadius: BorderRadius.circular(10),
+                          color: iconColor.withValues(alpha: isDark ? 0.18 : 0.10),
+                          borderRadius: BorderRadius.circular(11),
                         ),
                         child: Icon(
                           icon,
-                          size: 18,
-                          color: isDark
-                              ? const Color(0xFF94A3B8)
-                              : const Color(0xFF6C6674),
+                          size: 19,
+                          color: iconColor,
                         ),
                       ),
-                      title: Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: isDark
-                              ? const Color(0xFFF8FAFC)
-                              : const Color(0xFF22212E),
-                        ),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (trailingText != null)
-                            Text(
-                              trailingText!,
-                              style: TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w600,
-                                color: isDark
-                                    ? const Color(0xFF818CF8)
-                                    : const Color(0xFF7B7786),
-                              ),
-                            ),
-                          const SizedBox(width: 6),
-                          Icon(
-                            Icons.chevron_right,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 14.5,
+                            fontWeight: FontWeight.w700,
                             color: isDark
-                                ? const Color(0xFF475569)
-                                : const Color(0xFFC5C2CC),
+                                ? const Color(0xFFF8FAFC)
+                                : const Color(0xFF0F172A),
                           ),
-                        ],
+                        ),
                       ),
-                    ),
+                      if (trailingText != null) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isHighlight || trailingText == 'Active'
+                                ? const Color(0xFF10B981).withValues(alpha: 0.12)
+                                : trailingText == 'Upgrade'
+                                    ? const Color(0xFFF59E0B).withValues(alpha: 0.12)
+                                    : (isDark
+                                        ? const Color(0xFF1E2437)
+                                        : const Color(0xFFF1F5F9)),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isHighlight || trailingText == 'Active'
+                                  ? const Color(0xFF10B981).withValues(alpha: 0.25)
+                                  : trailingText == 'Upgrade'
+                                      ? const Color(0xFFF59E0B).withValues(alpha: 0.25)
+                                      : (isDark
+                                          ? const Color(0xFF282D4A)
+                                          : const Color(0xFFE2E8F0)),
+                            ),
+                          ),
+                          child: Text(
+                            trailingText!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: isHighlight ||
+                                      trailingText == 'Active' ||
+                                      trailingText == 'Upgrade'
+                                  ? FontWeight.w700
+                                  : FontWeight.w600,
+                              color: isHighlight || trailingText == 'Active'
+                                  ? const Color(0xFF10B981)
+                                  : trailingText == 'Upgrade'
+                                      ? const Color(0xFFF59E0B)
+                                      : (isDark
+                                          ? const Color(0xFFCBD5E1)
+                                          : const Color(0xFF64748B)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: isDark
+                            ? const Color(0xFF475569)
+                            : const Color(0xFF94A3B8),
+                        size: 20,
+                      ),
+                    ],
                   ),
-                );
-              },
+                ),
+              ),
             ),
     );
   }
