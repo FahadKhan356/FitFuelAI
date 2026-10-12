@@ -38,6 +38,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -52,10 +54,14 @@ class _ChatInputBarState extends State<ChatInputBar> {
                   height: 48,
                   padding: const EdgeInsets.symmetric(horizontal: 18),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.72),
+                    color: isDark
+                        ? const Color(0xFF141824).withValues(alpha: 0.85)
+                        : Colors.white.withValues(alpha: 0.72),
                     borderRadius: BorderRadius.circular(28),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.8),
+                      color: isDark
+                          ? const Color(0xFF282D4A)
+                          : Colors.white.withValues(alpha: 0.8),
                       width: 1,
                     ),
                     boxShadow: [
@@ -75,18 +81,18 @@ class _ChatInputBarState extends State<ChatInputBar> {
                           enabled: !widget.isBusy,
                           textInputAction: TextInputAction.send,
                           onSubmitted: (_) => _submit(),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 14,
                             fontWeight: FontWeight.w400,
-                            color: Color(0xFF1E1B3A),
+                            color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E1B3A),
                           ),
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: 'Ask anything about nutrition…',
                             hintStyle: TextStyle(
                               fontFamily: 'Inter',
                               fontSize: 13.5,
-                              color: Color(0xFF7A7699),
+                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF7A7699),
                               fontWeight: FontWeight.w400,
                             ),
                             border: InputBorder.none,

@@ -17,8 +17,9 @@ import '../../../../core/domain/repositories/water_repository.dart';
 import '../../../../core/domain/repositories/weight_repository.dart';
 import '../../../../core/services/avatar_uploader.dart';
 import '../../../../core/services/home_data_refresh_notifier.dart';
-import '../../../../core/services/streak_service.dart';
 import '../../../../core/services/water_goal_resolver.dart';
+import '../../../../core/services/streak_service.dart';
+import '../../../../core/theme/theme_controller.dart';
 import '../../../../core/utils/weight_progress_calculator.dart';
 import '../../../auth/presentation/bloc/auth_bloc.dart';
 import '../../data/models/user_profile_model.dart';
@@ -360,32 +361,37 @@ class _ProfileScreenState extends State<ProfileScreen>
   /// Red destructive button gets a confirm step so a stray tap can't sign the
   /// user out instantly.
   Future<void> _confirmLogout() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: _surface,
+        backgroundColor: isDark ? const Color(0xFF141824) : _surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Text(
+        title: Text(
           'Logout Account?',
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w800,
-            color: _textPrimary,
+            color: isDark ? const Color(0xFFF8FAFC) : _textPrimary,
           ),
         ),
-        content: const Text(
+        content: Text(
           'You will need to sign in again to access your tracked meals, '
           'water and weight history.',
-          style: TextStyle(fontSize: 14, color: _textSecondary, height: 1.4),
+          style: TextStyle(
+            fontSize: 14,
+            color: isDark ? const Color(0xFF94A3B8) : _textSecondary,
+            height: 1.4,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text(
+            child: Text(
               'Cancel',
               style: TextStyle(
                 fontWeight: FontWeight.w700,
-                color: _textSecondary,
+                color: isDark ? const Color(0xFF94A3B8) : _textSecondary,
               ),
             ),
           ),
@@ -405,6 +411,180 @@ class _ProfileScreenState extends State<ProfileScreen>
     if (confirmed != true || !mounted) return;
     // AuthBloc -> Unauthenticated -> _listenToAuthState redirects to splash.
     context.read<AuthBloc>().add(SignOutRequested());
+  }
+
+  void _showThemeSheet(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: isDark ? const Color(0xFF141824) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        final currentMode = AppThemeController.instance.themeMode;
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  'Choose App Appearance',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E1B3A),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Select how FitFuel AI looks on your device.',
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                _themeOptionTile(
+                  context: sheetContext,
+                  title: 'Light Mode',
+                  subtitle: 'Crisp daylight clean interface',
+                  icon: Icons.light_mode_rounded,
+                  selected: currentMode == ThemeMode.light,
+                  onTap: () {
+                    AppThemeController.instance.setThemeMode(ThemeMode.light);
+                    Navigator.pop(sheetContext);
+                    setState(() {});
+                  },
+                ),
+                const SizedBox(height: 10),
+                _themeOptionTile(
+                  context: sheetContext,
+                  title: 'Dark Mode',
+                  subtitle: 'Deep OLED sleek night interface',
+                  icon: Icons.dark_mode_rounded,
+                  selected: currentMode == ThemeMode.dark,
+                  onTap: () {
+                    AppThemeController.instance.setThemeMode(ThemeMode.dark);
+                    Navigator.pop(sheetContext);
+                    setState(() {});
+                  },
+                ),
+                const SizedBox(height: 10),
+                _themeOptionTile(
+                  context: sheetContext,
+                  title: 'System Default',
+                  subtitle: 'Automatically matches your device settings',
+                  icon: Icons.brightness_auto_rounded,
+                  selected: currentMode == ThemeMode.system,
+                  onTap: () {
+                    AppThemeController.instance.setThemeMode(ThemeMode.system);
+                    Navigator.pop(sheetContext);
+                    setState(() {});
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _themeOptionTile({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: selected
+              ? (isDark
+                  ? const Color(0xFF6366F1).withValues(alpha: 0.18)
+                  : const Color(0xFFEEF2FF))
+              : (isDark ? const Color(0xFF1E2436) : const Color(0xFFF8F9FE)),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: selected
+                ? const Color(0xFF6366F1)
+                : (isDark ? const Color(0xFF282D42) : const Color(0xFFE2E8F0)),
+            width: selected ? 1.8 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: selected
+                    ? const Color(0xFF6366F1)
+                    : (isDark ? const Color(0xFF2B334C) : const Color(0xFFE0E7FF)),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: selected
+                    ? Colors.white
+                    : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF4F46E5)),
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (selected)
+              const Icon(
+                Icons.check_circle_rounded,
+                color: Color(0xFF6366F1),
+                size: 22,
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// Tap avatar -> pick a photo, upload to storage, save the URL to the
@@ -498,9 +678,14 @@ class _ProfileScreenState extends State<ProfileScreen>
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? const Color(0xFFF8FAFC) : _textPrimary;
+    final textSecondary = isDark ? const Color(0xFF94A3B8) : _textSecondary;
+    final bgColor = isDark ? const Color(0xFF0B0E14) : _bg;
+    final dividerColor = isDark ? const Color(0xFF1E2436) : const Color(0xFFEDEAF3);
 
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: bgColor,
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
@@ -516,10 +701,18 @@ class _ProfileScreenState extends State<ProfileScreen>
                       style: textTheme.headlineSmall?.copyWith(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
-                        color: _textPrimary,
+                        color: textPrimary,
                       ),
                     ),
                     const Spacer(),
+                    _TopIconButton(
+                      icon: isDark ? Icons.light_mode_rounded : Icons.dark_mode_outlined,
+                      onTap: () {
+                        AppThemeController.instance.toggleTheme();
+                        setState(() {});
+                      },
+                    ),
+                    const SizedBox(width: 6),
                     _TopIconButton(
                       icon: Icons.workspace_premium_outlined,
                       onTap: () => context.push(AppRoutes.subscription),
@@ -532,7 +725,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                   ],
                 ),
               ),
-              Container(height: 1, color: const Color(0xFFEDEAF3)),
+              Container(height: 1, color: dividerColor),
               const SizedBox(height: 30),
               Center(
                 child: Column(
@@ -549,21 +742,21 @@ class _ProfileScreenState extends State<ProfileScreen>
                     const SizedBox(height: 18),
                     Text(
                       _displayName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 30,
                         height: 1,
                         fontWeight: FontWeight.w800,
-                        color: _textPrimary,
+                        color: textPrimary,
                       ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 6),
                     Text(
                       _levelLine,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: _textSecondary,
+                        color: textSecondary,
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -710,7 +903,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0.2,
-                    color: const Color(0xFF77757E),
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF77757E),
                   ),
                 ),
               ),
@@ -756,6 +949,15 @@ class _ProfileScreenState extends State<ProfileScreen>
                     _SettingTile(
                       mainCtrl: _mainCtrl,
                       index: 1,
+                      icon: Icons.palette_outlined,
+                      title: 'App Appearance',
+                      trailingText: AppThemeController.instance.themeModeLabel,
+                      onTap: () => _showThemeSheet(context),
+                    ),
+                    const SizedBox(height: 10),
+                    _SettingTile(
+                      mainCtrl: _mainCtrl,
+                      index: 2,
                       icon: Icons.credit_card_outlined,
                       title: 'Premium Subscription',
                       trailingText: _isPremium ? 'Active' : 'Upgrade',
@@ -764,7 +966,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     const SizedBox(height: 10),
                     _SettingTile(
                       mainCtrl: _mainCtrl,
-                      index: 2,
+                      index: 3,
                       icon: Icons.notifications_none_outlined,
                       title: 'Notifications',
                       trailingText: 'Daily Reminders',
@@ -773,7 +975,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     const SizedBox(height: 10),
                     _SettingTile(
                       mainCtrl: _mainCtrl,
-                      index: 3,
+                      index: 4,
                       icon: Icons.adjust_outlined,
                       title: 'Health Goals',
                       trailingText: _goalTypeTitle ?? 'Not set',
@@ -782,7 +984,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     const SizedBox(height: 10),
                     _SettingTile(
                       mainCtrl: _mainCtrl,
-                      index: 4,
+                      index: 5,
                       icon: Icons.monitor_weight_rounded,
                       title: 'BMI Calculator',
                       trailingText: 'Quick check',
@@ -796,7 +998,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: _SettingTile(
                   mainCtrl: _mainCtrl,
-                  index: 5,
+                  index: 6,
                   icon: Icons.logout_rounded,
                   title: 'Logout Account',
                   isLogout: true,
@@ -832,7 +1034,9 @@ class _TopIconButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Material(
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Material(
       color: Colors.transparent,
       child: InkResponse(
         onTap: onTap,
@@ -840,10 +1044,15 @@ class _TopIconButton extends StatelessWidget {
         child: SizedBox(
           width: 38,
           height: 38,
-          child: Icon(icon, size: 24, color: const Color(0xFF4C4A59)),
+          child: Icon(
+            icon,
+            size: 24,
+            color: isDark ? const Color(0xFFF1F5F9) : const Color(0xFF4C4A59),
+          ),
         ),
       ),
     );
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -1204,92 +1413,101 @@ class _MetricCard extends StatelessWidget {
           ),
         );
       },
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE8E6EE)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Icon with flame flicker on streak
-            AnimatedBuilder(
-              animation: flameCtrl,
-              builder: (context, child) {
-                final glow = index == 0
-                    ? 0.7 + (flameCtrl.value * 0.3)
-                    : 1.0;
-                return Opacity(
-                  opacity: glow,
-                  child: Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: iconBackground,
-                      borderRadius: BorderRadius.circular(11),
-                    ),
-                    child: Icon(icon, color: iconColor, size: 20),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.6,
-                color: Color(0xFF7C7580),
-                height: 1.1,
+      child: Builder(
+        builder: (context) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return Container(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF141824) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? const Color(0xFF22283A) : const Color(0xFFE8E6EE),
               ),
-            ),
-            const SizedBox(height: 10),
-            // Real value rendered directly — the old count-up multiplier sat on
-            // a partial number (e.g. "2.7" instead of "4.2") for well over a
-            // second after the tab was opened, which read as a stale/late
-            // value. Only the fade is animated now, and the Text is passed as
-            // `child` so it isn't rebuilt on every animation tick.
-            AnimatedBuilder(
-              animation: mainCtrl,
-              builder: (context, child) {
-                final fade = _clamp01(CurvedAnimation(
-                  parent: mainCtrl,
-                  curve: Interval(stagger + 0.04, stagger + 0.24,
-                      curve: Curves.easeOutCubic),
-                ).value);
-                return Opacity(opacity: fade, child: child);
-              },
-              child: Text(
-                '$targetValue$suffix',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1F1F2E),
-                  height: 1,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
                 ),
-              ),
+              ],
             ),
-            const SizedBox(height: 7),
-            Text(
-              subtitle,
-              style: const TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF777580),
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icon with flame flicker on streak
+                AnimatedBuilder(
+                  animation: flameCtrl,
+                  builder: (context, child) {
+                    final glow = index == 0
+                        ? 0.7 + (flameCtrl.value * 0.3)
+                        : 1.0;
+                    return Opacity(
+                      opacity: glow,
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? iconColor.withValues(alpha: 0.16)
+                              : iconBackground,
+                          borderRadius: BorderRadius.circular(11),
+                        ),
+                        child: Icon(icon, color: iconColor, size: 20),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.6,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF7C7580),
+                    height: 1.1,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                // Real value rendered directly — the old count-up multiplier sat on
+                // a partial number (e.g. "2.7" instead of "4.2") for well over a
+                // second after the tab was opened, which read as a stale/late
+                // value. Only the fade is animated now, and the Text is passed as
+                // `child` so it isn't rebuilt on every animation tick.
+                AnimatedBuilder(
+                  animation: mainCtrl,
+                  builder: (context, child) {
+                    final fade = _clamp01(CurvedAnimation(
+                      parent: mainCtrl,
+                      curve: Interval(stagger + 0.04, stagger + 0.24,
+                          curve: Curves.easeOutCubic),
+                    ).value);
+                    return Opacity(opacity: fade, child: child);
+                  },
+                  child: Text(
+                    '$targetValue$suffix',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1F1F2E),
+                      height: 1,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? const Color(0xFF64748B) : const Color(0xFF777580),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -1404,54 +1622,61 @@ class _GoalsCard extends StatelessWidget {
           child: Opacity(opacity: t, child: child),
         );
       },
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF6F4FF),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFECE8FF)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Today's Goals",
-              style: textTheme.titleLarge?.copyWith(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF242333),
+      child: Builder(
+        builder: (context) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return Container(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF141824) : const Color(0xFFF6F4FF),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? const Color(0xFF22283A) : const Color(0xFFECE8FF),
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
-            const SizedBox(height: 4),
-            // Percentage text cross-fade
-            AnimatedBuilder(
-              animation: mainCtrl,
-              builder: (context, child) {
-                final fadeT = _clamp01(CurvedAnimation(
-                  parent: mainCtrl,
-                  curve: const Interval(0.54, 0.70),
-                ).value);
-                final overall = _goalPercent(calorieConsumed, calorieGoal);
-                return Opacity(
-                  opacity: fadeT,
-                  child: Text(
-                    "You're $overall% through your daily calorie target!",
-                    style: textTheme.bodyMedium?.copyWith(
-                      fontSize: 13.5,
-                      color: const Color(0xFF7C798A),
-                      fontWeight: FontWeight.w500,
-                    ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Today's Goals",
+                  style: textTheme.titleLarge?.copyWith(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF242333),
                   ),
-                );
-              },
-            ),
+                ),
+                const SizedBox(height: 4),
+                // Percentage text cross-fade
+                AnimatedBuilder(
+                  animation: mainCtrl,
+                  builder: (context, child) {
+                    final fadeT = _clamp01(CurvedAnimation(
+                      parent: mainCtrl,
+                      curve: const Interval(0.54, 0.70),
+                    ).value);
+                    final overall = _goalPercent(calorieConsumed, calorieGoal);
+                    return Opacity(
+                      opacity: fadeT,
+                      child: Text(
+                        "You're $overall% through your daily calorie target!",
+                        style: textTheme.bodyMedium?.copyWith(
+                          fontSize: 13.5,
+                          color: isDark
+                              ? const Color(0xFF94A3B8)
+                              : const Color(0xFF7C798A),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    );
+                  },
+                ),
             const SizedBox(height: 14),
             _GoalRow(
               mainCtrl: mainCtrl,
@@ -1488,8 +1713,10 @@ class _GoalsCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
+      );
+    },
+  ),
+);
 
   static double _goalProgress(int consumed, int target) {
     if (target <= 0) return 0;
@@ -1542,6 +1769,7 @@ class _GoalRow extends StatelessWidget {
             curve: Interval(stagger, stagger + 0.26, curve: Curves.fastOutSlowIn),
           ).value);
 
+          final isDark = Theme.of(context).brightness == Brightness.dark;
           return Column(
             children: [
               Row(
@@ -1551,10 +1779,10 @@ class _GoalRow extends StatelessWidget {
                   Expanded(
                     child: Text(
                       label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF2C2940),
+                        color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF2C2940),
                       ),
                     ),
                   ),
@@ -1562,10 +1790,10 @@ class _GoalRow extends StatelessWidget {
                     opacity: t,
                     child: Text(
                       value,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF6F6C7D),
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF6F6C7D),
                       ),
                     ),
                   ),
@@ -1577,7 +1805,7 @@ class _GoalRow extends StatelessWidget {
                 child: LinearProgressIndicator(
                   minHeight: 8,
                   value: animatedProgress,
-                  backgroundColor: const Color(0xFFE7E1FF),
+                  backgroundColor: isDark ? const Color(0xFF22283A) : const Color(0xFFE7E1FF),
                   valueColor: const AlwaysStoppedAnimation<Color>(_purple),
                 ),
               ),
@@ -1647,55 +1875,79 @@ class _SettingTile extends StatelessWidget {
                 ),
               ),
             )
-          : Material(
-              color: _surface,
-              elevation: 1.5,
-              shadowColor: Colors.black.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(16),
-              clipBehavior: Clip.antiAlias,
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: _border),
+          : Builder(
+              builder: (context) {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                return Material(
+                  color: isDark ? const Color(0xFF141824) : _surface,
+                  elevation: 1.5,
+                  shadowColor: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
                   borderRadius: BorderRadius.circular(16),
-                ),
-                child: ListTile(
-                  onTap: onTap,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                  leading: Container(
-                    width: 32,
-                    height: 32,
+                  clipBehavior: Clip.antiAlias,
+                  child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF6F4FB),
-                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF22283A) : _border,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Icon(icon, size: 18, color: const Color(0xFF6C6674)),
-                  ),
-                  title: Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF22212E),
-                    ),
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (trailingText != null)
-                        Text(
-                          trailingText!,
-                          style: const TextStyle(
-                            fontSize: 13.5,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF7B7786),
-                          ),
+                    child: ListTile(
+                      onTap: onTap,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                      leading: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? const Color(0xFF1E2438)
+                              : const Color(0xFFF6F4FB),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                      const SizedBox(width: 6),
-                      const Icon(Icons.chevron_right, color: Color(0xFFC5C2CC)),
-                    ],
+                        child: Icon(
+                          icon,
+                          size: 18,
+                          color: isDark
+                              ? const Color(0xFF94A3B8)
+                              : const Color(0xFF6C6674),
+                        ),
+                      ),
+                      title: Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: isDark
+                              ? const Color(0xFFF8FAFC)
+                              : const Color(0xFF22212E),
+                        ),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (trailingText != null)
+                            Text(
+                              trailingText!,
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? const Color(0xFF818CF8)
+                                    : const Color(0xFF7B7786),
+                              ),
+                            ),
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.chevron_right,
+                            color: isDark
+                                ? const Color(0xFF475569)
+                                : const Color(0xFFC5C2CC),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
     );
   }

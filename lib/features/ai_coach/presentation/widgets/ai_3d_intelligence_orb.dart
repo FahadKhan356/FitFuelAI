@@ -34,7 +34,6 @@ class _Ai3dIntelligenceOrbState extends State<Ai3dIntelligenceOrb>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   ui.FragmentProgram? _program;
-  bool _shaderLoadFailed = false;
 
   double _currentEnergy = 1.0;
   double _targetEnergy = 1.0;
@@ -60,11 +59,6 @@ class _Ai3dIntelligenceOrbState extends State<Ai3dIntelligenceOrb>
       }
     } catch (e) {
       debugPrint('Ai3dIntelligenceOrb: Native shader loading fallback: $e');
-      if (mounted) {
-        setState(() {
-          _shaderLoadFailed = true;
-        });
-      }
     }
   }
 

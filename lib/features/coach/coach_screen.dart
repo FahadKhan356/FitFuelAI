@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
-import 'models/coach_response.dart';
 import 'providers/coach_controller.dart';
 import 'providers/daily_summary_provider.dart';
 import 'widgets/ai_orb_background.dart';
@@ -78,12 +77,14 @@ class _CoachScreenState extends State<CoachScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.dark.copyWith(
+      value: (isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark).copyWith(
         statusBarColor: Colors.transparent,
       ),
       child: Scaffold(
-        backgroundColor: const Color(0xFFF6F4FF),
+        backgroundColor: isDark ? const Color(0xFF0B0E14) : const Color(0xFFF6F4FF),
         body: SafeArea(
           bottom: false,
           child: Stack(
@@ -193,6 +194,7 @@ class _CoachScreenState extends State<CoachScreen> {
   }
 
   Widget _buildHeaderRow(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final canPop = widget.showBackButton && Navigator.of(context).canPop();
 
     return Padding(
@@ -208,7 +210,7 @@ class _CoachScreenState extends State<CoachScreen> {
           else
             _buildGlassIconButton(
               icon: Icons.auto_awesome_rounded,
-              iconColor: const Color(0xFF5B4BDB),
+              iconColor: isDark ? const Color(0xFF818CF8) : const Color(0xFF5B4BDB),
               onTap: () {
                 _sendQuery("What should I focus on right now?");
               },
@@ -222,13 +224,13 @@ class _CoachScreenState extends State<CoachScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
+                Text(
                   'AI Coach',
                   style: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1E1B3A),
+                    color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E1B3A),
                     letterSpacing: -0.3,
                   ),
                 ),
@@ -288,42 +290,55 @@ class _CoachScreenState extends State<CoachScreen> {
     required VoidCallback onTap,
     Color iconColor = const Color(0xFF5B4BDB),
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.72),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF5B4BDB).withValues(alpha: 0.04),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final resolvedIconColor = isDark && iconColor == const Color(0xFF5B4BDB)
+            ? const Color(0xFF818CF8)
+            : iconColor;
+
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(16),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF141824).withValues(alpha: 0.85)
+                        : Colors.white.withValues(alpha: 0.72),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF282D4A)
+                          : Colors.white.withValues(alpha: 0.8),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF5B4BDB).withValues(alpha: 0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: Icon(
-                icon,
-                size: 20,
-                color: iconColor,
+                  child: Icon(
+                    icon,
+                    size: 20,
+                    color: resolvedIconColor,
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -338,6 +353,8 @@ class _CoachScreenState extends State<CoachScreen> {
   }
 
   void _showHistorySheet(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -349,12 +366,16 @@ class _CoachScreenState extends State<CoachScreen> {
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.92),
+                color: isDark
+                    ? const Color(0xFF141824).withValues(alpha: 0.95)
+                    : Colors.white.withValues(alpha: 0.92),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(24),
                 ),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.8),
+                  color: isDark
+                      ? const Color(0xFF282D4A)
+                      : Colors.white.withValues(alpha: 0.8),
                   width: 1,
                 ),
               ),
@@ -367,19 +388,19 @@ class _CoachScreenState extends State<CoachScreen> {
                       width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE3DEFF),
+                        color: isDark ? const Color(0xFF282D4A) : const Color(0xFFE3DEFF),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'Chat Options',
                     style: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF1E1B3A),
+                      color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E1B3A),
                     ),
                   ),
                   const SizedBox(height: 14),
@@ -388,20 +409,20 @@ class _CoachScreenState extends State<CoachScreen> {
                       Icons.refresh_rounded,
                       color: Color(0xFF5B4BDB),
                     ),
-                    title: const Text(
+                    title: Text(
                       'Refresh sync data',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1E1B3A),
+                        color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E1B3A),
                       ),
                     ),
-                    subtitle: const Text(
+                    subtitle: Text(
                       'Re-fetch daily and weekly summary from server',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 12,
-                        color: Color(0xFF7A7699),
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF7A7699),
                       ),
                     ),
                     onTap: () {
@@ -420,20 +441,20 @@ class _CoachScreenState extends State<CoachScreen> {
                       Icons.delete_sweep_rounded,
                       color: Color(0xFFF97316),
                     ),
-                    title: const Text(
+                    title: Text(
                       'Clear conversation',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1E1B3A),
+                        color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E1B3A),
                       ),
                     ),
-                    subtitle: const Text(
+                    subtitle: Text(
                       'Reset chat back to initial state',
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 12,
-                        color: Color(0xFF7A7699),
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF7A7699),
                       ),
                     ),
                     onTap: () {

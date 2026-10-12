@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/config/routes.dart';
 import 'core/di/service_locator.dart';
+import 'core/theme/theme_controller.dart';
 import 'shared/theme/app_theme.dart';
 
 class FitFuelApp extends StatelessWidget {
@@ -11,11 +12,16 @@ class FitFuelApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MultiBlocProvider(
       providers: blocProviders,
-      child: MaterialApp.router(
-        title: 'FITFUEL AI',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.darkTheme,
-        routerConfig: goRouter,
+      child: ListenableBuilder(
+        listenable: AppThemeController.instance,
+        builder: (context, _) => MaterialApp.router(
+          title: 'FITFUEL AI',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: AppThemeController.instance.themeMode,
+          routerConfig: goRouter,
+        ),
       ),
     );
 }

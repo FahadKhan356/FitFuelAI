@@ -13,6 +13,7 @@ import 'package:fitfuel_ai/core/services/home_data_cache.dart';
 import 'package:fitfuel_ai/core/services/home_data_refresh_notifier.dart';
 import 'package:fitfuel_ai/core/services/streak_service.dart';
 import 'package:fitfuel_ai/core/services/water_goal_resolver.dart';
+import 'package:fitfuel_ai/core/theme/theme_controller.dart';
 import 'package:fitfuel_ai/core/utils/fitness_calculator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -74,7 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       // The Scan tab is already the scanner, and the Coach tab has its own chat input bar.
       floatingActionButton: (_navIndex == 2 || _navIndex == 3)
           ? null
@@ -453,14 +454,19 @@ class _HomeContentState extends State<_HomeContent>
               },
               child: Row(
                 children: [
-                  Text(
-                    '${_greetingPrefix()}, $_greetingName ',
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      color: kHeadline,
-                      letterSpacing: -0.4,
-                    ),
+                  Builder(
+                    builder: (context) {
+                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                      return Text(
+                        '${_greetingPrefix()}, $_greetingName ',
+                        style: TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? const Color(0xFFF8FAFC) : kHeadline,
+                          letterSpacing: -0.4,
+                        ),
+                      );
+                    },
                   ),
                   const Icon(Icons.waving_hand_rounded,
                       size: 22, color: kOrange),
@@ -482,15 +488,20 @@ class _HomeContentState extends State<_HomeContent>
                   child: Opacity(opacity: t, child: child),
                 );
               },
-              child: Text(
-                _loading
-                    ? 'Fetching your daily targets…'
-                    : 'Let’s hit today’s goals together.',
-                style: const TextStyle(
-                  fontSize: 13.5,
-                  color: kBody,
-                  fontWeight: FontWeight.w400,
-                ),
+              child: Builder(
+                builder: (context) {
+                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                  return Text(
+                    _loading
+                        ? 'Fetching your daily targets…'
+                        : 'Let’s hit today’s goals together.',
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      color: isDark ? const Color(0xFF94A3B8) : kBody,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  );
+                },
               ),
             ),
             const SizedBox(height: 18),
@@ -774,7 +785,9 @@ class _TopBar extends StatelessWidget {
   final bool streakTodayActive;
 
   @override
-  Widget build(BuildContext context) => Row(
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         AnimatedBuilder(
@@ -813,14 +826,18 @@ class _TopBar extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
+                gradient: LinearGradient(
+                  colors: isDark
+                      ? const [Color(0xFF2E2214), Color(0xFF382914)]
+                      : const [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
                 ),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFFDE68A)),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF6B4515) : const Color(0xFFFDE68A),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFF59E0B).withValues(alpha: 0.12),
+                    color: const Color(0xFFF59E0B).withValues(alpha: isDark ? 0.2 : 0.12),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -847,20 +864,50 @@ class _TopBar extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
+            // Quick Theme Switcher
+            GestureDetector(
+              onTap: AppThemeController.instance.toggleTheme,
+              child: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF141824) : kWhite,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF22283A) : const Color(0xFFE2E8F0),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  isDark ? Icons.light_mode_rounded : Icons.dark_mode_outlined,
+                  color: isDark ? const Color(0xFFF59E0B) : const Color(0xFF6366F1),
+                  size: 19,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
             // Notifications Bell
             GestureDetector(
               onTap: () => context.push(AppRoutes.notifications),
               child: Container(
-                width: 40,
-                height: 40,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
-                  color: kWhite,
+                  color: isDark ? const Color(0xFF141824) : kWhite,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF22283A) : const Color(0xFFE2E8F0),
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
+                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -869,21 +916,24 @@ class _TopBar extends StatelessWidget {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.notifications_outlined,
-                      color: Color(0xFF6366F1),
-                      size: 20,
+                      color: isDark ? const Color(0xFF818CF8) : const Color(0xFF6366F1),
+                      size: 19,
                     ),
                     Positioned(
-                      top: 8,
-                      right: 8,
+                      top: 7,
+                      right: 7,
                       child: Container(
                         width: 7,
                         height: 7,
                         decoration: BoxDecoration(
                           color: const Color(0xFFFF6B6B),
                           shape: BoxShape.circle,
-                          border: Border.all(color: kWhite, width: 1.2),
+                          border: Border.all(
+                            color: isDark ? const Color(0xFF141824) : kWhite,
+                            width: 1.2,
+                          ),
                         ),
                       ),
                     ),
@@ -891,17 +941,20 @@ class _TopBar extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             // Profile Avatar
             GestureDetector(
               onTap: onAvatarTap,
               child: Container(
-                width: 40,
-                height: 40,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFFEEF2FF),
-                  border: Border.all(color: const Color(0xFF6366F1), width: 2),
+                  color: isDark ? const Color(0xFF1E2438) : const Color(0xFFEEF2FF),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF818CF8) : const Color(0xFF6366F1),
+                    width: 2,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: const Color(0xFF6366F1).withValues(alpha: 0.2),
@@ -914,43 +967,51 @@ class _TopBar extends StatelessWidget {
                 child: avatarUrl != null && avatarUrl!.isNotEmpty
                     ? Image.network(
                         avatarUrl!,
-                        width: 40,
-                        height: 40,
+                        width: 38,
+                        height: 38,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stack) => const Center(
-                          child: Icon(Icons.person_rounded,
-                              size: 20, color: Color(0xFF6366F1)),
+                        errorBuilder: (context, error, stack) => Center(
+                          child: Icon(
+                            Icons.person_rounded,
+                            size: 19,
+                            color: isDark ? const Color(0xFF818CF8) : const Color(0xFF6366F1),
+                          ),
                         ),
                       )
-                    : const Center(
-                        child: Icon(Icons.person_rounded,
-                            size: 20, color: Color(0xFF6366F1)),
+                    : Center(
+                        child: Icon(
+                          Icons.person_rounded,
+                          size: 19,
+                          color: isDark ? const Color(0xFF818CF8) : const Color(0xFF6366F1),
+                        ),
                       ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             // Activity Calendar
             GestureDetector(
               onTap: () => context.push(AppRoutes.activityCalendar),
               child: Container(
-                width: 40,
-                height: 40,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
-                  color: kWhite,
+                  color: isDark ? const Color(0xFF141824) : kWhite,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF22283A) : const Color(0xFFE2E8F0),
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
+                      color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.calendar_month_rounded,
-                  color: Color(0xFF6366F1),
-                  size: 20,
+                  color: isDark ? const Color(0xFF818CF8) : const Color(0xFF6366F1),
+                  size: 19,
                 ),
               ),
             ),
@@ -958,6 +1019,7 @@ class _TopBar extends StatelessWidget {
         ),
       ],
     );
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -969,18 +1031,24 @@ class _DashboardLoading extends StatelessWidget {
   const _DashboardLoading();
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: kWhite,
+        color: isDark ? const Color(0xFF141824) : kWhite,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: kBorder, width: 1),
+        border: Border.all(
+          color: isDark ? const Color(0xFF22283A) : kBorder,
+          width: 1,
+        ),
       ),
       child: const Center(
         child: CircularProgressIndicator(color: kPurple),
       ),
     );
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -1290,7 +1358,9 @@ class _MacroRow extends StatelessWidget {
   final double fatTotal;
 
   @override
-  Widget build(BuildContext context) => Row(
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Row(
       children: [
         Expanded(
           child: _MacroCard(
@@ -1304,8 +1374,8 @@ class _MacroRow extends StatelessWidget {
             progress: proteinTotal <= 0
                 ? 0.0
                 : (proteinCurrent / proteinTotal).clamp(0.0, 1.0),
-            bgColor: const Color(0xFFF8F7FF),
-            borderColor: const Color(0xFFE0E7FF),
+            bgColor: isDark ? const Color(0xFF141824) : const Color(0xFFF8F7FF),
+            borderColor: isDark ? const Color(0xFF282D4A) : const Color(0xFFE0E7FF),
           ),
         ),
         const SizedBox(width: 10),
@@ -1321,8 +1391,8 @@ class _MacroRow extends StatelessWidget {
             progress: carbsTotal <= 0
                 ? 0.0
                 : (carbsCurrent / carbsTotal).clamp(0.0, 1.0),
-            bgColor: const Color(0xFFFFFDF5),
-            borderColor: const Color(0xFFFEF3C7),
+            bgColor: isDark ? const Color(0xFF141824) : const Color(0xFFFFFDF5),
+            borderColor: isDark ? const Color(0xFF423419) : const Color(0xFFFEF3C7),
           ),
         ),
         const SizedBox(width: 10),
@@ -1338,12 +1408,13 @@ class _MacroRow extends StatelessWidget {
             progress: fatTotal <= 0
                 ? 0.0
                 : (fatCurrent / fatTotal).clamp(0.0, 1.0),
-            bgColor: const Color(0xFFFFF5F6),
-            borderColor: const Color(0xFFFFE4E6),
+            bgColor: isDark ? const Color(0xFF141824) : const Color(0xFFFFF5F6),
+            borderColor: isDark ? const Color(0xFF461F28) : const Color(0xFFFFE4E6),
           ),
         ),
       ],
     );
+  }
 }
 
 class _MacroCard extends StatelessWidget {
@@ -1439,28 +1510,33 @@ class _MacroCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            RichText(
-              text: TextSpan(
-                children: [
-                  TextSpan(
-                    text: current,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: kHeadline,
-                      letterSpacing: -0.5,
-                    ),
+            Builder(
+              builder: (context) {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                return RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: current,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: isDark ? const Color(0xFFF8FAFC) : kHeadline,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      TextSpan(
+                        text: ' $total',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w500,
+                          color: isDark ? const Color(0xFF94A3B8) : kBody,
+                        ),
+                      ),
+                    ],
                   ),
-                  TextSpan(
-                    text: ' $total',
-                    style: const TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w500,
-                      color: kBody,
-                    ),
-                  ),
-                ],
-              ),
+                );
+              },
             ),
             const SizedBox(height: 8),
             ClipRRect(
@@ -1512,76 +1588,82 @@ class _MealCard extends StatelessWidget {
           child: Opacity(opacity: t, child: child),
         );
       },
-      child: GestureDetector(
-        onTap: () => context.push(AppRoutes.mealTracking),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: kCardBg,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFFFEDD5), width: 1.2),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFFF97316).withValues(alpha: 0.06),
-                blurRadius: 14,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFB923C), Color(0xFFEA580C)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+      child: Builder(
+        builder: (context) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return GestureDetector(
+            onTap: () => context.push(AppRoutes.mealTracking),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF141824) : kCardBg,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF22283A) : const Color(0xFFFFEDD5),
+                  width: 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFF97316).withValues(alpha: isDark ? 0.03 : 0.06),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
                   ),
-                  borderRadius: BorderRadius.circular(13),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFEA580C).withValues(alpha: 0.28),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.restaurant_rounded,
-                  color: kWhite,
-                  size: 22,
-                ),
+                ],
               ),
-              const SizedBox(width: 14),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Track a Meal',
-                      style: TextStyle(
-                        fontSize: 15.5,
-                        fontWeight: FontWeight.w800,
-                        color: kHeadline,
-                        letterSpacing: -0.2,
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFB923C), Color(0xFFEA580C)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
+                      borderRadius: BorderRadius.circular(13),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFEA580C).withValues(alpha: 0.28),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
                     ),
-                    SizedBox(height: 3),
-                    Text(
-                      'Add your breakfast, lunch or dinner in seconds.',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w500,
-                        color: kBody,
-                        height: 1.35,
-                      ),
+                    child: const Icon(
+                      Icons.restaurant_rounded,
+                      color: kWhite,
+                      size: 22,
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Track a Meal',
+                          style: TextStyle(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? const Color(0xFFF8FAFC) : kHeadline,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Add your breakfast, lunch or dinner in seconds.',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w500,
+                            color: isDark ? const Color(0xFF94A3B8) : kBody,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 8.5),
@@ -1617,8 +1699,10 @@ class _MealCard extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
+      );
+    },
+  ),
+);
 }
 
 // ─────────────────────────────────────────────
@@ -1655,99 +1739,105 @@ class _WaterCard extends StatelessWidget {
           child: Opacity(opacity: t, child: child),
         );
       },
-      child: GestureDetector(
-        onTap: () async {
-          await context.push(AppRoutes.waterTracker);
-          onReload();
-        },
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF0F9FF),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: const Color(0xFFBAE6FD), width: 1.2),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF0284C7).withValues(alpha: 0.06),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0284C7).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.water_drop_rounded,
-                        size: 20,
-                        color: Color(0xFF0284C7),
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3.5),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE0F2FE),
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                    child: Text(
-                      '$percent% DONE',
-                      style: const TextStyle(
-                        fontSize: 8.5,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF0284C7),
-                        letterSpacing: 0.5,
-                      ),
-                    ),
+      child: Builder(
+        builder: (context) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return GestureDetector(
+            onTap: () async {
+              await context.push(AppRoutes.waterTracker);
+              onReload();
+            },
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF0F2130) : const Color(0xFFF0F9FF),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF1B3D59) : const Color(0xFFBAE6FD),
+                  width: 1.2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF0284C7).withValues(alpha: isDark ? 0.03 : 0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              const Text(
-                'WATER',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF64748B),
-                  letterSpacing: 1.1,
-                ),
-              ),
-              const SizedBox(height: 3),
-              RichText(
-                text: TextSpan(
-                  children: [
-                    TextSpan(
-                      text: (totalMl / 1000.0).toStringAsFixed(1),
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: kHeadline,
-                        letterSpacing: -0.5,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0284C7).withValues(alpha: isDark ? 0.2 : 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.water_drop_rounded,
+                            size: 20,
+                            color: Color(0xFF0284C7),
+                          ),
+                        ),
                       ),
-                    ),
-                    TextSpan(
-                      text: ' / ${(targetMl / 1000.0).toStringAsFixed(1)}L',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: kBody,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3.5),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF163248) : const Color(0xFFE0F2FE),
+                          borderRadius: BorderRadius.circular(100),
+                        ),
+                        child: Text(
+                          '$percent% DONE',
+                          style: const TextStyle(
+                            fontSize: 8.5,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF0284C7),
+                            letterSpacing: 0.5,
+                          ),
+                        ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'WATER',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      letterSpacing: 1.1,
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                  const SizedBox(height: 3),
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: (totalMl / 1000.0).toStringAsFixed(1),
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? const Color(0xFFF8FAFC) : kHeadline,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        TextSpan(
+                          text: ' / ${(targetMl / 1000.0).toStringAsFixed(1)}L',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: isDark ? const Color(0xFF94A3B8) : kBody,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               const SizedBox(height: 8),
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
@@ -1781,9 +1871,11 @@ class _WaterCard extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE0F2FE),
+                    color: isDark ? const Color(0xFF163248) : const Color(0xFFE0F2FE),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFBAE6FD)),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF1B3D59) : const Color(0xFFBAE6FD),
+                    ),
                   ),
                   child: const Center(
                     child: Text(
@@ -1800,8 +1892,10 @@ class _WaterCard extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
+      );
+    },
+  ),
+);
   }
 }
 
@@ -2027,6 +2121,8 @@ class _AICoachCardState extends State<_AICoachCard>
         final idle = _idleController.value;
         final pressScale = 1.0 - (0.04 * _pressController.value);
 
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+
         return Transform.translate(
           offset: Offset(0, 22 * (1 - t)),
           child: Opacity(
@@ -2044,36 +2140,51 @@ class _AICoachCardState extends State<_AICoachCard>
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [
-                        Colors.white,
-                        Color.lerp(
-                          Colors.white,
-                          const Color(0xFFF6F3FF),
-                          idle * 0.75,
-                        )!,
-                      ],
+                      colors: isDark
+                          ? [
+                              const Color(0xFF141824),
+                              Color.lerp(
+                                const Color(0xFF141824),
+                                const Color(0xFF1E1E38),
+                                idle * 0.75,
+                              )!,
+                            ]
+                          : [
+                              Colors.white,
+                              Color.lerp(
+                                Colors.white,
+                                const Color(0xFFF6F3FF),
+                                idle * 0.75,
+                              )!,
+                            ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: Color.lerp(
-                        const Color(0xFFE8E5FB),
-                        const Color(0xFFC7BFF8),
-                        idle,
-                      )!,
+                      color: isDark
+                          ? Color.lerp(
+                              const Color(0xFF2B2F48),
+                              const Color(0xFF4F46E5),
+                              idle,
+                            )!
+                          : Color.lerp(
+                              const Color(0xFFE8E5FB),
+                              const Color(0xFFC7BFF8),
+                              idle,
+                            )!,
                       width: 1.2,
                     ),
                     boxShadow: [
                       BoxShadow(
                         color: const Color(0xFF5B4BDB).withValues(
-                          alpha: 0.05 + (0.07 * idle),
+                          alpha: isDark ? 0.08 : (0.05 + (0.07 * idle)),
                         ),
                         blurRadius: 16 + (8 * idle),
                         offset: const Offset(0, 4),
                       ),
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.02),
+                        color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.02),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
@@ -2128,18 +2239,18 @@ class _AICoachCardState extends State<_AICoachCard>
                               width: 28,
                               height: 28,
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF6F4FF),
+                                color: isDark ? const Color(0xFF1E2438) : const Color(0xFFF6F4FF),
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: const Color(0xFFE5E1FA),
+                                  color: isDark ? const Color(0xFF2B2F48) : const Color(0xFFE5E1FA),
                                   width: 1,
                                 ),
                               ),
-                              child: const Center(
+                              child: Center(
                                 child: Icon(
                                   Icons.info_outline_rounded,
                                   size: 14,
-                                  color: Color(0xFF7A7699),
+                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF7A7699),
                                 ),
                               ),
                             ),
@@ -2164,13 +2275,13 @@ class _AICoachCardState extends State<_AICoachCard>
                             ),
                           ),
                           const SizedBox(width: 5),
-                          const Text(
+                          Text(
                             'AI COACH',
                             style: TextStyle(
                               fontFamily: 'Inter',
                               fontSize: 9.5,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF7A7699),
+                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF7A7699),
                               letterSpacing: 1.2,
                             ),
                           ),
@@ -2181,11 +2292,11 @@ class _AICoachCardState extends State<_AICoachCard>
                       // Dynamic Context-Aware Prompt
                       Text(
                         _getCoachPrompt(),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF1E1B3A),
+                          color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E1B3A),
                           height: 1.35,
                           letterSpacing: -0.2,
                         ),
@@ -2323,112 +2434,129 @@ class _MealItem extends StatelessWidget {
           ),
         );
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: kCardBg,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFF1F5F9), width: 1.2),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.025),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: imagePlaceholderColor.withValues(alpha: 0.22),
-                borderRadius: BorderRadius.circular(13),
+      child: Builder(
+        builder: (context) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF141824) : kCardBg,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? const Color(0xFF22283A) : const Color(0xFFF1F5F9),
+                width: 1.2,
               ),
-              child: Center(
-                child: Icon(icon, size: 24, color: kHeadline),
-              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.025),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
-            const SizedBox(width: 13),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            child: Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: imagePlaceholderColor.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      icon,
+                      size: 24,
+                      color: isDark ? const Color(0xFFF8FAFC) : kHeadline,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: _mealTypeColor.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                        child: Text(
-                          mealType,
-                          style: TextStyle(
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w700,
-                            color: _mealTypeColor,
-                            letterSpacing: 0.3,
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: _mealTypeColor.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                            child: Text(
+                              mealType,
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w700,
+                                color: _mealTypeColor,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
                           ),
+                          const SizedBox(width: 6),
+                          Icon(
+                            Icons.access_time_rounded,
+                            size: 12,
+                            color: isDark ? const Color(0xFF94A3B8) : kBody,
+                          ),
+                          const SizedBox(width: 3),
+                          Text(
+                            time,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isDark ? const Color(0xFF94A3B8) : kBody,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? const Color(0xFFF8FAFC) : kHeadline,
+                          letterSpacing: -0.2,
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      const Icon(Icons.access_time_rounded,
-                          size: 12, color: kBody),
-                      const SizedBox(width: 3),
+                      const SizedBox(height: 2),
                       Text(
-                        time,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: kBody,
-                          fontWeight: FontWeight.w500,
+                        kcal,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          color: isDark ? const Color(0xFF818CF8) : const Color(0xFF6366F1),
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 5),
-                  Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w700,
-                      color: kHeadline,
-                      letterSpacing: -0.2,
+                ),
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E2438) : const Color(0xFFF8F9FE),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF2B2F48) : const Color(0xFFE2E8F0),
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    kcal,
-                    style: const TextStyle(
-                      fontSize: 12.5,
-                      color: Color(0xFF6366F1),
-                      fontWeight: FontWeight.w700,
-                    ),
+                  child: Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 13,
+                    color: isDark ? const Color(0xFF94A3B8) : kBody,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8F9FE),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: const Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 13,
-                color: kBody,
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
 }
@@ -2543,6 +2671,10 @@ class _BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeColor = isDark ? const Color(0xFF818CF8) : kPurple;
+    final inactiveColor = isDark ? const Color(0xFF94A3B8) : kBody;
+
     final items = [
       const _NavItem(icon: Icons.home_rounded, label: 'Home'),
       const _NavItem(icon: Icons.bar_chart_rounded, label: 'Stats'),
@@ -2553,11 +2685,16 @@ class _BottomNav extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: kWhite,
-        border: const Border(top: BorderSide(color: kBorder, width: 1)),
+        color: isDark ? const Color(0xFF141824) : kWhite,
+        border: Border(
+          top: BorderSide(
+            color: isDark ? const Color(0xFF22283A) : kBorder,
+            width: 1,
+          ),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.04),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -2582,7 +2719,7 @@ class _BottomNav extends StatelessWidget {
                       Icon(
                         items[i].icon,
                         size: 24,
-                        color: active ? kPurple : kBody,
+                        color: active ? activeColor : inactiveColor,
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -2591,7 +2728,7 @@ class _BottomNav extends StatelessWidget {
                           fontSize: 10,
                           fontWeight:
                               active ? FontWeight.w700 : FontWeight.w400,
-                          color: active ? kPurple : kBody,
+                          color: active ? activeColor : inactiveColor,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -2600,7 +2737,7 @@ class _BottomNav extends StatelessWidget {
                         width: active ? 18 : 0,
                         height: 3,
                         decoration: BoxDecoration(
-                          color: kPurple,
+                          color: activeColor,
                           borderRadius: BorderRadius.circular(100),
                         ),
                       ),

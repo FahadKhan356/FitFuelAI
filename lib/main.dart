@@ -5,6 +5,7 @@ import 'app.dart';
 import 'core/constants/app_constants.dart';
 import 'core/di/service_locator.dart';
 import 'core/services/home_data_cache.dart';
+import 'core/theme/theme_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +29,9 @@ void main() async {
       await HomeDataCache.loadPersistent(currentUser.id);
     } catch (_) {}
   }
+
+  // Pre-load theme mode preference
+  await AppThemeController.instance.loadTheme();
   
   runApp(const FitFuelApp());
 }

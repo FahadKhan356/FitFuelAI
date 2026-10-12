@@ -13,10 +13,7 @@ import '../../../../core/domain/entities/calendar_tracking.dart';
 import '../../../../core/services/home_data_refresh_notifier.dart';
 import '../bloc/analytics_bloc.dart';
 
-const _bg = Color(0xFFF7F6FB);
-const _surface = Colors.white;
 const _purple = Color(0xFF6366FF);
-const _textPrimary = Color(0xFF1F1F2E);
 
 class AnalyticsScreen extends StatefulWidget {
   const AnalyticsScreen({Key? key}) : super(key: key);
@@ -29,6 +26,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
   late final AnimationController _mainController;
   late final AnalyticsBloc _analyticsBloc;
   bool isWeekly = true;
+
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get _bg => _isDark ? const Color(0xFF0B0E14) : const Color(0xFFF7F6FB);
+  Color get _surface => _isDark ? const Color(0xFF141824) : Colors.white;
+  Color get _textPrimary => _isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1F1F2E);
+  Color get _textSecondary => _isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
   /// The dates shown by the charts/stats — always matches the active mode:
   /// - Weekly  → the last 7 days (today back 6).
@@ -147,7 +150,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
             child: const Icon(Icons.trending_up, color: Colors.white, size: 18),
           ),
           const SizedBox(width: 8),
-          const Text(
+          Text(
             'Insights',
             style: TextStyle(
               color: _textPrimary,
@@ -191,7 +194,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
                 child: Text(
                   'Weekly',
                   style: TextStyle(
-                    color: isWeekly ? _purple : Colors.grey[600],
+                    color: isWeekly ? _purple : _textSecondary,
                     fontWeight: isWeekly ? FontWeight.w600 : FontWeight.w500,
                     fontSize: 14,
                   ),
@@ -221,7 +224,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
                 child: Text(
                   'Monthly',
                   style: TextStyle(
-                    color: !isWeekly ? _purple : Colors.grey[600],
+                    color: !isWeekly ? _purple : _textSecondary,
                     fontWeight: !isWeekly ? FontWeight.w600 : FontWeight.w500,
                     fontSize: 14,
                   ),
@@ -286,7 +289,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
       decoration: BoxDecoration(
         color: _surface,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
+        border: _isDark ? Border.all(color: const Color(0xFF22283A)) : null,
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: _isDark ? 0.2 : 0.05), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -297,14 +301,14 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Calorie Activity', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: _textPrimary)),
+                  Text('Calorie Activity', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: _textPrimary)),
                   const SizedBox(height: 4),
-                  Text('Intake vs Daily Budget', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                  Text('Intake vs Daily Budget', style: TextStyle(fontSize: 12, color: _textSecondary)),
                 ],
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: const Color(0xFFF3F2FF), borderRadius: BorderRadius.circular(6)),
+                decoration: BoxDecoration(color: _isDark ? const Color(0xFF23254A) : const Color(0xFFF3F2FF), borderRadius: BorderRadius.circular(6)),
                 child: Text(
                   maxCal > 0 ? 'Target: ${maxCal.toInt()} kcal' : 'Set your goal',
                   style: const TextStyle(fontSize: 11, color: _purple, fontWeight: FontWeight.w600),
@@ -331,14 +335,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
       decoration: BoxDecoration(
         color: _surface,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
+        border: _isDark ? Border.all(color: const Color(0xFF22283A)) : null,
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: _isDark ? 0.2 : 0.05), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Macro Distribution', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: _textPrimary)),
+          Text('Macro Distribution', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: _textPrimary)),
           const SizedBox(height: 4),
-          Text('Daily average split', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+          Text('Daily average split', style: TextStyle(fontSize: 12, color: _textSecondary)),
           const SizedBox(height: 20),
           Row(
             children: [
@@ -347,6 +352,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
                 child: SizedBox(
                   height: 160,
                   child: PieChart(
+                    centerColor: _surface,
                     sections: [
                       PieChartSectionData(color: const Color(0xFF14B8A6), value: 30, title: '30%', titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white), radius: 52, titlePositionPercentageOffset: 0.64),
                       PieChartSectionData(color: const Color(0xFFFFA500), value: 50, title: '50%', titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white), radius: 52, titlePositionPercentageOffset: 0.64),
@@ -386,13 +392,14 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
       decoration: BoxDecoration(
         color: _surface,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
+        border: _isDark ? Border.all(color: const Color(0xFF22283A)) : null,
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: _isDark ? 0.2 : 0.05), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Row(
         children: [
           Container(
             width: 40, height: 40,
-            decoration: BoxDecoration(color: const Color(0xFF06B6D4).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(color: const Color(0xFF06B6D4).withValues(alpha: _isDark ? 0.2 : 0.1), borderRadius: BorderRadius.circular(8)),
             child: const Icon(Icons.check_circle_outline, color: Color(0xFF06B6D4), size: 22),
           ),
           const SizedBox(width: 12),
@@ -400,8 +407,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('On Track to Goal', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _textPrimary)),
-                Text('Achieved complete: Day $hitCount', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                Text('On Track to Goal', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _textPrimary)),
+                Text('Achieved complete: Day $hitCount', style: TextStyle(fontSize: 12, color: _textSecondary)),
               ],
             ),
           ),
@@ -498,18 +505,32 @@ class _KpiCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: _surface,
+            color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF141824) : Colors.white,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
+            border: Theme.of(context).brightness == Brightness.dark ? Border.all(color: const Color(0xFF22283A)) : null,
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.05), blurRadius: 8, offset: const Offset(0, 2))],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(width: 40, height: 40, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(8)), child: Icon(icon, color: Colors.white, size: 20)),
               const SizedBox(height: 12),
-              Text('$value$suffix', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _textPrimary)),
+              Text(
+                '$value$suffix',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFFF8FAFC) : const Color(0xFF1F1F2E),
+                ),
+              ),
               const SizedBox(height: 4),
-              Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF94A3B8) : Colors.grey[600],
+                ),
+              ),
             ],
           ),
         ),
@@ -526,19 +547,29 @@ class _MacroLegendItem extends StatelessWidget {
   final Color color;
 
   @override
-  Widget build(BuildContext context) => Row(
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Row(
       children: [
         Container(width: 12, height: 12, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
         const SizedBox(width: 8),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[700])),
-            Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _textPrimary)),
+            Text(label, style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF94A3B8) : Colors.grey[700])),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1F1F2E),
+              ),
+            ),
           ],
         ),
       ],
     );
+  }
 }
 
 class BarChart extends StatelessWidget {
@@ -624,16 +655,31 @@ class BarChartPainter extends CustomPainter {
 
 class PieChart extends StatelessWidget {
 
-  const PieChart({required this.sections, super.key, this.sectionsSpace = 2, this.centerSpaceRadius = 42});
+  const PieChart({
+    required this.sections,
+    super.key,
+    this.sectionsSpace = 2,
+    this.centerSpaceRadius = 42,
+    this.centerColor,
+  });
   final List<PieChartSectionData> sections;
   final double sectionsSpace;
   final double centerSpaceRadius;
+  final Color? centerColor;
 
   @override
-  Widget build(BuildContext context) => CustomPaint(
+  Widget build(BuildContext context) {
+    final defaultCenter = Theme.of(context).brightness == Brightness.dark ? const Color(0xFF141824) : Colors.white;
+    return CustomPaint(
       size: const Size(160, 160),
-      painter: PieChartPainter(sections: sections, sectionsSpace: sectionsSpace, centerSpaceRadius: centerSpaceRadius),
+      painter: PieChartPainter(
+        sections: sections,
+        sectionsSpace: sectionsSpace,
+        centerSpaceRadius: centerSpaceRadius,
+        centerColor: centerColor ?? defaultCenter,
+      ),
     );
+  }
 }
 
 class PieChartSectionData {
@@ -656,10 +702,16 @@ class PieChartSectionData {
 
 class PieChartPainter extends CustomPainter {
 
-  PieChartPainter({required this.sections, required this.sectionsSpace, required this.centerSpaceRadius});
+  PieChartPainter({
+    required this.sections,
+    required this.sectionsSpace,
+    required this.centerSpaceRadius,
+    this.centerColor = Colors.white,
+  });
   final List<PieChartSectionData> sections;
   final double sectionsSpace;
   final double centerSpaceRadius;
+  final Color centerColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -675,10 +727,10 @@ class PieChartPainter extends CustomPainter {
       startAngle += sweepAngle + sectionsSpace / section.radius;
     }
 
-    final centerPaint = Paint()..color = _surface..style = PaintingStyle.fill;
+    final centerPaint = Paint()..color = centerColor..style = PaintingStyle.fill;
     canvas.drawCircle(center, centerSpaceRadius, centerPaint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

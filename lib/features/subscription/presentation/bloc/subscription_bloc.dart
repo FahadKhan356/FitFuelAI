@@ -98,7 +98,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         try {
           await quotaRepo.syncPlanTier(
             userId: event.userId,
-            planType: subscription.plan ?? event.plan,
+            planType: subscription.plan,
           );
         } catch (_) {}
       }
@@ -120,7 +120,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
         try {
           await quotaRepo.syncPlanTier(
             userId: event.userId,
-            planType: subscription!.plan ?? 'monthly',
+            planType: subscription!.plan,
           );
         } catch (_) {}
       }
