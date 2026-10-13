@@ -91,7 +91,6 @@ extension BmiCategoryInfo on BmiCategory {
 
 /// The outcome of a single BMI calculation.
 class BmiResult {
-
   const BmiResult({
     required this.bmi,
     required this.category,
@@ -99,7 +98,10 @@ class BmiResult {
     required this.healthyWeightMinKg,
     required this.healthyWeightMaxKg,
     required this.deltaToHealthyKg,
+    this.estimatedBodyFatPercentage,
+    this.bmrKcal,
   });
+
   final double bmi;
   final BmiCategory category;
 
@@ -114,6 +116,12 @@ class BmiResult {
   /// to _gain_ weight, positive when they need to _lose_ weight, zero when
   /// already inside the healthy band.
   final double deltaToHealthyKg;
+
+  /// Clinically estimated body fat percentage (Deurenberg formula).
+  final double? estimatedBodyFatPercentage;
+
+  /// Basal Metabolic Rate in kcal/day (Mifflin-St Jeor formula).
+  final double? bmrKcal;
 }
 
 class BmiCalculator {
@@ -143,13 +151,27 @@ class BmiCalculator {
 
   /// Classifies a BMI into the granular WHO adult category.
   static BmiCategory classify(double bmi) {
-    if (bmi < 16.0) return BmiCategory.severeUnderweight;
-    if (bmi < 17.0) return BmiCategory.moderateUnderweight;
-    if (bmi < 18.5) return BmiCategory.mildUnderweight;
-    if (bmi < 25.0) return BmiCategory.normal;
-    if (bmi < 30.0) return BmiCategory.overweight;
-    if (bmi < 35.0) return BmiCategory.obeseClassI;
-    if (bmi < 40.0) return BmiCategory.obeseClassII;
+    if (bmi < 16.0) {
+      return BmiCategory.severeUnderweight;
+    }
+    if (bmi < 17.0) {
+      return BmiCategory.moderateUnderweight;
+    }
+    if (bmi < 18.5) {
+      return BmiCategory.mildUnderweight;
+    }
+    if (bmi < 25.0) {
+      return BmiCategory.normal;
+    }
+    if (bmi < 30.0) {
+      return BmiCategory.overweight;
+    }
+    if (bmi < 35.0) {
+      return BmiCategory.obeseClassI;
+    }
+    if (bmi < 40.0) {
+      return BmiCategory.obeseClassII;
+    }
     return BmiCategory.obeseClassIII;
   }
 
@@ -172,6 +194,8 @@ class BmiCalculator {
   static BmiResult calculate({
     required double weightKg,
     required double heightCm,
+    int? age,
+    bool? isMale,
   }) {
     final bmi = calculateBmi(weightKg: weightKg, heightCm: heightCm);
     final range = healthyWeightRange(heightCm: heightCm);
@@ -188,6 +212,18 @@ class BmiCalculator {
       delta = 0.0;
     }
 
+    double? bodyFat;
+    double? bmr;
+    if (age != null && isMale != null && age > 0) {
+      bodyFat = estimateBodyFat(bmi: bmi, age: age, isMale: isMale);
+      bmr = calculateBmr(
+        weightKg: weightKg,
+        heightCm: heightCm,
+        age: age,
+        isMale: isMale,
+      );
+    }
+
     return BmiResult(
       bmi: bmi,
       category: category,
@@ -195,8 +231,42 @@ class BmiCalculator {
       healthyWeightMinKg: range.min,
       healthyWeightMaxKg: range.max,
       deltaToHealthyKg: _round1(delta),
+      estimatedBodyFatPercentage: bodyFat,
+      bmrKcal: bmr,
     );
   }
+
+  /// Clinically validated Deurenberg adult body fat formula:
+  /// `BF% = (1.20 × BMI) + (0.23 × Age) - (10.8 × gender) - 5.4` (male=1, female=0)
+  static double estimateBodyFat({
+    required double bmi,
+    required int age,
+    required bool isMale,
+  }) {
+    final fat = (1.20 * bmi) + (0.23 * age) - (10.8 * (isMale ? 1 : 0)) - 5.4;
+    return _round1(fat.clamp(3.0, 65.0));
+  }
+
+  /// Basal Metabolic Rate using the Mifflin-St Jeor formula (kcal/day):
+  /// `BMR = (10 × weight_kg) + (6.25 × height_cm) - (5 × age) + s` (s = +5 male, -161 female)
+  static double calculateBmr({
+    required double weightKg,
+    required double heightCm,
+    required int age,
+    required bool isMale,
+  }) {
+    final s = isMale ? 5.0 : -161.0;
+    final bmr = (10.0 * weightKg) + (6.25 * heightCm) - (5.0 * age) + s;
+    return _round1(bmr.clamp(500.0, 4500.0));
+  }
+
+  /// Unit conversion utilities.
+  static double kgToLbs(double kg) => _round1(kg * 2.20462);
+  static double lbsToKg(double lbs) => _round1(lbs / 2.20462);
+  static double cmToInches(double cm) => _round1(cm / 2.54);
+  static double inchesToCm(double inches) => _round1(inches * 2.54);
+  static double feetInchesToCm(int feet, double inches) =>
+      _round1(((feet * 12.0) + inches) * 2.54);
 
   static double _round1(double v) => (v * 10).roundToDouble() / 10;
   static double _round2(double v) => (v * 100).roundToDouble() / 100;
