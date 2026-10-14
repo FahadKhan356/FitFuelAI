@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../models/coach_response.dart';
 import '../providers/coach_controller.dart';
 import 'coach_block_renderer.dart';
+import '../../../shared/theme/app_theme.dart';
 
 /// Renders either a user speech bubble or a rich glassmorphic coach reply card.
 class CoachMessageCard extends StatelessWidget {
@@ -26,10 +27,10 @@ class CoachMessageCard extends StatelessWidget {
     }
 
     if (message.isLoading) {
-      return _buildTypingIndicator();
+      return _buildTypingIndicator(context);
     }
 
-    return _buildCoachReplyCard();
+    return _buildCoachReplyCard(context);
   }
 
   /// User bubble: solid #5B4BDB, white text, radius 16 with a 4px tail corner.
@@ -69,11 +70,20 @@ class CoachMessageCard extends StatelessWidget {
     );
   }
 
-  /// Coach reply card: glass card, white 72% opacity, blur 12, border 1px white 80%.
-  Widget _buildCoachReplyCard() {
+  /// Coach reply card: transparent glass card with blur 16, subtle tint and responsive dark/light colors.
+  Widget _buildCoachReplyCard(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final response = message.coachResponse ??
         const CoachResponse(headline: 'AI Coach', summary: '');
     final timeStr = DateFormat.jm().format(message.timestamp);
+
+    // Highly transparent glassmorphic aesthetic matching user request
+    final cardBg = isDark
+        ? const Color(0xFF1E1714).withValues(alpha: 0.38)
+        : Colors.white.withValues(alpha: 0.38);
+    final cardBorder = isDark
+        ? AppDarkColors.border.withValues(alpha: 0.45)
+        : Colors.white.withValues(alpha: 0.50);
 
     return Align(
       alignment: Alignment.centerLeft,
@@ -83,19 +93,19 @@ class CoachMessageCard extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
             child: Container(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.72),
+                color: cardBg,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.80),
+                  color: cardBorder,
                   width: 1.0,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF5B4BDB).withValues(alpha: 0.04),
+                    color: Colors.black.withValues(alpha: isDark ? 0.20 : 0.04),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
@@ -109,10 +119,10 @@ class CoachMessageCard extends StatelessWidget {
                     children: [
                       Text(
                         'AI COACH · $timeStr',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF5B4BDB),
+                          color: isDark ? const Color(0xFF9E8FFF) : const Color(0xFF5B4BDB),
                           letterSpacing: 0.6,
                         ),
                       ),
@@ -124,10 +134,10 @@ class CoachMessageCard extends StatelessWidget {
                   if (response.headline.isNotEmpty)
                     Text(
                       response.headline,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15.5,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF1E1B3A),
+                        color: isDark ? AppDarkColors.textPrimary : const Color(0xFF1E1B3A),
                         height: 1.3,
                       ),
                     ),
@@ -137,10 +147,10 @@ class CoachMessageCard extends StatelessWidget {
                     const SizedBox(height: 5),
                     Text(
                       response.summary,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF4A4670),
+                        color: isDark ? AppDarkColors.textSecondary : const Color(0xFF4A4670),
                         height: 1.4,
                       ),
                     ),
@@ -160,7 +170,7 @@ class CoachMessageCard extends StatelessWidget {
                       runSpacing: 8,
                       children: [
                         for (int i = 0; i < response.actions.length; i++)
-                          _buildActionChip(response.actions[i], isFirst: i == 0),
+                          _buildActionChip(response.actions[i], isFirst: i == 0, isDark: isDark),
                       ],
                     ),
                   ],
@@ -173,7 +183,7 @@ class CoachMessageCard extends StatelessWidget {
                       runSpacing: 6,
                       children: [
                         for (final followup in response.followups)
-                          _buildFollowupChip(followup),
+                          _buildFollowupChip(followup, isDark: isDark),
                       ],
                     ),
                   ],
@@ -186,8 +196,8 @@ class CoachMessageCard extends StatelessWidget {
     );
   }
 
-  /// Action chips: first filled purple, others white with 1 px #D9D3FF border.
-  Widget _buildActionChip(CoachActionItem action, {required bool isFirst}) {
+  /// Action chips: first filled purple, others subtle transparent tint.
+  Widget _buildActionChip(CoachActionItem action, {required bool isFirst, required bool isDark}) {
     IconData iconData = Icons.touch_app_rounded;
     if (action.icon == 'water_drop') {
       iconData = Icons.water_drop_rounded;
@@ -195,24 +205,36 @@ class CoachMessageCard extends StatelessWidget {
       iconData = Icons.restaurant_rounded;
     }
 
+    final chipBg = isFirst
+        ? const Color(0xFF5B4BDB)
+        : (isDark
+            ? AppDarkColors.surfaceAlt.withValues(alpha: 0.35)
+            : Colors.white.withValues(alpha: 0.50));
+    final chipBorder = isFirst
+        ? null
+        : Border.all(
+            color: isDark
+                ? AppDarkColors.border.withValues(alpha: 0.45)
+                : const Color(0xFFD9D3FF).withValues(alpha: 0.60),
+            width: 1.0,
+          );
+    final contentColor = isFirst
+        ? Colors.white
+        : (isDark ? AppDarkColors.textPrimary : const Color(0xFF5B4BDB));
+
     return GestureDetector(
       onTap: () => onTapAction(action),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isFirst ? const Color(0xFF5B4BDB) : Colors.white,
+          color: chipBg,
           borderRadius: BorderRadius.circular(20),
-          border: isFirst
-              ? null
-              : Border.all(
-                  color: const Color(0xFFD9D3FF),
-                  width: 1.0,
-                ),
+          border: chipBorder,
           boxShadow: [
             BoxShadow(
               color: isFirst
                   ? const Color(0xFF5B4BDB).withValues(alpha: 0.25)
-                  : Colors.black.withValues(alpha: 0.02),
+                  : Colors.black.withValues(alpha: isDark ? 0.15 : 0.03),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -224,7 +246,7 @@ class CoachMessageCard extends StatelessWidget {
             Icon(
               iconData,
               size: 15,
-              color: isFirst ? Colors.white : const Color(0xFF5B4BDB),
+              color: contentColor,
             ),
             const SizedBox(width: 6),
             Text(
@@ -232,7 +254,7 @@ class CoachMessageCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
-                color: isFirst ? Colors.white : const Color(0xFF5B4BDB),
+                color: contentColor,
               ),
             ),
           ],
@@ -241,23 +263,30 @@ class CoachMessageCard extends StatelessWidget {
     );
   }
 
-  /// Small followup question chip under actions.
-  Widget _buildFollowupChip(String text) {
+  /// Small followup question chip under actions with transparent frosted style.
+  Widget _buildFollowupChip(String text, {required bool isDark}) {
     return GestureDetector(
       onTap: () => onTapFollowup(text),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: const Color(0xFFEDE9FF).withValues(alpha: 0.7),
+          color: isDark
+              ? AppDarkColors.surfaceAlt.withValues(alpha: 0.28)
+              : const Color(0xFFEDE9FF).withValues(alpha: 0.40),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFE3DEFF), width: 0.8),
+          border: Border.all(
+            color: isDark
+                ? AppDarkColors.border.withValues(alpha: 0.35)
+                : const Color(0xFFE3DEFF).withValues(alpha: 0.50),
+            width: 0.8,
+          ),
         ),
         child: Text(
           text,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11.5,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF4A4670),
+            color: isDark ? AppDarkColors.textSecondary : const Color(0xFF4A4670),
           ),
         ),
       ),
@@ -265,7 +294,8 @@ class CoachMessageCard extends StatelessWidget {
   }
 
   /// 3-dot typing indicator inside a glass card while waiting.
-  Widget _buildTypingIndicator() {
+  Widget _buildTypingIndicator(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
@@ -273,14 +303,18 @@ class CoachMessageCard extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.72),
+                color: isDark
+                    ? const Color(0xFF1E1714).withValues(alpha: 0.38)
+                    : Colors.white.withValues(alpha: 0.38),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.80),
+                  color: isDark
+                      ? AppDarkColors.border.withValues(alpha: 0.45)
+                      : Colors.white.withValues(alpha: 0.50),
                   width: 1.0,
                 ),
               ),
@@ -354,6 +388,7 @@ class CoachThinkingBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
@@ -361,14 +396,18 @@ class CoachThinkingBubble extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.72),
+                color: isDark
+                    ? const Color(0xFF1E1714).withValues(alpha: 0.38)
+                    : Colors.white.withValues(alpha: 0.38),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.80),
+                  color: isDark
+                      ? AppDarkColors.border.withValues(alpha: 0.45)
+                      : Colors.white.withValues(alpha: 0.50),
                   width: 1.0,
                 ),
               ),

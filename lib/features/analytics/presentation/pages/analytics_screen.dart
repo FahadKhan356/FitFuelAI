@@ -14,6 +14,7 @@ import '../../../../core/domain/entities/calendar_tracking.dart';
 import '../../../../core/services/home_data_refresh_notifier.dart';
 import '../../../coach/providers/daily_summary_provider.dart';
 import '../bloc/analytics_bloc.dart';
+import '../../../../shared/theme/app_theme.dart';
 
 // Brand Accent Colors
 const Color _kPrimary = Color(0xFF6366F1);
@@ -39,12 +40,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen>
   int? _selectedBarIndex;
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
-  Color get _bg => _isDark ? const Color(0xFF0B0E14) : const Color(0xFFF8F9FE);
-  Color get _surface => _isDark ? const Color(0xFF141824) : Colors.white;
-  Color get _surfaceAlt => _isDark ? const Color(0xFF1B2237) : const Color(0xFFF1F5F9);
-  Color get _textPrimary => _isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
-  Color get _textSecondary => _isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-  Color get _borderColor => _isDark ? const Color(0xFF282D4A) : const Color(0xFFE2E8F0);
+  Color get _bg => _isDark ? AppDarkColors.background : const Color(0xFFF8F9FE);
+  Color get _surface => _isDark ? AppDarkColors.surface : Colors.white;
+  Color get _surfaceAlt =>
+      _isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF1F5F9);
+  Color get _textPrimary =>
+      _isDark ? AppDarkColors.textPrimary : const Color(0xFFFAF4EE);
+  Color get _textSecondary =>
+      _isDark ? AppDarkColors.textSecondary : const Color(0xFF64748B);
+  Color get _borderColor =>
+      _isDark ? AppDarkColors.border : const Color(0xFFE2E8F0);
 
   /// The active dates shown by the charts/stats:
   /// - Weekly  → 7 days (today back 6).
@@ -1001,10 +1006,10 @@ class _KpiCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF141824) : Colors.white,
+            color: isDark ? AppDarkColors.surface : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDark ? const Color(0xFF282D4A) : const Color(0xFFE2E8F0),
+              color: isDark ? AppDarkColors.border : const Color(0xFFE2E8F0),
             ),
             boxShadow: [
               BoxShadow(
@@ -1351,7 +1356,7 @@ class PieChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final defaultCenter = Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFF141824)
+        ? AppDarkColors.surface
         : Colors.white;
 
     return CustomPaint(

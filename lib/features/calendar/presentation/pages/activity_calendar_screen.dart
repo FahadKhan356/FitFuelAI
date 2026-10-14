@@ -9,14 +9,7 @@ import '../../../../core/domain/entities/calendar_tracking.dart';
 import '../../../../core/domain/usecases/all_usecases.dart';
 import '../../../../core/services/home_data_refresh_notifier.dart';
 import '../../../../core/services/streak_service.dart';
-
-const _bg = Color(0xFFF7F6FB);
-const _surface = Colors.white;
-const _purple = Color(AppColors.authPurple);
-const _purpleSoft = Color(0xFFF0ECFF);
-const _textPrimary = Color(0xFF1F1F2E);
-const _textSecondary = Color(0xFF72707F);
-const _border = Color(0xFFE7E3EF);
+import '../../../../shared/theme/app_theme.dart';
 
 class ActivityCalendarScreen extends StatefulWidget {
   const ActivityCalendarScreen({super.key});
@@ -29,6 +22,15 @@ class _ActivityCalendarScreenState extends State<ActivityCalendarScreen> {
   // Static in-memory cache for 0ms instantaneous month switching
   static final Map<String, CalendarTracking> _monthCache = {};
   static int _cachedStreak = 0;
+
+  static const Color _purple = Color(AppColors.authPurple);
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get _bg => _isDark ? AppDarkColors.background : const Color(0xFFF7F6FB);
+  Color get _surface => _isDark ? AppDarkColors.surface : Colors.white;
+  Color get _purpleSoft => _isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF0ECFF);
+  Color get _textPrimary => _isDark ? AppDarkColors.textPrimary : const Color(0xFF1F1F2E);
+  Color get _textSecondary => _isDark ? AppDarkColors.textSecondary : const Color(0xFF72707F);
+  Color get _border => _isDark ? AppDarkColors.border : const Color(0xFFE7E3EF);
 
   late DateTime _month; // First day of the currently shown month
   CalendarTracking? _tracking;
@@ -194,12 +196,12 @@ Widget _buildHeader() => Padding(
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: _border),
               ),
-              child: const Icon(Icons.arrow_back_ios_new_rounded,
+              child: Icon(Icons.arrow_back_ios_new_rounded,
                   size: 18, color: _textPrimary),
             ),
           ),
           const SizedBox(width: 12),
-          const Text(
+          Text(
             'Activity Calendar',
             style: TextStyle(
               fontSize: 20,
@@ -236,12 +238,12 @@ Widget _buildHeader() => Padding(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.cloud_off_rounded, size: 42, color: _textSecondary),
+          Icon(Icons.cloud_off_rounded, size: 42, color: _textSecondary),
           const SizedBox(height: 12),
           Text(
             'Could not load your activity.\n$_error',
             textAlign: TextAlign.center,
-            style: const TextStyle(color: _textSecondary, fontSize: 14, height: 1.5),
+            style: TextStyle(color: _textSecondary, fontSize: 14, height: 1.5),
           ),
           const SizedBox(height: 16),
           ElevatedButton(
@@ -300,7 +302,7 @@ Widget _buildMonthCard() {
                 child: Text(
                   '${_monthName(_month.month)} ${_month.year}',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: _textPrimary,
@@ -317,7 +319,7 @@ Widget _buildMonthCard() {
                       child: Text(
                         d,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                           color: _textSecondary,
@@ -356,7 +358,7 @@ Widget _buildMonthCard() {
         ? _purple
         : isSelected
             ? _purpleSoft
-            : _surface;
+            : (_isDark ? AppDarkColors.surfaceAlt : _surface);
     final numberColor = isToday ? Colors.white : _textPrimary;
 
     return GestureDetector(
@@ -417,7 +419,10 @@ Widget _buildMonthCard() {
       return const Icon(Icons.cancel_rounded,
           size: 11, color: Color(0xFFE53935));
     }
-    return const _MiniDot(color: Color(0xFFD0CDDD), size: 4);
+    return _MiniDot(
+      color: _isDark ? AppDarkColors.border : const Color(0xFFD0CDDD),
+      size: 4,
+    );
   }
 Widget _buildLegend() => Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -452,7 +457,7 @@ Widget _buildLegend() => Container(
         const SizedBox(width: 6),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: _textSecondary,

@@ -7,12 +7,9 @@ import '../../../../core/domain/entities/goal_entity.dart';
 import '../../../../core/domain/entities/user_profile_entity.dart';
 import '../../../../core/domain/repositories/user_repository.dart';
 
-const _bg = Color(0xFFF7F6FB);
-const _surface = Colors.white;
+import '../../../../shared/theme/app_theme.dart';
+
 const _purple = Color(AppColors.authPurple);
-const _textPrimary = Color(0xFF1F1F2E);
-const _textSecondary = Color(0xFF706D7B);
-const _border = Color(0xFFE7E3EF);
 
 /// Full-screen summary of the user's health & nutrition goals, loaded live
 /// from the `goals` and `user_profiles` tables.
@@ -27,6 +24,16 @@ class _HealthGoalsScreenState extends State<HealthGoalsScreen> {
   GoalEntity? _goals;
   UserProfileEntity? _profile;
   bool _loading = true;
+
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get _bg => _isDark ? AppDarkColors.background : const Color(0xFFF7F6FB);
+  Color get _surface => _isDark ? AppDarkColors.surface : Colors.white;
+  Color get _textPrimary =>
+      _isDark ? AppDarkColors.textPrimary : const Color(0xFF1F1F2E);
+  Color get _textSecondary =>
+      _isDark ? AppDarkColors.textSecondary : const Color(0xFF706D7B);
+  Color get _border =>
+      _isDark ? AppDarkColors.border : const Color(0xFFE7E3EF);
 
   @override
   void initState() {
@@ -84,18 +91,18 @@ class _HealthGoalsScreenState extends State<HealthGoalsScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
               color: _textPrimary, size: 18),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
-        title: const Text('Health Goals',
+        title: Text('Health Goals',
             style: TextStyle(
                 fontSize: 18, fontWeight: FontWeight.w800, color: _textPrimary)),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: _purple))
           : _goals == null && _profile == null
-              ? const Center(
+              ? Center(
                   child: Text('No goal data found.',
                       style: TextStyle(color: _textSecondary)),
                 )
@@ -218,14 +225,14 @@ Widget _goalBanner(String? goalType, GoalEntity? g) => Container(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
             child: Text(value,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
                     color: _textPrimary)),
           ),
           const SizedBox(height: 2),
           Text(label,
-              style: const TextStyle(fontSize: 12, color: _textSecondary)),
+              style: TextStyle(fontSize: 12, color: _textSecondary)),
         ],
       ),
     );
@@ -240,7 +247,7 @@ Widget _goalBanner(String? goalType, GoalEntity? g) => Container(
       child: Column(
         children: [
           for (var i = 0; i < children.length; i++) ...[
-            if (i > 0) const Divider(height: 1, color: _border),
+            if (i > 0) Divider(height: 1, color: _border),
             children[i],
           ],
         ],
@@ -255,14 +262,14 @@ Widget _goalBanner(String? goalType, GoalEntity? g) => Container(
           const SizedBox(width: 12),
           Expanded(
             child: Text(label,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 14,
                     color: _textSecondary,
                     fontWeight: FontWeight.w500)),
           ),
           const SizedBox(width: 12),
           Text(value,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                   color: _textPrimary)),
@@ -277,13 +284,16 @@ class _SectionLabel extends StatelessWidget {
   final String text;
 
   @override
-  Widget build(BuildContext context) => Text(
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w800,
         letterSpacing: 1.1,
-        color: _textSecondary,
+        color: isDark ? AppDarkColors.textSecondary : const Color(0xFF706D7B),
       ),
     );
+  }
 }

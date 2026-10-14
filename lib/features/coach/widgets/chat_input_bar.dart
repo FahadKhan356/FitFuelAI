@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../../../shared/theme/app_theme.dart';
 
 /// Glass pill text field and 42 px purple send button matching Image A.
 class ChatInputBar extends StatefulWidget {

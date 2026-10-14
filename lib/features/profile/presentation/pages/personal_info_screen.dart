@@ -8,11 +8,9 @@ import '../../../../core/services/avatar_uploader.dart';
 import '../../data/models/user_profile_model.dart';
 import '../../domain/repositories/profile_repository.dart';
 
-const _bg = Color(0xFFF7F6FB);
-const _surface = Colors.white;
+import '../../../../shared/theme/app_theme.dart';
+
 const _purple = Color(AppColors.authPurple);
-const _textPrimary = Color(0xFF1F1F2E);
-const _border = Color(0xFFE7E3EF);
 
 /// Options reused from the onboarding flow so the edit screen stays consistent
 /// with what is actually stored in the database.
@@ -50,6 +48,18 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   UserProfileModel? _profile;
   bool _loading = true;
   bool _saving = false;
+
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get _bg => _isDark ? AppDarkColors.background : const Color(0xFFF7F6FB);
+  Color get _surface => _isDark ? AppDarkColors.surface : Colors.white;
+  Color get _surfaceAlt =>
+      _isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF6F5FB);
+  Color get _textPrimary =>
+      _isDark ? AppDarkColors.textPrimary : const Color(0xFF1F1F2E);
+  Color get _textSecondary =>
+      _isDark ? AppDarkColors.textSecondary : const Color(0xFF706D7B);
+  Color get _border =>
+      _isDark ? AppDarkColors.border : const Color(0xFFE7E3EF);
 
   // Controllers (populated once profile is loaded).
   final _nameCtrl = TextEditingController();
@@ -242,11 +252,11 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
               color: _textPrimary, size: 18),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
-        title: const Text(
+        title: Text(
           'Personal Information',
           style: TextStyle(
             fontSize: 18,
@@ -304,7 +314,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
             const Icon(Icons.error_outline_rounded,
                 color: Color(0xFFEF4444), size: 48),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'Could not load your profile.',
               style: TextStyle(
                   fontSize: 16,
@@ -346,7 +356,9 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                       height: 112,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: const Color(0xFFEAE6FF),
+                        color: _isDark
+                            ? AppDarkColors.surfaceAlt
+                            : const Color(0xFFEAE6FF),
                         border: Border.all(color: _purple, width: 2),
                       ),
                       clipBehavior: Clip.antiAlias,
@@ -575,7 +587,7 @@ Row(
               const SizedBox(width: 8),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
                   color: _textPrimary,
@@ -603,16 +615,18 @@ Row(
         validator: validator,
         maxLines: maxLines,
         keyboardType: keyboardType,
+        style: TextStyle(color: _textPrimary, fontSize: 14),
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon, size: 20),
+          labelStyle: TextStyle(color: _textSecondary),
+          prefixIcon: Icon(icon, size: 20, color: _textSecondary),
           filled: true,
-          fillColor: const Color(0xFFF6F5FB),
+          fillColor: _surfaceAlt,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: _border),
+            borderSide: BorderSide(color: _border),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -636,18 +650,20 @@ Row(
       padding: const EdgeInsets.only(bottom: 12),
       child: DropdownButtonFormField<String>(
         initialValue: currentValue,
+        dropdownColor: _surface,
         icon: const Icon(Icons.arrow_drop_down_circle_outlined,
             color: _purple, size: 20),
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon, size: 20),
+          labelStyle: TextStyle(color: _textSecondary),
+          prefixIcon: Icon(icon, size: 20, color: _textSecondary),
           filled: true,
-          fillColor: const Color(0xFFF6F5FB),
+          fillColor: _surfaceAlt,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: _border),
+            borderSide: BorderSide(color: _border),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -660,7 +676,7 @@ Row(
           return DropdownMenuItem<String>(
             value: value,
             child: Text(textResolver(o),
-                style: const TextStyle(color: _textPrimary, fontSize: 14)),
+                style: TextStyle(color: _textPrimary, fontSize: 14)),
           );
         }).toList(),
         onChanged: (v) => onChanged(v),

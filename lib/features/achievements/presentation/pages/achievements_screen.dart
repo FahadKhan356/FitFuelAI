@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../bloc/achievements_bloc.dart';
+import '../../../../shared/theme/app_theme.dart';
 
 const Color _kPurple = Color(AppColors.authPurple);
 const Color _kOrange = Color(0xFFFFA24A);
@@ -47,16 +48,16 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
   _BadgeFilter _activeFilter = _BadgeFilter.all;
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
-  Color get _bg => _isDark ? const Color(0xFF0B0E14) : const Color(0xFFF7F6FB);
-  Color get _surface => _isDark ? const Color(0xFF141824) : Colors.white;
+  Color get _bg => _isDark ? AppDarkColors.background : const Color(0xFFF7F6FB);
+  Color get _surface => _isDark ? AppDarkColors.surface : Colors.white;
   Color get _surfaceAlt =>
-      _isDark ? const Color(0xFF1C2235) : const Color(0xFFF0ECFF);
+      _isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF0ECFF);
   Color get _textPrimary =>
-      _isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1F1F2E);
+      _isDark ? AppDarkColors.textPrimary : const Color(0xFF1F1F2E);
   Color get _textSecondary =>
-      _isDark ? const Color(0xFF94A3B8) : const Color(0xFF74717F);
+      _isDark ? AppDarkColors.textSecondary : const Color(0xFF74717F);
   Color get _border =>
-      _isDark ? const Color(0xFF23283E) : const Color(0xFFE6E2EC);
+      _isDark ? AppDarkColors.border : const Color(0xFFE6E2EC);
 
   @override
   void initState() {

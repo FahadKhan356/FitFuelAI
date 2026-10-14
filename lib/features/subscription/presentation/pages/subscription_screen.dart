@@ -4,14 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../shared/theme/app_theme.dart';
+
 // Subscription screen
-const _bg = Color(0xFFF7F6FB);
-const _surface = Colors.white;
 const _purple = Color(AppColors.authPurple);
-const _purpleSoft = Color(0xFFEDEBFB);
-const _textPrimary = Color(0xFF1E1D2A);
-const _textSecondary = Color(0xFF6F6C7B);
-const _border = Color(0xFFE7E3EF);
 const _borderStrong = Color(0xFF5B4EE8);
 
 class SubscriptionScreen extends StatefulWidget {
@@ -25,6 +21,18 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _animController;
   String _selectedPlan = 'premium_yearly';
+
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get _bg => _isDark ? AppDarkColors.background : const Color(0xFFF7F6FB);
+  Color get _surface => _isDark ? AppDarkColors.surface : Colors.white;
+  Color get _purpleSoft =>
+      _isDark ? AppDarkColors.surfaceAlt : const Color(0xFFEDEBFB);
+  Color get _textPrimary =>
+      _isDark ? AppDarkColors.textPrimary : const Color(0xFF1E1D2A);
+  Color get _textSecondary =>
+      _isDark ? AppDarkColors.textSecondary : const Color(0xFF6F6C7B);
+  Color get _border =>
+      _isDark ? AppDarkColors.border : const Color(0xFFE7E3EF);
 
   @override
   void initState() {
@@ -428,7 +436,11 @@ class _IconButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Material(
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? AppDarkColors.textPrimary : const Color(0xFF1E1D2A);
+    return Material(
       color: Colors.transparent,
       child: InkResponse(
         onTap: onTap,
@@ -439,11 +451,12 @@ class _IconButton extends StatelessWidget {
           child: Icon(
             icon,
             size: 20,
-            color: _textPrimary,
+            color: textPrimary,
           ),
         ),
       ),
     );
+  }
 }
 
 class _BenefitCard extends StatelessWidget {
@@ -458,13 +471,23 @@ class _BenefitCard extends StatelessWidget {
   final String subtitle;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = isDark ? AppDarkColors.surface : Colors.white;
+    final purpleSoft =
+        isDark ? AppDarkColors.surfaceAlt : const Color(0xFFEDEBFB);
+    final border = isDark ? AppDarkColors.border : const Color(0xFFE7E3EF);
+    final textPrimary =
+        isDark ? AppDarkColors.textPrimary : const Color(0xFF1E1D2A);
+    final textSecondary =
+        isDark ? AppDarkColors.textSecondary : const Color(0xFF6F6C7B);
+    return Container(
       height: 190,
       padding: const EdgeInsets.fromLTRB(14, 16, 14, 14),
       decoration: BoxDecoration(
-        color: _surface,
+        color: surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _border),
+        border: Border.all(color: border),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -479,8 +502,8 @@ class _BenefitCard extends StatelessWidget {
           Container(
             width: 52,
             height: 52,
-            decoration: const BoxDecoration(
-              color: _purpleSoft,
+            decoration: BoxDecoration(
+              color: purpleSoft,
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -493,10 +516,10 @@ class _BenefitCard extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w800,
-              color: _textPrimary,
+              color: textPrimary,
               height: 1.15,
             ),
           ),
@@ -504,16 +527,17 @@ class _BenefitCard extends StatelessWidget {
           Text(
             subtitle,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w500,
-              color: _textSecondary,
+              color: textSecondary,
               height: 1.25,
             ),
           ),
         ],
       ),
     );
+  }
 }
 
 class _PlanCard extends StatelessWidget {
@@ -537,8 +561,18 @@ class _PlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = selected ? _borderStrong : _border;
-    final backgroundColor = selected ? const Color(0xFFFDFCFF) : _surface;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = isDark ? AppDarkColors.surface : Colors.white;
+    final border = isDark ? AppDarkColors.border : const Color(0xFFE7E3EF);
+    final textPrimary =
+        isDark ? AppDarkColors.textPrimary : const Color(0xFF1E1D2A);
+    final textSecondary =
+        isDark ? AppDarkColors.textSecondary : const Color(0xFF6F6C7B);
+
+    final borderColor = selected ? _borderStrong : border;
+    final backgroundColor = selected
+        ? (isDark ? AppDarkColors.surfaceHighlight : const Color(0xFFFDFCFF))
+        : surface;
 
     return InkWell(
       onTap: onTap,
@@ -572,7 +606,11 @@ class _PlanCard extends StatelessWidget {
                       shape: BoxShape.circle,
                       color: selected ? _purple : Colors.transparent,
                       border: Border.all(
-                        color: selected ? _purple : const Color(0xFFC8C4D6),
+                        color: selected
+                            ? _purple
+                            : (isDark
+                                ? AppDarkColors.border
+                                : const Color(0xFFC8C4D6)),
                         width: 2,
                       ),
                     ),
@@ -588,20 +626,20 @@ class _PlanCard extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
-                            color: _textPrimary,
+                            color: textPrimary,
                           ),
                         ),
                         if (subline != null) ...[
                           const SizedBox(height: 2),
                           Text(
                             subline!,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w700,
-                              color: _textSecondary,
+                              color: textSecondary,
                               letterSpacing: 0.3,
                             ),
                           ),
@@ -614,18 +652,18 @@ class _PlanCard extends StatelessWidget {
                       children: [
                         TextSpan(
                           text: price,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
-                            color: _textPrimary,
+                            color: textPrimary,
                           ),
                         ),
                         TextSpan(
                           text: period == 'once' ? ' once' : period,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: _textSecondary,
+                            color: textSecondary,
                           ),
                         ),
                       ],
@@ -670,12 +708,18 @@ class _SocialProofCard extends StatelessWidget {
   const _SocialProofCard();
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surface = isDark ? AppDarkColors.surface : Colors.white;
+    final border = isDark ? AppDarkColors.border : const Color(0xFFE7E3EF);
+    final textSecondary =
+        isDark ? AppDarkColors.textSecondary : const Color(0xFF6F6C7B);
+    return Container(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
       decoration: BoxDecoration(
-        color: _surface,
+        color: surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _border),
+        border: Border.all(color: border),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -704,13 +748,13 @@ class _SocialProofCard extends StatelessWidget {
                 initials: 'K',
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Joined by 50k+ healthy users',
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w700,
-                    color: _textSecondary,
+                    color: textSecondary,
                   ),
                 ),
               ),
@@ -730,11 +774,11 @@ class _SocialProofCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          const Row(
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.shield_outlined, size: 18, color: _purple),
-              SizedBox(width: 8),
+              const Icon(Icons.shield_outlined, size: 18, color: _purple),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Secure checkout. Cancel anytime in your App Store settings. 7-day free trial applies to the Yearly plan.',
@@ -742,7 +786,7 @@ class _SocialProofCard extends StatelessWidget {
                     fontSize: 13,
                     height: 1.35,
                     fontWeight: FontWeight.w500,
-                    color: _textSecondary,
+                    color: textSecondary,
                   ),
                 ),
               ),
@@ -751,6 +795,7 @@ class _SocialProofCard extends StatelessWidget {
         ],
       ),
     );
+  }
 }
 
 class _AvatarChip extends StatelessWidget {
@@ -763,22 +808,30 @@ class _AvatarChip extends StatelessWidget {
   final String initials;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary =
+        isDark ? AppDarkColors.textPrimary : const Color(0xFF1E1D2A);
+    return Container(
       width: 28,
       height: 28,
       decoration: BoxDecoration(
         color: color,
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 1.6),
+        border: Border.all(
+          color: isDark ? AppDarkColors.surface : Colors.white,
+          width: 1.6,
+        ),
       ),
       alignment: Alignment.center,
       child: Text(
         initials,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w800,
-          color: _textPrimary,
+          color: textPrimary,
         ),
       ),
     );
+  }
 }

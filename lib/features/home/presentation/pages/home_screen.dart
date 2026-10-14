@@ -24,6 +24,7 @@ import '../../../../screens/camera_scan_screen.dart';
 import '../../../ai_coach/presentation/pages/ai_coach_screen.dart';
 import '../../../analytics/presentation/pages/analytics_screen.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
+import '../../../../shared/theme/app_theme.dart';
 
 // ─────────────────────────────────────────────
 //  Design Tokens
@@ -422,7 +423,9 @@ class _HomeContentState extends State<_HomeContent>
   }
 
   @override
-  Widget build(BuildContext context) => SafeArea(
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return SafeArea(
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -454,19 +457,14 @@ class _HomeContentState extends State<_HomeContent>
               },
               child: Row(
                 children: [
-                  Builder(
-                    builder: (context) {
-                      final isDark = Theme.of(context).brightness == Brightness.dark;
-                      return Text(
-                        '${_greetingPrefix()}, $_greetingName ',
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w800,
-                          color: isDark ? const Color(0xFFF8FAFC) : kHeadline,
-                          letterSpacing: -0.4,
-                        ),
-                      );
-                    },
+                  Text(
+                    '${_greetingPrefix()}, $_greetingName ',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? AppDarkColors.textPrimary : kHeadline,
+                      letterSpacing: -0.4,
+                    ),
                   ),
                   const Icon(Icons.waving_hand_rounded,
                       size: 22, color: kOrange),
@@ -488,20 +486,15 @@ class _HomeContentState extends State<_HomeContent>
                   child: Opacity(opacity: t, child: child),
                 );
               },
-              child: Builder(
-                builder: (context) {
-                  final isDark = Theme.of(context).brightness == Brightness.dark;
-                  return Text(
-                    _loading
-                        ? 'Fetching your daily targets…'
-                        : 'Let’s hit today’s goals together.',
-                    style: TextStyle(
-                      fontSize: 13.5,
-                      color: isDark ? const Color(0xFF94A3B8) : kBody,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  );
-                },
+              child: Text(
+                _loading
+                    ? 'Fetching your daily targets…'
+                    : 'Let’s hit today’s goals together.',
+                style: TextStyle(
+                  fontSize: 13.5,
+                  color: isDark ? AppDarkColors.textSecondary : kBody,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
             ),
             const SizedBox(height: 18),
@@ -595,12 +588,17 @@ class _HomeContentState extends State<_HomeContent>
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: kWhite,
+                    color: isDark ? AppDarkColors.surface : kWhite,
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: const Color(0xFFEDE9FE), width: 1.2),
+                    border: Border.all(
+                      color: isDark ? AppDarkColors.border : const Color(0xFFEDE9FE),
+                      width: 1.2,
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF6366F1).withValues(alpha: 0.05),
+                        color: isDark
+                            ? Colors.black.withValues(alpha: 0.2)
+                            : const Color(0xFF6366F1).withValues(alpha: 0.05),
                         blurRadius: 14,
                         offset: const Offset(0, 4),
                       ),
@@ -612,9 +610,11 @@ class _HomeContentState extends State<_HomeContent>
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF5F3FF),
+                          color: isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF5F3FF),
                           borderRadius: BorderRadius.circular(13),
-                          border: Border.all(color: const Color(0xFFE0E7FF)),
+                          border: Border.all(
+                            color: isDark ? AppDarkColors.border : const Color(0xFFE0E7FF),
+                          ),
                         ),
                         child: const Icon(
                           Icons.monitor_weight_rounded,
@@ -623,7 +623,7 @@ class _HomeContentState extends State<_HomeContent>
                         ),
                       ),
                       const SizedBox(width: 14),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -632,17 +632,17 @@ class _HomeContentState extends State<_HomeContent>
                               style: TextStyle(
                                 fontSize: 15.5,
                                 fontWeight: FontWeight.w800,
-                                color: kHeadline,
+                                color: isDark ? AppDarkColors.textPrimary : kHeadline,
                                 letterSpacing: -0.2,
                               ),
                             ),
-                            SizedBox(height: 3),
+                            const SizedBox(height: 3),
                             Text(
                               'Check your body mass index and healthy range in one tap.',
                               style: TextStyle(
                                 fontSize: 12.5,
                                 fontWeight: FontWeight.w500,
-                                color: kBody,
+                                color: isDark ? AppDarkColors.textSecondary : kBody,
                                 height: 1.35,
                               ),
                             ),
@@ -653,7 +653,7 @@ class _HomeContentState extends State<_HomeContent>
                         width: 32,
                         height: 32,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF5F3FF),
+                          color: isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF5F3FF),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(
@@ -686,22 +686,22 @@ class _HomeContentState extends State<_HomeContent>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Recent Meals',
                     style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
-                      color: kHeadline,
+                      color: isDark ? AppDarkColors.textPrimary : kHeadline,
                       letterSpacing: -0.2,
                     ),
                   ),
                   GestureDetector(
                     onTap: () => context.push(AppRoutes.mealTracking),
-                    child: const Text(
+                    child: Text(
                       'See History',
                       style: TextStyle(
                         fontSize: 13,
-                        color: kPurple,
+                        color: isDark ? const Color(0xFF818CF8) : kPurple,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -715,28 +715,35 @@ class _HomeContentState extends State<_HomeContent>
                 width: double.infinity,
                 padding: const EdgeInsets.all(22),
                 decoration: BoxDecoration(
-                  color: kCardBg,
+                  color: isDark ? AppDarkColors.surface : kCardBg,
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: kBorder, width: 1),
+                  border: Border.all(
+                    color: isDark ? AppDarkColors.border : kBorder,
+                    width: 1,
+                  ),
                 ),
-                child: const Column(
+                child: Column(
                   children: [
-                    Icon(Icons.restaurant_rounded, size: 30, color: kPurple),
-                    SizedBox(height: 10),
+                    Icon(
+                      Icons.restaurant_rounded,
+                      size: 30,
+                      color: isDark ? const Color(0xFF818CF8) : kPurple,
+                    ),
+                    const SizedBox(height: 10),
                     Text(
                       'No meals recorded today yet.',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: kHeadline,
+                        color: isDark ? AppDarkColors.textPrimary : kHeadline,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
                       'Tap See History to log a meal.',
                       style: TextStyle(
                         fontSize: 12.5,
-                        color: kBody,
+                        color: isDark ? AppDarkColors.textSecondary : kBody,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -762,6 +769,7 @@ class _HomeContentState extends State<_HomeContent>
         ),
       ),
     );
+  }
 }
 
 double _clamp01(double value) => value.clamp(0.0, 1.0);
@@ -872,10 +880,10 @@ class _TopBar extends StatelessWidget {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF141824) : kWhite,
+                  color: isDark ? AppDarkColors.surface : kWhite,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isDark ? const Color(0xFF22283A) : const Color(0xFFE2E8F0),
+                    color: isDark ? AppDarkColors.border : const Color(0xFFE2E8F0),
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -900,10 +908,10 @@ class _TopBar extends StatelessWidget {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF141824) : kWhite,
+                  color: isDark ? AppDarkColors.surface : kWhite,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isDark ? const Color(0xFF22283A) : const Color(0xFFE2E8F0),
+                    color: isDark ? AppDarkColors.border : const Color(0xFFE2E8F0),
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -931,7 +939,7 @@ class _TopBar extends StatelessWidget {
                           color: const Color(0xFFFF6B6B),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: isDark ? const Color(0xFF141824) : kWhite,
+                            color: isDark ? AppDarkColors.surface : kWhite,
                             width: 1.2,
                           ),
                         ),
@@ -950,7 +958,7 @@ class _TopBar extends StatelessWidget {
                 height: 38,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isDark ? const Color(0xFF1E2438) : const Color(0xFFEEF2FF),
+                  color: isDark ? AppDarkColors.surfaceAlt : const Color(0xFFEEF2FF),
                   border: Border.all(
                     color: isDark ? const Color(0xFF818CF8) : const Color(0xFF6366F1),
                     width: 2,
@@ -995,10 +1003,10 @@ class _TopBar extends StatelessWidget {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF141824) : kWhite,
+                  color: isDark ? AppDarkColors.surface : kWhite,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isDark ? const Color(0xFF22283A) : const Color(0xFFE2E8F0),
+                    color: isDark ? AppDarkColors.border : const Color(0xFFE2E8F0),
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -1037,10 +1045,10 @@ class _DashboardLoading extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF141824) : kWhite,
+        color: isDark ? AppDarkColors.surface : kWhite,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isDark ? const Color(0xFF22283A) : kBorder,
+          color: isDark ? AppDarkColors.border : kBorder,
           width: 1,
         ),
       ),
@@ -1374,8 +1382,8 @@ class _MacroRow extends StatelessWidget {
             progress: proteinTotal <= 0
                 ? 0.0
                 : (proteinCurrent / proteinTotal).clamp(0.0, 1.0),
-            bgColor: isDark ? const Color(0xFF141824) : const Color(0xFFF8F7FF),
-            borderColor: isDark ? const Color(0xFF282D4A) : const Color(0xFFE0E7FF),
+            bgColor: isDark ? AppDarkColors.surface : const Color(0xFFF8F7FF),
+            borderColor: isDark ? AppDarkColors.border : const Color(0xFFE0E7FF),
           ),
         ),
         const SizedBox(width: 10),
@@ -1391,8 +1399,8 @@ class _MacroRow extends StatelessWidget {
             progress: carbsTotal <= 0
                 ? 0.0
                 : (carbsCurrent / carbsTotal).clamp(0.0, 1.0),
-            bgColor: isDark ? const Color(0xFF141824) : const Color(0xFFFFFDF5),
-            borderColor: isDark ? const Color(0xFF423419) : const Color(0xFFFEF3C7),
+            bgColor: isDark ? AppDarkColors.surface : const Color(0xFFFFFDF5),
+            borderColor: isDark ? const Color(0xFF4A381C) : const Color(0xFFFEF3C7),
           ),
         ),
         const SizedBox(width: 10),
@@ -1408,8 +1416,8 @@ class _MacroRow extends StatelessWidget {
             progress: fatTotal <= 0
                 ? 0.0
                 : (fatCurrent / fatTotal).clamp(0.0, 1.0),
-            bgColor: isDark ? const Color(0xFF141824) : const Color(0xFFFFF5F6),
-            borderColor: isDark ? const Color(0xFF461F28) : const Color(0xFFFFE4E6),
+            bgColor: isDark ? AppDarkColors.surface : const Color(0xFFFFF5F6),
+            borderColor: isDark ? const Color(0xFF4E2429) : const Color(0xFFFFE4E6),
           ),
         ),
       ],
@@ -1521,7 +1529,7 @@ class _MacroCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
-                          color: isDark ? const Color(0xFFF8FAFC) : kHeadline,
+                          color: isDark ? AppDarkColors.textPrimary : kHeadline,
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -1530,7 +1538,7 @@ class _MacroCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w500,
-                          color: isDark ? const Color(0xFF94A3B8) : kBody,
+                          color: isDark ? AppDarkColors.textSecondary : kBody,
                         ),
                       ),
                     ],
@@ -1597,10 +1605,10 @@ class _MealCard extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF141824) : kCardBg,
+                color: isDark ? AppDarkColors.surface : kCardBg,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF22283A) : const Color(0xFFFFEDD5),
+                  color: isDark ? AppDarkColors.border : const Color(0xFFFFEDD5),
                   width: 1.2,
                 ),
                 boxShadow: [
@@ -1647,7 +1655,7 @@ class _MealCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 15.5,
                             fontWeight: FontWeight.w800,
-                            color: isDark ? const Color(0xFFF8FAFC) : kHeadline,
+                            color: isDark ? AppDarkColors.textPrimary : kHeadline,
                             letterSpacing: -0.2,
                           ),
                         ),
@@ -1657,7 +1665,7 @@ class _MealCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w500,
-                            color: isDark ? const Color(0xFF94A3B8) : kBody,
+                            color: isDark ? AppDarkColors.textSecondary : kBody,
                             height: 1.35,
                           ),
                         ),
@@ -1750,10 +1758,10 @@ class _WaterCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF0F2130) : const Color(0xFFF0F9FF),
+                color: isDark ? AppDarkColors.surface : const Color(0xFFF0F9FF),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: isDark ? const Color(0xFF1B3D59) : const Color(0xFFBAE6FD),
+                  color: isDark ? AppDarkColors.border : const Color(0xFFBAE6FD),
                   width: 1.2,
                 ),
                 boxShadow: [
@@ -1789,7 +1797,7 @@ class _WaterCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3.5),
                         decoration: BoxDecoration(
-                          color: isDark ? const Color(0xFF163248) : const Color(0xFFE0F2FE),
+                          color: isDark ? AppDarkColors.surfaceAlt : const Color(0xFFE0F2FE),
                           borderRadius: BorderRadius.circular(100),
                         ),
                         child: Text(
@@ -1810,7 +1818,7 @@ class _WaterCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                      color: isDark ? AppDarkColors.textSecondary : const Color(0xFF64748B),
                       letterSpacing: 1.1,
                     ),
                   ),
@@ -1823,7 +1831,7 @@ class _WaterCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w800,
-                            color: isDark ? const Color(0xFFF8FAFC) : kHeadline,
+                            color: isDark ? AppDarkColors.textPrimary : kHeadline,
                             letterSpacing: -0.5,
                           ),
                         ),
@@ -1832,70 +1840,70 @@ class _WaterCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: isDark ? const Color(0xFF94A3B8) : kBody,
+                            color: isDark ? AppDarkColors.textSecondary : kBody,
                           ),
                         ),
                       ],
                     ),
                   ),
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Stack(
-                  children: [
-                    Container(
-                      height: 4,
-                      width: double.infinity,
-                      color: const Color(0xFFBAE6FD).withValues(alpha: 0.5),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Stack(
+                      children: [
+                        Container(
+                          height: 4,
+                          width: double.infinity,
+                          color: const Color(0xFFBAE6FD).withValues(alpha: 0.5),
+                        ),
+                        FractionallySizedBox(
+                          widthFactor: progress,
+                          child: Container(
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0284C7),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    FractionallySizedBox(
-                      widthFactor: progress,
-                      child: Container(
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7),
-                          borderRadius: BorderRadius.circular(10),
+                  ),
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: () async {
+                      await context.push(AppRoutes.waterTracker);
+                      onReload();
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isDark ? AppDarkColors.surfaceAlt : const Color(0xFFE0F2FE),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isDark ? AppDarkColors.border : const Color(0xFFBAE6FD),
+                        ),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          '+250ml',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF0284C7),
+                          ),
                         ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 10),
-              GestureDetector(
-                onTap: () async {
-                  await context.push(AppRoutes.waterTracker);
-                  onReload();
-                },
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF163248) : const Color(0xFFE0F2FE),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: isDark ? const Color(0xFF1B3D59) : const Color(0xFFBAE6FD),
-                    ),
                   ),
-                  child: const Center(
-                    child: Text(
-                      '+250ml',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF0284C7),
-                      ),
-                    ),
-                  ),
-                ),
+                ],
               ),
-            ],
-          ),
-        ),
-      );
-    },
-  ),
-);
+            ),
+          );
+        },
+      ),
+    );
   }
 }
 
@@ -1971,6 +1979,7 @@ class _AICoachCardState extends State<_AICoachCard>
 
   void _showInfoSheet(BuildContext context) {
     HapticFeedback.lightImpact();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -1980,10 +1989,10 @@ class _AICoachCardState extends State<_AICoachCard>
         child: Container(
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.96),
+            color: isDark ? AppDarkColors.surface : Colors.white.withValues(alpha: 0.96),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(26)),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.8),
+              color: isDark ? AppDarkColors.border : Colors.white.withValues(alpha: 0.8),
               width: 1.5,
             ),
             boxShadow: [
@@ -2003,7 +2012,7 @@ class _AICoachCardState extends State<_AICoachCard>
                   width: 38,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE3DEFF),
+                    color: isDark ? AppDarkColors.surfaceHighlight : const Color(0xFFE3DEFF),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -2036,7 +2045,7 @@ class _AICoachCardState extends State<_AICoachCard>
                     ),
                   ),
                   const SizedBox(width: 14),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -2046,18 +2055,18 @@ class _AICoachCardState extends State<_AICoachCard>
                             fontFamily: 'Inter',
                             fontSize: 17,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1E1B3A),
+                            color: isDark ? AppDarkColors.textPrimary : const Color(0xFF1E1B3A),
                             letterSpacing: -0.3,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
                           'Powered by Google Gemini Flash',
                           style: TextStyle(
                             fontFamily: 'Inter',
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF7A7699),
+                            color: isDark ? AppDarkColors.textSecondary : const Color(0xFF7A7699),
                           ),
                         ),
                       ],
@@ -2066,12 +2075,12 @@ class _AICoachCardState extends State<_AICoachCard>
                 ],
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'FitFuel AI Coach continuously synchronizes with your logged meals, calories, macro goals, and hydration to offer personalized coaching, deficit adjustments, and instant recipe suggestions 24/7.',
                 style: TextStyle(
                   fontFamily: 'Inter',
                   fontSize: 13.5,
-                  color: Color(0xFF4A4670),
+                  color: isDark ? AppDarkColors.textSecondary : const Color(0xFF4A4670),
                   height: 1.45,
                 ),
               ),
@@ -2142,10 +2151,10 @@ class _AICoachCardState extends State<_AICoachCard>
                     gradient: LinearGradient(
                       colors: isDark
                           ? [
-                              const Color(0xFF141824),
+                              AppDarkColors.surface,
                               Color.lerp(
-                                const Color(0xFF141824),
-                                const Color(0xFF1E1E38),
+                                AppDarkColors.surface,
+                                AppDarkColors.surfaceAlt,
                                 idle * 0.75,
                               )!,
                             ]
@@ -2164,8 +2173,8 @@ class _AICoachCardState extends State<_AICoachCard>
                     border: Border.all(
                       color: isDark
                           ? Color.lerp(
-                              const Color(0xFF2B2F48),
-                              const Color(0xFF4F46E5),
+                              AppDarkColors.border,
+                              const Color(0xFF6366F1),
                               idle,
                             )!
                           : Color.lerp(
@@ -2239,10 +2248,10 @@ class _AICoachCardState extends State<_AICoachCard>
                               width: 28,
                               height: 28,
                               decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF1E2438) : const Color(0xFFF6F4FF),
+                                color: isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF6F4FF),
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: isDark ? const Color(0xFF2B2F48) : const Color(0xFFE5E1FA),
+                                  color: isDark ? AppDarkColors.border : const Color(0xFFE5E1FA),
                                   width: 1,
                                 ),
                               ),
@@ -2250,7 +2259,7 @@ class _AICoachCardState extends State<_AICoachCard>
                                 child: Icon(
                                   Icons.info_outline_rounded,
                                   size: 14,
-                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF7A7699),
+                                  color: isDark ? AppDarkColors.textSecondary : const Color(0xFF7A7699),
                                 ),
                               ),
                             ),
@@ -2281,7 +2290,7 @@ class _AICoachCardState extends State<_AICoachCard>
                               fontFamily: 'Inter',
                               fontSize: 9.5,
                               fontWeight: FontWeight.w700,
-                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF7A7699),
+                              color: isDark ? AppDarkColors.textSecondary : const Color(0xFF7A7699),
                               letterSpacing: 1.2,
                             ),
                           ),
@@ -2296,7 +2305,7 @@ class _AICoachCardState extends State<_AICoachCard>
                           fontFamily: 'Inter',
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E1B3A),
+                          color: isDark ? AppDarkColors.textPrimary : const Color(0xFF1E1B3A),
                           height: 1.35,
                           letterSpacing: -0.2,
                         ),
@@ -2315,27 +2324,29 @@ class _AICoachCardState extends State<_AICoachCard>
                                   vertical: 5.5,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFEDE9FF),
+                                  color: isDark ? AppDarkColors.surfaceAlt : const Color(0xFFEDE9FF),
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(
-                                    color: Color.lerp(
-                                      const Color(0xFFDFD9FF),
-                                      const Color(0xFFC7BFF8),
-                                      idle,
-                                    )!,
+                                    color: isDark
+                                        ? AppDarkColors.border
+                                        : Color.lerp(
+                                            const Color(0xFFDFD9FF),
+                                            const Color(0xFFC7BFF8),
+                                            idle,
+                                          )!,
                                     width: 1,
                                   ),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Text(
+                                    Text(
                                       'ASK NOW',
                                       style: TextStyle(
                                         fontFamily: 'Inter',
                                         fontSize: 11,
                                         fontWeight: FontWeight.w800,
-                                        color: Color(0xFF5B4BDB),
+                                        color: isDark ? const Color(0xFF818CF8) : const Color(0xFF5B4BDB),
                                         letterSpacing: 0.5,
                                       ),
                                     ),
@@ -2441,10 +2452,10 @@ class _MealItem extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF141824) : kCardBg,
+              color: isDark ? AppDarkColors.surface : kCardBg,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDark ? const Color(0xFF22283A) : const Color(0xFFF1F5F9),
+                color: isDark ? AppDarkColors.border : const Color(0xFFF1F5F9),
                 width: 1.2,
               ),
               boxShadow: [
@@ -2468,7 +2479,7 @@ class _MealItem extends StatelessWidget {
                     child: Icon(
                       icon,
                       size: 24,
-                      color: isDark ? const Color(0xFFF8FAFC) : kHeadline,
+                      color: isDark ? AppDarkColors.textPrimary : kHeadline,
                     ),
                   ),
                 ),
@@ -2500,14 +2511,14 @@ class _MealItem extends StatelessWidget {
                           Icon(
                             Icons.access_time_rounded,
                             size: 12,
-                            color: isDark ? const Color(0xFF94A3B8) : kBody,
+                            color: isDark ? AppDarkColors.textSecondary : kBody,
                           ),
                           const SizedBox(width: 3),
                           Text(
                             time,
                             style: TextStyle(
                               fontSize: 11,
-                              color: isDark ? const Color(0xFF94A3B8) : kBody,
+                              color: isDark ? AppDarkColors.textSecondary : kBody,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -2521,7 +2532,7 @@ class _MealItem extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 14.5,
                           fontWeight: FontWeight.w700,
-                          color: isDark ? const Color(0xFFF8FAFC) : kHeadline,
+                          color: isDark ? AppDarkColors.textPrimary : kHeadline,
                           letterSpacing: -0.2,
                         ),
                       ),
@@ -2541,16 +2552,16 @@ class _MealItem extends StatelessWidget {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E2438) : const Color(0xFFF8F9FE),
+                    color: isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF8F9FE),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: isDark ? const Color(0xFF2B2F48) : const Color(0xFFE2E8F0),
+                      color: isDark ? AppDarkColors.border : const Color(0xFFE2E8F0),
                     ),
                   ),
                   child: Icon(
                     Icons.arrow_forward_ios_rounded,
                     size: 13,
-                    color: isDark ? const Color(0xFF94A3B8) : kBody,
+                    color: isDark ? AppDarkColors.textSecondary : kBody,
                   ),
                 ),
               ],
@@ -2673,7 +2684,7 @@ class _BottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final activeColor = isDark ? const Color(0xFF818CF8) : kPurple;
-    final inactiveColor = isDark ? const Color(0xFF94A3B8) : kBody;
+    final inactiveColor = isDark ? AppDarkColors.textSecondary : kBody;
 
     final items = [
       const _NavItem(icon: Icons.home_rounded, label: 'Home'),
@@ -2685,10 +2696,10 @@ class _BottomNav extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF141824) : kWhite,
+        color: isDark ? AppDarkColors.bottomNav : kWhite,
         border: Border(
           top: BorderSide(
-            color: isDark ? const Color(0xFF22283A) : kBorder,
+            color: isDark ? AppDarkColors.borderSubtle : kBorder,
             width: 1,
           ),
         ),

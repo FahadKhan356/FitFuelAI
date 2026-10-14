@@ -11,14 +11,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:fitfuel_ai/shared/theme/app_theme.dart';
 
-const _bg = Color(0xFFF7F6FB);
-const _surface = Colors.white;
+bool _isDark(BuildContext context) => Theme.of(context).brightness == Brightness.dark;
+Color _surface(BuildContext context) => _isDark(context) ? AppDarkColors.surface : Colors.white;
+Color _purpleSoft(BuildContext context) => _isDark(context) ? AppDarkColors.surfaceAlt : const Color(0xFFF0EDFF);
+Color _textPrimary(BuildContext context) => _isDark(context) ? AppDarkColors.textPrimary : const Color(0xFF1E1D2A);
+Color _textSecondary(BuildContext context) => _isDark(context) ? AppDarkColors.textSecondary : const Color(0xFF706D7B);
+Color _border(BuildContext context) => _isDark(context) ? AppDarkColors.border : const Color(0xFFE8E4EF);
 const _purple = Color(AppColors.authPurple);
-const _purpleSoft = Color(0xFFF0EDFF);
-const _textPrimary = Color(0xFF1E1D2A);
-const _textSecondary = Color(0xFF706D7B);
-const _border = Color(0xFFE8E4EF);
 const _mint = Color(0xFF20C78B);
 
 double _clamp01(double v) => v.clamp(0.0, 1.0);
@@ -45,6 +46,14 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
   late final AnimationController _mainCtrl;
   late final AnimationController _pulseCtrl;
   bool isWeekly = true;
+
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get _bg => _isDark ? AppDarkColors.background : const Color(0xFFF7F6FB);
+  Color get _surface => _isDark ? AppDarkColors.surface : Colors.white;
+  Color get _purpleSoft => _isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF0EDFF);
+  Color get _textPrimary => _isDark ? AppDarkColors.textPrimary : const Color(0xFF1E1D2A);
+  Color get _textSecondary => _isDark ? AppDarkColors.textSecondary : const Color(0xFF706D7B);
+  Color get _border => _isDark ? AppDarkColors.border : const Color(0xFFE8E4EF);
 
   // ── In-memory static cache for instant 0ms screen opening ──
   static double? _cachedCurrentWeight;
@@ -351,7 +360,11 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
                 ],
               ),
             ),
-            const Divider(height: 1, thickness: 1, color: Color(0xFFECE9F4)),
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: _isDark ? AppDarkColors.border : const Color(0xFFECE9F4),
+            ),
             Expanded(
               child: _loading
                   ? const Center(child: CircularProgressIndicator(color: _purple))
@@ -401,7 +414,7 @@ class _WeightTrackerScreenState extends State<WeightTrackerScreen>
                         const SizedBox(height: 2),
                         Text(
                           isWeekly ? 'Last 7 days' : 'Last 30 days',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w500,
                             color: _textSecondary,
@@ -545,19 +558,19 @@ class _WeightHeader extends StatelessWidget {
                 children: [
                   TextSpan(
                     text: currentWeight.toStringAsFixed(1),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 34,
                       fontWeight: FontWeight.w800,
-                      color: _textPrimary,
+                      color: _textPrimary(context),
                       height: 1,
                     ),
                   ),
-                  const TextSpan(
+                  TextSpan(
                     text: ' kg',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
-                      color: _textSecondary,
+                      color: _textSecondary(context),
                     ),
                   ),
                 ],
@@ -660,10 +673,10 @@ class _WeightChart extends StatelessWidget {
                           padding: const EdgeInsets.only(top: 8),
                           child: Text(
                             labels[value.toInt() % 7],
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
-                              color: _textSecondary,
+                              color: _textSecondary(context),
                             ),
                           ),
                         );
@@ -679,10 +692,10 @@ class _WeightChart extends StatelessWidget {
                           : (maxWeight - minWeight) / 4,
                       getTitlesWidget: (value, meta) => Text(
                           value.toStringAsFixed(1),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: _textSecondary,
+                            color: _textSecondary(context),
                           ),
                         ),
                     ),
@@ -773,7 +786,7 @@ class _GoalProgressCard extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: _textPrimary,
+                        color: _textPrimary(context),
                       ),
                 ),
                 const Spacer(),
@@ -891,7 +904,9 @@ class _MilestoneCard extends StatelessWidget {
       child: _CardShell(
         child: Container(
           decoration: BoxDecoration(
-            color: highlighted ? const Color(0xFFF3F9FF) : _surface,
+            color: highlighted
+                ? (_isDark(context) ? AppDarkColors.surfaceAlt : const Color(0xFFF3F9FF))
+                : _surface(context),
             borderRadius: BorderRadius.circular(16),
           ),
           child: ListTile(
@@ -920,19 +935,19 @@ class _MilestoneCard extends StatelessWidget {
             ),
             title: Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
-                color: _textPrimary,
+                color: _textPrimary(context),
               ),
             ),
             subtitle: Text(
               '$subtitle\n$dateLabel',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12.5,
                 height: 1.35,
                 fontWeight: FontWeight.w500,
-                color: _textSecondary,
+                color: _textSecondary(context),
               ),
             ),
             trailing: const Icon(Icons.chevron_right_rounded, color: Color(0xFFC6C2CF)),
@@ -1008,7 +1023,7 @@ class _BmiCard extends StatelessWidget {
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: _purpleSoft,
+                      color: _purpleSoft(context),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Icon(Icons.monitor_weight_outlined, color: _purple, size: 22),
@@ -1034,10 +1049,10 @@ class _BmiCard extends StatelessWidget {
                           children: [
                             Text(
                               bmi.toStringAsFixed(1),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.w800,
-                                color: _textPrimary,
+                                color: _textPrimary(context),
                                 height: 1,
                               ),
                             ),
@@ -1045,10 +1060,10 @@ class _BmiCard extends StatelessWidget {
                               padding: const EdgeInsets.only(bottom: 3),
                               child: Text(
                                 categoryLabel,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w600,
-                                  color: _textSecondary,
+                                  color: _textSecondary(context),
                                 ),
                               ),
                             ),
@@ -1060,21 +1075,21 @@ class _BmiCard extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      const Text(
+                      Text(
                         'IDEAL RANGE',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
-                          color: _textSecondary,
+                          color: _textSecondary(context),
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         idealRange,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
-                          color: _textPrimary,
+                          color: _textPrimary(context),
                         ),
                       ),
                     ],
@@ -1181,9 +1196,9 @@ class _WeightEntryBottomSheetState extends State<WeightEntryBottomSheet> {
       duration: const Duration(milliseconds: 200),
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        decoration: const BoxDecoration(
-          color: _surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: _surface(context),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
         child: Column(
@@ -1193,18 +1208,18 @@ class _WeightEntryBottomSheetState extends State<WeightEntryBottomSheet> {
             // ── Header ──
             Row(
               children: [
-                const Text(
+                Text(
                   'Log Weight',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
-                    color: _textPrimary,
+                    color: _textPrimary(context),
                   ),
                 ),
                 const Spacer(),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
-                  child: const Icon(Icons.close_rounded, color: _textSecondary),
+                  child: Icon(Icons.close_rounded, color: _textSecondary(context)),
                 ),
               ],
             ),
@@ -1214,12 +1229,12 @@ class _WeightEntryBottomSheetState extends State<WeightEntryBottomSheet> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Date',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: _textSecondary,
+                    color: _textSecondary(context),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -1238,19 +1253,19 @@ class _WeightEntryBottomSheetState extends State<WeightEntryBottomSheet> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(
-                      border: Border.all(color: _border),
+                      border: Border.all(color: _border(context)),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.calendar_today_rounded, size: 18, color: _textSecondary),
+                        Icon(Icons.calendar_today_rounded, size: 18, color: _textSecondary(context)),
                         const SizedBox(width: 10),
                         Text(
                           DateFormat('MMM dd, yyyy').format(selectedDate),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: _textPrimary,
+                            color: _textPrimary(context),
                           ),
                         ),
                       ],
@@ -1265,31 +1280,31 @@ class _WeightEntryBottomSheetState extends State<WeightEntryBottomSheet> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Weight (kg)',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: _textSecondary,
+                    color: _textSecondary(context),
                   ),
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _weightController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: _textPrimary,
+                    color: _textPrimary(context),
                   ),
                   decoration: InputDecoration(
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: _border),
+                      borderSide: BorderSide(color: _border(context)),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: _border),
+                      borderSide: BorderSide(color: _border(context)),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -1315,18 +1330,18 @@ class _WeightEntryBottomSheetState extends State<WeightEntryBottomSheet> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: _border),
+                      side: BorderSide(color: _border(context)),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Cancel',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: _textPrimary,
+                        color: _textPrimary(context),
                       ),
                     ),
                   ),
@@ -1380,7 +1395,9 @@ class _IconButton extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Material(
+  Widget build(BuildContext context) {
+    final dark = _isDark(context);
+    return Material(
       color: Colors.transparent,
       child: InkResponse(
         onTap: onTap,
@@ -1388,10 +1405,15 @@ class _IconButton extends StatelessWidget {
         child: SizedBox(
           width: 34,
           height: 34,
-          child: Icon(icon, size: 20, color: _textPrimary),
+          child: Icon(
+            icon,
+            size: 20,
+            color: dark ? AppDarkColors.textPrimary : const Color(0xFF1E1D2A),
+          ),
         ),
       ),
     );
+  }
 }
 
 class _CardShell extends StatelessWidget {
@@ -1400,15 +1422,19 @@ class _CardShell extends StatelessWidget {
   final EdgeInsets padding;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) {
+    final dark = _isDark(context);
+    return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: _surface,
+        color: dark ? AppDarkColors.surface : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _border),
+        border: Border.all(
+          color: dark ? AppDarkColors.border : const Color(0xFFE8E4EF),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: dark ? 0.2 : 0.05),
             blurRadius: 12,
             offset: const Offset(0, 5),
           ),
@@ -1416,6 +1442,7 @@ class _CardShell extends StatelessWidget {
       ),
       child: child,
     );
+  }
 }
 
 class _SegmentPill extends StatelessWidget {
@@ -1432,19 +1459,23 @@ class _SegmentPill extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
+  Widget build(BuildContext context) {
+    final dark = _isDark(context);
+    return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.fastOutSlowIn,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? _surface : Colors.transparent,
+          color: selected
+              ? (dark ? AppDarkColors.surface : Colors.white)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(999),
           boxShadow: selected
               ? [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
+                    color: Colors.black.withValues(alpha: dark ? 0.2 : 0.08),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -1456,11 +1487,14 @@ class _SegmentPill extends StatelessWidget {
           style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w800,
-            color: selected ? _textPrimary : _textSecondary,
+            color: selected
+                ? (dark ? AppDarkColors.textPrimary : const Color(0xFF1E1D2A))
+                : (dark ? AppDarkColors.textSecondary : const Color(0xFF706D7B)),
           ),
         ),
       ),
     );
+  }
 }
 
 class _ProgressBadge extends StatelessWidget {
@@ -1470,7 +1504,9 @@ class _ProgressBadge extends StatelessWidget {
   final String text;
 
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(
+  Widget build(BuildContext context) {
+    final dark = _isDark(context);
+    return AnimatedBuilder(
       animation: mainCtrl,
       builder: (context, child) {
         final t = _clamp01(CurvedAnimation(
@@ -1483,7 +1519,7 @@ class _ProgressBadge extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
-              color: _purpleSoft,
+              color: dark ? AppDarkColors.surfaceAlt : const Color(0xFFF0EDFF),
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
@@ -1498,6 +1534,7 @@ class _ProgressBadge extends StatelessWidget {
         );
       },
     );
+  }
 }
 
 class _MiniStat extends StatelessWidget {
@@ -1514,14 +1551,16 @@ class _MiniStat extends StatelessWidget {
   final Color? accent;
 
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) {
+    final dark = _isDark(context);
+    return Column(
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w800,
-            color: _textSecondary,
+            color: dark ? AppDarkColors.textSecondary : const Color(0xFF706D7B),
             letterSpacing: 0.3,
           ),
         ),
@@ -1531,9 +1570,10 @@ class _MiniStat extends StatelessWidget {
           style: TextStyle(
             fontSize: valueSize,
             fontWeight: FontWeight.w800,
-            color: accent ?? _textPrimary,
+            color: accent ?? (dark ? AppDarkColors.textPrimary : const Color(0xFF1E1D2A)),
           ),
         ),
       ],
     );
+  }
 }

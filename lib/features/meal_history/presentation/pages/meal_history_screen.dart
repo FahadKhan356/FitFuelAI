@@ -1,21 +1,30 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fitfuel_ai/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
+import '../../../../shared/theme/app_theme.dart';
 
-const _bg = Color(0xFFF7F6FB);
-const _surface = Colors.white;
+bool _isDark(BuildContext context) =>
+    Theme.of(context).brightness == Brightness.dark;
+Color _bg(BuildContext context) =>
+    _isDark(context) ? AppDarkColors.background : const Color(0xFFF7F6FB);
+Color _surface(BuildContext context) =>
+    _isDark(context) ? AppDarkColors.surface : Colors.white;
+Color _textPrimary(BuildContext context) =>
+    _isDark(context) ? AppDarkColors.textPrimary : const Color(0xFF1F1F2E);
+Color _textSecondary(BuildContext context) =>
+    _isDark(context) ? AppDarkColors.textSecondary : const Color(0xFF70707C);
+Color _border(BuildContext context) =>
+    _isDark(context) ? AppDarkColors.border : const Color(0xFFE7E3EF);
+Color _line(BuildContext context) =>
+    _isDark(context) ? AppDarkColors.borderSubtle : const Color(0xFFE3DFFF);
 const _purple = Color(AppColors.authPurple);
-const _textPrimary = Color(0xFF1F1F2E);
-const _textSecondary = Color(0xFF70707C);
-const _border = Color(0xFFE7E3EF);
-const _line = Color(0xFFE3DFFF);
 
 class MealHistoryScreen extends StatelessWidget {
   const MealHistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: _bg(context),
       body: SafeArea(
         child: Column(
           children: [
@@ -33,13 +42,19 @@ class MealHistoryScreen extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontSize: 22,
                           fontWeight: FontWeight.w700,
-                          color: _textPrimary,
+                          color: _textPrimary(context),
                         ),
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1, thickness: 1, color: Color(0xFFECE9F4)),
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: _isDark(context)
+                  ? AppDarkColors.borderSubtle
+                  : const Color(0xFFECE9F4),
+            ),
             Expanded(
               child: ListView(
                 physics: const BouncingScrollPhysics(),
@@ -137,7 +152,7 @@ class _IconButton extends StatelessWidget {
         child: SizedBox(
           width: 34,
           height: 34,
-          child: Icon(icon, size: 20, color: _textPrimary),
+          child: Icon(icon, size: 20, color: _textPrimary(context)),
         ),
       ),
     );
@@ -151,9 +166,9 @@ class _SearchBar extends StatelessWidget {
       height: 54,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: _surface,
+        color: _surface(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _border),
+        border: Border.all(color: _border(context)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -162,16 +177,16 @@ class _SearchBar extends StatelessWidget {
           ),
         ],
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.search, size: 22, color: _textSecondary),
-          SizedBox(width: 10),
+          Icon(Icons.search, size: 22, color: _textSecondary(context)),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               'Search meals, ingredients...',
               style: TextStyle(
                 fontSize: 15.5,
-                color: _textSecondary,
+                color: _textSecondary(context),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -216,10 +231,10 @@ class _FilterChip extends StatelessWidget {
   Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
       decoration: BoxDecoration(
-        color: selected ? _purple : _surface,
+        color: selected ? _purple : _surface(context),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: selected ? _purple : _border,
+          color: selected ? _purple : _border(context),
           width: selected ? 0 : 1,
         ),
         boxShadow: [
@@ -237,7 +252,7 @@ class _FilterChip extends StatelessWidget {
         style: TextStyle(
           fontSize: 14.5,
           fontWeight: FontWeight.w700,
-          color: selected ? Colors.white : _textSecondary,
+          color: selected ? Colors.white : _textSecondary(context),
         ),
       ),
     );
@@ -267,10 +282,10 @@ class _DayHeader extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w800,
-            color: _textPrimary,
+            color: _textPrimary(context),
           ),
         ),
         const SizedBox(width: 10),
@@ -278,10 +293,10 @@ class _DayHeader extends StatelessWidget {
           padding: const EdgeInsets.only(top: 1),
           child: Text(
             dateLabel,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: _textSecondary,
+              color: _textSecondary(context),
             ),
           ),
         ),
@@ -291,10 +306,10 @@ class _DayHeader extends StatelessWidget {
           children: [
             Text(
               totalLabel,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
-                color: _textSecondary,
+                color: _textSecondary(context),
                 letterSpacing: 0.3,
               ),
             ),
@@ -340,9 +355,9 @@ class _MealEntryCard extends StatelessWidget {
   Widget build(BuildContext context) => Container(
       margin: const EdgeInsets.only(left: 14),
       decoration: BoxDecoration(
-        color: _surface,
+        color: _surface(context),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _border),
+        border: Border.all(color: _border(context)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -371,30 +386,31 @@ class _MealEntryCard extends StatelessWidget {
                     Icon(
                       _iconForCategory(category),
                       size: 16,
-                      color: _textSecondary,
+                      color: _textSecondary(context),
                     ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         '$category • $time',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w800,
-                          color: _textSecondary,
+                          color: _textSecondary(context),
                           letterSpacing: 0.3,
                         ),
                       ),
                     ),
-                    const Icon(Icons.more_horiz, size: 22, color: _textSecondary),
+                    Icon(Icons.more_horiz,
+                        size: 22, color: _textSecondary(context)),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
-                    color: _textPrimary,
+                    color: _textPrimary(context),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -411,11 +427,11 @@ class _MealEntryCard extends StatelessWidget {
                           children: [
                             Text(
                               description,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 15,
                                 height: 1.25,
                                 fontWeight: FontWeight.w500,
-                                color: _textSecondary,
+                                color: _textSecondary(context),
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -424,21 +440,21 @@ class _MealEntryCard extends StatelessWidget {
                               children: [
                                 Text(
                                   calories,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 22,
                                     fontWeight: FontWeight.w800,
-                                    color: _textPrimary,
+                                    color: _textPrimary(context),
                                   ),
                                 ),
                                 const SizedBox(width: 5),
-                                const Padding(
-                                  padding: EdgeInsets.only(bottom: 3),
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 3),
                                   child: Text(
                                     'KCAL',
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w800,
-                                      color: _textSecondary,
+                                      color: _textSecondary(context),
                                       letterSpacing: 0.5,
                                     ),
                                   ),
@@ -452,13 +468,22 @@ class _MealEntryCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 14),
-                const Divider(height: 1, thickness: 1, color: Color(0xFFECEAF2)),
+                Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: _isDark(context)
+                      ? AppDarkColors.borderSubtle
+                      : const Color(0xFFECEAF2),
+                ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(child: _MacroItem(label: 'PROTEIN', value: protein)),
+                    Expanded(
+                        child: _MacroItem(label: 'PROTEIN', value: protein)),
                     const SizedBox(width: 10),
-                    Expanded(child: _MacroItem(label: 'CARBS', value: carbs, accent: _cyan)),
+                    Expanded(
+                        child: _MacroItem(
+                            label: 'CARBS', value: carbs, accent: _cyan)),
                     const SizedBox(width: 10),
                     Expanded(child: _MacroItem(label: 'FAT', value: fat)),
                   ],
@@ -508,7 +533,7 @@ class _TimelineDot extends StatelessWidget {
           child: Container(
             width: 2,
             margin: const EdgeInsets.only(top: 8),
-            color: _line,
+            color: _line(context),
           ),
         ),
       ],
@@ -572,7 +597,8 @@ class _MealThumb extends StatelessWidget {
               ),
             ),
             child: const Center(
-              child: Icon(Icons.set_meal_rounded, size: 24, color: Color(0xFF8A4E26)),
+              child: Icon(Icons.set_meal_rounded,
+                  size: 24, color: Color(0xFF8A4E26)),
             ),
           ),
           fit: BoxFit.cover,
@@ -602,10 +628,10 @@ class _MacroItem extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 10.5,
             fontWeight: FontWeight.w800,
-            color: _textSecondary,
+            color: _textSecondary(context),
             letterSpacing: 0.3,
           ),
         ),
@@ -615,17 +641,19 @@ class _MacroItem extends StatelessWidget {
           child: LinearProgressIndicator(
             minHeight: 4,
             value: 0.72,
-            backgroundColor: const Color(0xFFE9E7F1),
+            backgroundColor: _isDark(context)
+                ? AppDarkColors.surfaceHighlight
+                : const Color(0xFFE9E7F1),
             valueColor: AlwaysStoppedAnimation<Color>(accent),
           ),
         ),
         const SizedBox(height: 6),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w800,
-            color: _textPrimary,
+            color: _textPrimary(context),
           ),
         ),
       ],
@@ -645,21 +673,23 @@ class _ActionPill extends StatelessWidget {
   Widget build(BuildContext context) => Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFC),
+        color: _isDark(context)
+            ? AppDarkColors.surfaceAlt
+            : const Color(0xFFFAFAFC),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: _border),
+        border: Border.all(color: _border(context)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 15, color: _textSecondary),
+          Icon(icon, size: 15, color: _textSecondary(context)),
           const SizedBox(width: 5),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w700,
-              color: _textSecondary,
+              color: _textSecondary(context),
             ),
           ),
         ],

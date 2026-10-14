@@ -11,6 +11,7 @@ import '../../../../core/domain/entities/water_entry_entity.dart';
 import '../../../../core/services/home_data_cache.dart';
 import '../../../../core/services/water_goal_resolver.dart';
 import '../bloc/water_tracker_bloc.dart';
+import '../../../../shared/theme/app_theme.dart';
 
 // ─────────────────────────────────────────────
 //  Design Tokens & Accent Colors
@@ -47,12 +48,12 @@ class _WaterTrackerScreenState extends State<WaterTrackerScreen>
   ];
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
-  Color get _bg => _isDark ? const Color(0xFF0B0E14) : const Color(0xFFF8F9FE);
-  Color get _surface => _isDark ? const Color(0xFF141824) : Colors.white;
-  Color get _surfaceAlt => _isDark ? const Color(0xFF1B2237) : const Color(0xFFF1F5F9);
-  Color get _textPrimary => _isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
-  Color get _textSecondary => _isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-  Color get _borderColor => _isDark ? const Color(0xFF282D4A) : const Color(0xFFE2E8F0);
+  Color get _bg => _isDark ? AppDarkColors.background : const Color(0xFFF8F9FE);
+  Color get _surface => _isDark ? AppDarkColors.surface : Colors.white;
+  Color get _surfaceAlt => _isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF1F5F9);
+  Color get _textPrimary => _isDark ? AppDarkColors.textPrimary : const Color(0xFF0F172A);
+  Color get _textSecondary => _isDark ? AppDarkColors.textSecondary : const Color(0xFF64748B);
+  Color get _borderColor => _isDark ? AppDarkColors.border : const Color(0xFFE2E8F0);
 
   @override
   void initState() {
@@ -693,10 +694,10 @@ class _IconButton extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF141824) : Colors.white,
+            color: isDark ? AppDarkColors.surface : Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isDark ? const Color(0xFF282D4A) : const Color(0xFFE2E8F0),
+              color: isDark ? AppDarkColors.border : const Color(0xFFE2E8F0),
             ),
             boxShadow: [
               BoxShadow(
@@ -856,11 +857,11 @@ class _WaveReservoirCard extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
                 decoration: BoxDecoration(
-                  color: (isDark ? const Color(0xFF0F172A) : Colors.white)
-                      .withValues(alpha: 0.78),
+                  color: (isDark ? AppDarkColors.surface : Colors.white)
+                      .withValues(alpha: isDark ? 0.88 : 0.78),
                   borderRadius: BorderRadius.circular(22),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: isDark ? 0.20 : 0.70),
+                    color: isDark ? AppDarkColors.border : Colors.white.withValues(alpha: 0.70),
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -1565,11 +1566,11 @@ class _WaterEntryBottomSheetState extends State<WaterEntryBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surface = isDark ? const Color(0xFF141824) : Colors.white;
-    final surfaceAlt = isDark ? const Color(0xFF1B2237) : const Color(0xFFF1F5F9);
-    final textPrimary = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
-    final textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
-    final borderColor = isDark ? const Color(0xFF282D4A) : const Color(0xFFE2E8F0);
+    final surface = isDark ? AppDarkColors.surface : Colors.white;
+    final surfaceAlt = isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF1F5F9);
+    final textPrimary = isDark ? AppDarkColors.textPrimary : const Color(0xFF0F172A);
+    final textSecondary = isDark ? AppDarkColors.textSecondary : const Color(0xFF64748B);
+    final borderColor = isDark ? AppDarkColors.border : const Color(0xFFE2E8F0);
     final activeColor = _isSubtract ? const Color(0xFFEF4444) : _kWaterBlue;
 
     return AnimatedPadding(

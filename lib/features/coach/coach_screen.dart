@@ -11,6 +11,7 @@ import 'widgets/chat_input_bar.dart';
 import 'widgets/coach_message_card.dart';
 import 'widgets/quick_chips.dart';
 import 'widgets/snapshot_strip.dart';
+import '../../shared/theme/app_theme.dart';
 
 /// Complete AI Coach screen matching Image A and user specifications.
 class CoachScreen extends StatefulWidget {
@@ -84,7 +85,7 @@ class _CoachScreenState extends State<CoachScreen> {
         statusBarColor: Colors.transparent,
       ),
       child: Scaffold(
-        backgroundColor: isDark ? const Color(0xFF0B0E14) : const Color(0xFFF6F4FF),
+        backgroundColor: isDark ? AppDarkColors.background : const Color(0xFFF6F4FF),
         body: SafeArea(
           bottom: false,
           child: Stack(
@@ -311,12 +312,12 @@ class _CoachScreenState extends State<CoachScreen> {
                   height: 40,
                   decoration: BoxDecoration(
                     color: isDark
-                        ? const Color(0xFF141824).withValues(alpha: 0.85)
+                        ? AppDarkColors.surface.withValues(alpha: 0.85)
                         : Colors.white.withValues(alpha: 0.72),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: isDark
-                          ? const Color(0xFF282D4A)
+                          ? AppDarkColors.border
                           : Colors.white.withValues(alpha: 0.8),
                       width: 1,
                     ),
@@ -367,14 +368,14 @@ class _CoachScreenState extends State<CoachScreen> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: isDark
-                    ? const Color(0xFF141824).withValues(alpha: 0.95)
+                    ? AppDarkColors.surface.withValues(alpha: 0.95)
                     : Colors.white.withValues(alpha: 0.92),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(24),
                 ),
                 border: Border.all(
                   color: isDark
-                      ? const Color(0xFF282D4A)
+                      ? AppDarkColors.border
                       : Colors.white.withValues(alpha: 0.8),
                   width: 1,
                 ),

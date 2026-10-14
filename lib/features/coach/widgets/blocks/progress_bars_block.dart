@@ -33,6 +33,7 @@ class ProgressBarsBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final items = block.items.whereType<CoachProgressBarItem>().toList();
 
     return Column(
@@ -41,10 +42,10 @@ class ProgressBarsBlock extends StatelessWidget {
         if (block.title.isNotEmpty) ...[
           Text(
             block.title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF4A4670),
+              color: isDark ? const Color(0xFFFAF4EE) : const Color(0xFF4A4670),
             ),
           ),
           const SizedBox(height: 8),
@@ -59,18 +60,18 @@ class ProgressBarsBlock extends StatelessWidget {
                   children: [
                     Text(
                       item.label,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1E1B3A),
+                        color: isDark ? const Color(0xFFFAF4EE) : const Color(0xFF1E1B3A),
                       ),
                     ),
                     Text(
                       '${item.value.toInt()} / ${item.target.toInt()} ${item.unit}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF7A7699),
+                        color: isDark ? const Color(0xFFB8A79B) : const Color(0xFF7A7699),
                       ),
                     ),
                   ],
@@ -81,7 +82,9 @@ class ProgressBarsBlock extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: item.target > 0 ? (item.value / item.target).clamp(0.0, 1.0) : 0.0,
                     minHeight: 6,
-                    backgroundColor: _resolveTrack(item.color),
+                    backgroundColor: isDark
+                        ? Colors.white.withValues(alpha: 0.12)
+                        : _resolveTrack(item.color),
                     valueColor: AlwaysStoppedAnimation<Color>(_resolveColor(item.color)),
                   ),
                 ),

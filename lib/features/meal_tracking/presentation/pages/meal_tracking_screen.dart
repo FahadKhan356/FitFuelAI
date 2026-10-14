@@ -9,13 +9,10 @@ import '../../../../core/services/calorie_goal_resolver.dart';
 import '../../../../core/services/home_data_cache.dart';
 import '../../../../core/services/home_data_refresh_notifier.dart';
 import 'meal_entry_screen.dart';
+import '../../../../shared/theme/app_theme.dart';
 
-const _bg = Color(0xFFF7F6FB);
-const _surface = Colors.white;
+bool _isDark(BuildContext context) => Theme.of(context).brightness == Brightness.dark;
 const _purple = Color(AppColors.authPurple);
-const _textPrimary = Color(0xFF1F1F2E);
-const _textSecondary = Color(0xFF706D7B);
-const _border = Color(0xFFE7E3EF);
 
 // ─────────────────────────────────────────────
 //  Meal Entry Model
@@ -51,6 +48,13 @@ class MealTrackingScreen extends StatefulWidget {
 }
 
 class _MealTrackingScreenState extends State<MealTrackingScreen> {
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get _bg => _isDark ? AppDarkColors.background : const Color(0xFFF7F6FB);
+  Color get _surface => _isDark ? AppDarkColors.surface : Colors.white;
+  Color get _textPrimary => _isDark ? AppDarkColors.textPrimary : const Color(0xFF1F1F2E);
+  Color get _textSecondary => _isDark ? AppDarkColors.textSecondary : const Color(0xFF706D7B);
+  Color get _border => _isDark ? AppDarkColors.border : const Color(0xFFE7E3EF);
+
   int totalCalories = 0;
   int calorieGoal = 0;
   double totalProtein = 0, totalCarbs = 0, totalFat = 0;
@@ -349,10 +353,10 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF5F5FA),
+                        color: _isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF5F5FA),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back_ios_new_rounded,
                         size: 16,
                         color: _textPrimary,
@@ -360,7 +364,7 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
+                  Text(
                     'Meal Tracking',
                     style: TextStyle(
                       fontSize: 22,
@@ -372,7 +376,7 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
                 ],
               ),
             ),
-            const Divider(height: 1, thickness: 1, color: _border),
+            Divider(height: 1, thickness: 1, color: _border),
 
             // Calorie Progress
             Padding(
@@ -396,7 +400,7 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
                             children: [
                               TextSpan(
                                 text: '$totalCalories',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.w800,
                                   color: _textPrimary,
@@ -405,7 +409,7 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
                               ),
                               TextSpan(
                                 text: ' / $calorieGoal kcal',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: _textSecondary,
@@ -419,7 +423,7 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
                     const SizedBox(height: 8),
                     Text(
                       '${calorieGoal - totalCalories} kcal remaining',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: _textSecondary,
@@ -461,7 +465,7 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
                             color: _textSecondary.withValues(alpha: 0.35),
                           ),
                           const SizedBox(height: 12),
-                          const Text(
+                          Text(
                             'No meals logged today yet',
                             style: TextStyle(
                               fontSize: 15,
@@ -470,7 +474,7 @@ class _MealTrackingScreenState extends State<MealTrackingScreen> {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          const Text(
+                          Text(
                             'Tap the + button to track your meals',
                             style: TextStyle(
                               fontSize: 13,
@@ -541,16 +545,18 @@ class _MealCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) {
+    final dark = _isDark(context);
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: _surface,
+        color: dark ? AppDarkColors.surface : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _border),
+        border: Border.all(color: dark ? AppDarkColors.border : const Color(0xFFE7E3EF)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: dark ? 0.2 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -562,7 +568,7 @@ class _MealCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: _getMealColor(meal.mealType),
+              color: dark ? AppDarkColors.surfaceAlt : _getMealColor(meal.mealType),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
@@ -577,29 +583,29 @@ class _MealCard extends StatelessWidget {
               children: [
                 Text(
                   meal.foodName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: _textPrimary,
+                    color: dark ? AppDarkColors.textPrimary : const Color(0xFF1F1F2E),
                   ),
                 ),
-                                const SizedBox(height: 3),
+                const SizedBox(height: 3),
                 Text(
                   meal.mealType.toUpperCase(),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: _textSecondary,
+                    color: dark ? AppDarkColors.textSecondary : const Color(0xFF706D7B),
                     letterSpacing: 0.5,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'P ${meal.protein.toStringAsFixed(0)}g · C ${meal.carbs.toStringAsFixed(0)}g · F ${meal.fat.toStringAsFixed(0)}g',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w600,
-                    color: _textSecondary,
+                    color: dark ? AppDarkColors.textSecondary : const Color(0xFF706D7B),
                   ),
                 ),
               ],
@@ -616,9 +622,14 @@ class _MealCard extends StatelessWidget {
           const SizedBox(width: 8),
           GestureDetector(
             onTap: onRemove,
-            child: const Icon(Icons.close_rounded, size: 20, color: _textSecondary),
+            child: Icon(
+              Icons.close_rounded,
+              size: 20,
+              color: dark ? AppDarkColors.textSecondary : const Color(0xFF706D7B),
+            ),
           ),
         ],
       ),
     );
+  }
 }

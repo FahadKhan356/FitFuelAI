@@ -2,6 +2,8 @@ import 'package:fitfuel_ai/core/constants/app_colors.dart';
 import 'package:fitfuel_ai/core/di/service_locator.dart';
 import 'package:fitfuel_ai/core/domain/usecases/all_usecases.dart';
 import 'package:fitfuel_ai/core/utils/bmi_calculator.dart';
+import 'package:fitfuel_ai/core/services/home_data_refresh_notifier.dart';
+import 'package:fitfuel_ai/shared/theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -32,16 +34,16 @@ class _BmiScreenState extends State<BmiScreen>
   bool _isSaving = false;
 
   bool get _isDark => Theme.of(context).brightness == Brightness.dark;
-  Color get _bg => _isDark ? const Color(0xFF0B0E14) : const Color(0xFFF8F9FE);
-  Color get _surface => _isDark ? const Color(0xFF141824) : Colors.white;
+  Color get _bg => _isDark ? AppDarkColors.background : const Color(0xFFF8F9FE);
+  Color get _surface => _isDark ? AppDarkColors.surface : Colors.white;
   Color get _surfaceAlt =>
-      _isDark ? const Color(0xFF1C2235) : const Color(0xFFF1F5F9);
+      _isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF1F5F9);
   Color get _borderColor =>
-      _isDark ? const Color(0xFF23283E) : const Color(0xFFE2E8F0);
+      _isDark ? AppDarkColors.border : const Color(0xFFE2E8F0);
   Color get _textPrimary =>
-      _isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
+      _isDark ? AppDarkColors.textPrimary : const Color(0xFF0F172A);
   Color get _textSecondary =>
-      _isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+      _isDark ? AppDarkColors.textSecondary : const Color(0xFF64748B);
 
   @override
   void initState() {
@@ -123,13 +125,20 @@ class _BmiScreenState extends State<BmiScreen>
         'Logged via BMI Calculator',
       );
 
-      // 2. Update user profile current weight
-      await sl<UpdateUserProfileUseCase>().call(userId, {
-        'current_weight_kg': _weightKg,
-        'height_cm': _heightCm,
-        'age': _age,
-        'gender': _isMale ? 'male' : 'female',
-      });
+      // 2. Update user profile
+      try {
+        await sl<UpdateUserProfileUseCase>().call(userId, {
+          'weight_kg': _weightKg,
+          'height_cm': _heightCm,
+          'age': _age,
+          'gender': _isMale ? 'male' : 'female',
+        });
+      } catch (e) {
+        debugPrint('UpdateUserProfileUseCase non-fatal error: $e');
+      }
+
+      // Notify app of weight/dashboard change
+      HomeDataRefreshNotifier.instance.refresh();
 
       if (!mounted) {
         return;

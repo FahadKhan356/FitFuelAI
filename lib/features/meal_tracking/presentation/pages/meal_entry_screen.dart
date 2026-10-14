@@ -6,13 +6,9 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/data/models/nutrition_food.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../features/food_search/data/datasources/nutrition_api_datasource.dart';
+import '../../../../shared/theme/app_theme.dart';
 
-const _surface = Colors.white;
 const _purple = Color(AppColors.authPurple);
-const _purpleSoft = Color(0xFFF0ECFF);
-const _textPrimary = Color(0xFF1F1F2E);
-const _textSecondary = Color(0xFF706D7B);
-const _border = Color(0xFFE7E3EF);
 
 // ─────────────────────────────────────────────
 //  Food Item Model
@@ -97,6 +93,19 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
   final categories = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Snack'];
   NutritionApiDataSource get _api => sl<NutritionApiDataSource>();
 
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get _surface => _isDark ? AppDarkColors.surface : Colors.white;
+  Color get _surfaceAlt =>
+      _isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF5F5FA);
+  Color get _purpleSoft =>
+      _isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF0ECFF);
+  Color get _textPrimary =>
+      _isDark ? AppDarkColors.textPrimary : const Color(0xFF1F1F2E);
+  Color get _textSecondary =>
+      _isDark ? AppDarkColors.textSecondary : const Color(0xFF706D7B);
+  Color get _border =>
+      _isDark ? AppDarkColors.border : const Color(0xFFE7E3EF);
+
   @override
   void initState() {
     super.initState();
@@ -174,9 +183,9 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
       padding:
           EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: _surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
         child: SingleChildScrollView(
@@ -185,7 +194,7 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
             children: [
               Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Manual Food Search',
                       style: TextStyle(
@@ -198,12 +207,12 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child:
-                        const Icon(Icons.close_rounded, color: _textSecondary),
+                        Icon(Icons.close_rounded, color: _textSecondary),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Search food items, inspect micronutrients, and log meals with a manual portion calculator.',
                 style: TextStyle(
                   fontSize: 13,
@@ -216,7 +225,7 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
               TextField(
                 controller: _searchController,
                 onChanged: _filterFoods,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                   color: _textPrimary,
@@ -224,11 +233,11 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: _border),
+                    borderSide: BorderSide(color: _border),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: _border),
+                    borderSide: BorderSide(color: _border),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -241,7 +250,7 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
                     fontSize: 14,
                     color: Color(0xFFB0ADB9),
                   ),
-                  prefixIcon: const Icon(Icons.search_rounded,
+                  prefixIcon: Icon(Icons.search_rounded,
                       color: _textSecondary, size: 22),
                 ),
               ),
@@ -319,7 +328,7 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
                                           food.name,
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w700,
                                             color: _textPrimary,
@@ -342,7 +351,7 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
                                     children: [
                                       Text(
                                         '${food.caloriesPer100g} kcal',
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
                                           color: _textSecondary,
@@ -351,7 +360,7 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
                                       const SizedBox(width: 10),
                                       Text(
                                         food.servingLabel,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
                                           color: _textSecondary,
@@ -366,7 +375,7 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF5F5FA),
+                                color: _surfaceAlt,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Text(
@@ -389,7 +398,7 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5FA),
+                    color: _surfaceAlt,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: _border),
                   ),
@@ -397,7 +406,7 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
                     _searchController.text.trim().isEmpty
                         ? 'Search for a food (e.g. chicken, banana, oats) or use your camera to scan a barcode.'
                         : 'No matching food items found. Try another search term.',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       color: _textSecondary,
@@ -423,13 +432,13 @@ class _MealEntryBottomSheetState extends State<MealEntryBottomSheet> {
               OutlinedButton(
                 onPressed: () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: _border),
+                  side: BorderSide(color: _border),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Close',
                   style: TextStyle(
                     fontSize: 14,
@@ -462,6 +471,19 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
   double servingGrams = 50;
   late final TextEditingController _gramsController;
   late String selectedMealType;
+
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
+  Color get _surface => _isDark ? AppDarkColors.surface : Colors.white;
+  Color get _surfaceAlt =>
+      _isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF5F5FA);
+  Color get _purpleSoft =>
+      _isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF0ECFF);
+  Color get _textPrimary =>
+      _isDark ? AppDarkColors.textPrimary : const Color(0xFF1F1F2E);
+  Color get _textSecondary =>
+      _isDark ? AppDarkColors.textSecondary : const Color(0xFF706D7B);
+  Color get _border =>
+      _isDark ? AppDarkColors.border : const Color(0xFFE7E3EF);
 
   @override
   void initState() {
@@ -523,9 +545,9 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
       padding:
           EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: _surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
         child: SingleChildScrollView(
@@ -534,7 +556,7 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
             children: [
               Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Nutrition Details',
                       style: TextStyle(
@@ -547,21 +569,21 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child:
-                        const Icon(Icons.close_rounded, color: _textSecondary),
+                        Icon(Icons.close_rounded, color: _textSecondary),
                   ),
                 ],
               ),
               const SizedBox(height: 14),
               Text(
                 widget.food.name,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
                   color: _textPrimary,
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Adjust the portion and meal type, then log your entry with micronutrients included.',
                 style: TextStyle(
                   fontSize: 13,
@@ -574,9 +596,10 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8F6FF),
+                  color: _isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF8F6FF),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFEAE6FC)),
+                  border: Border.all(
+                      color: _isDark ? AppDarkColors.border : const Color(0xFFEAE6FC)),
                 ),
                 child: Row(
                   children: [
@@ -584,7 +607,7 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Calories',
                             style: TextStyle(
                               fontSize: 13,
@@ -595,7 +618,7 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
                           const SizedBox(height: 6),
                           Text(
                             '$calories kcal',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.w800,
                               color: _textPrimary,
@@ -634,20 +657,22 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
                             value: (calories / 650).clamp(0.0, 1.0),
                             strokeWidth: 8,
                             color: _purple,
-                            backgroundColor: const Color(0xFFE9E6FD),
+                            backgroundColor: _isDark
+                                ? AppDarkColors.surfaceHighlight
+                                : const Color(0xFFE9E6FD),
                           ),
                           Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
                                 '${((calories / 650) * 100).clamp(0, 100).round()}%',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w800,
                                   color: _textPrimary,
                                 ),
                               ),
-                              const Text(
+                              Text(
                                 'of 650 kcal',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
@@ -668,7 +693,7 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Serving Size / Amount',
                     style: TextStyle(
                       fontSize: 13,
@@ -678,7 +703,7 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
                   ),
                   Text(
                     widget.food.servingLabel,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: _textSecondary,
@@ -731,7 +756,7 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
                       height: 44,
                       padding: const EdgeInsets.symmetric(horizontal: 10),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: _isDark ? AppDarkColors.surfaceAlt : Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: _purple, width: 1.6),
                       ),
@@ -744,7 +769,7 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
                               keyboardType: const TextInputType.numberWithOptions(
                                   decimal: true),
                               textAlign: TextAlign.center,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
                                 color: _textPrimary,
@@ -827,7 +852,11 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: isSelected ? _purple : const Color(0xFFF0EEF8),
+                        color: isSelected
+                            ? _purple
+                            : (_isDark
+                                ? AppDarkColors.surfaceAlt
+                                : const Color(0xFFF0EEF8)),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -853,7 +882,7 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
                 onChanged: _setGrams,
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 'Meal type',
                 style: TextStyle(
                   fontSize: 13,
@@ -889,7 +918,7 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
                 ],
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Micronutrients',
                 style: TextStyle(
                   fontSize: 13,
@@ -923,13 +952,13 @@ class _FoodNutritionDetailSheetState extends State<FoodNutritionDetailSheet> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: _border),
+                        side: BorderSide(color: _border),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Back',
                         style: TextStyle(
                           fontSize: 14,
@@ -1004,14 +1033,21 @@ class _FoodCategoryChip extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final border = isDark ? AppDarkColors.border : const Color(0xFFE7E3EF);
+    final surfaceAlt =
+        isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF5F5FA);
+    final textPrimary =
+        isDark ? AppDarkColors.textPrimary : const Color(0xFF1F1F2E);
+    return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
         decoration: BoxDecoration(
-          color: isSelected ? _purple : const Color(0xFFF5F5FA),
+          color: isSelected ? _purple : surfaceAlt,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isSelected ? _purple : _border),
+          border: Border.all(color: isSelected ? _purple : border),
         ),
         child: Text(
           label,
@@ -1019,11 +1055,12 @@ class _FoodCategoryChip extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w700,
-            color: isSelected ? Colors.white : _textPrimary,
+            color: isSelected ? Colors.white : textPrimary,
           ),
         ),
       ),
     );
+  }
 }
 
 class _MicronutrientRow extends StatelessWidget {
@@ -1033,23 +1070,30 @@ class _MicronutrientRow extends StatelessWidget {
   final String value;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final border = isDark ? AppDarkColors.border : const Color(0xFFE7E3EF);
+    final surfaceAlt =
+        isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF5F5FA);
+    final textPrimary =
+        isDark ? AppDarkColors.textPrimary : const Color(0xFF1F1F2E);
+    return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5FA),
+        color: surfaceAlt,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _border),
+        border: Border.all(color: border),
       ),
       child: Row(
         children: [
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: _textPrimary,
+                color: textPrimary,
               ),
             ),
           ),
@@ -1064,4 +1108,5 @@ class _MicronutrientRow extends StatelessWidget {
         ],
       ),
     );
+  }
 }
