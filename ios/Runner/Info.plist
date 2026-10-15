@@ -54,7 +54,7 @@
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
 	<key>NSCameraUsageDescription</key>
-	<string>FitFuel needs camera access to scan your food and track calories</string>
+	<string>FitFuel AI needs camera access to scan food and analyze exercise posture in real-time</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>FitFuel needs photo library access to select food images</string>
 	<key>NSMicrophoneUsageDescription</key>

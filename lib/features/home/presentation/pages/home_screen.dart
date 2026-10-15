@@ -844,6 +844,143 @@ class _HomeContentState extends State<_HomeContent>
                 ),
               ),
             ),
+            const SizedBox(height: 12),
+            // AI Posture Coach Card
+            AnimatedBuilder(
+              animation: _entryController,
+              builder: (context, child) {
+                final t = CurvedAnimation(
+                  parent: _entryController,
+                  curve: const Interval(0.48, 0.68, curve: Curves.easeOutCubic),
+                ).value;
+                return Opacity(
+                  opacity: t,
+                  child: Transform.translate(
+                    offset: Offset(0, 28 * (1 - t)),
+                    child: child,
+                  ),
+                );
+              },
+              child: GestureDetector(
+                onTap: () => context.push(AppRoutes.postureCoach),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isDark
+                          ? const [Color(0xFF261D4E), Color(0xFF1E1738)]
+                          : const [Color(0xFFF3F0FF), Color(0xFFEDE8FE)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color(0xFF5B4EE8).withValues(alpha: 0.3)
+                          : const Color(0xFFDCD2FD),
+                      width: 1.2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF5B4EE8).withValues(alpha: 0.08),
+                        blurRadius: 14,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF5B4EE8), Color(0xFF7B6FF0)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(13),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF5B4EE8).withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.accessibility_new_rounded,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  'AI Posture Coach',
+                                  style: TextStyle(
+                                    fontSize: 15.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: isDark ? AppDarkColors.textPrimary : kHeadline,
+                                    letterSpacing: -0.2,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF5B4EE8).withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Text(
+                                    'NEW',
+                                    style: TextStyle(
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF5B4EE8),
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              'Live exercise form check, rep counting & injury alerts.',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w500,
+                                color: isDark ? AppDarkColors.textSecondary : kBody,
+                                height: 1.35,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF5B4EE8).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 13,
+                          color: Color(0xFF5B4EE8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
             const SizedBox(height: 22),
             AnimatedBuilder(
               animation: _entryController,

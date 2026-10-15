@@ -24,10 +24,12 @@ import '../../features/subscription/presentation/pages/subscription_screen.dart'
 import '../../features/water_tracker/presentation/pages/water_tracker_screen.dart';
 import '../../features/weight_tracker/presentation/pages/bmi_screen.dart';
 import '../../features/weight_tracker/presentation/pages/weight_tracker_screen.dart';
+import '../../features/posture_coach/screens/posture_coach_screen.dart';
 import '../../screens/camera_scan_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
+  static const String postureCoach = '/posture-coach';
   static const String welcome = '/welcome';
   static const String login = '/login';
   static const String signup = '/signup';
@@ -179,6 +181,10 @@ final goRouter = GoRouter(
     GoRoute(
       path: AppRoutes.activityCalendar,
       builder: (context, state) => const ActivityCalendarScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.postureCoach,
+      builder: (context, state) => const PostureCoachScreen(),
     ),
   ],
 );
