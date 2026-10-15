@@ -25,6 +25,9 @@ import '../../../ai_coach/presentation/pages/ai_coach_screen.dart';
 import '../../../analytics/presentation/pages/analytics_screen.dart';
 import '../../../profile/presentation/pages/profile_screen.dart';
 import '../../../../shared/theme/app_theme.dart';
+import '../../../../core/domain/repositories/meal_repository.dart';
+import '../../../meal_tracking/presentation/pages/food_nutrition_detail_sheet.dart';
+import '../../../meal_tracking/presentation/pages/meal_tracking_screen.dart' show MealLog;
 
 // ─────────────────────────────────────────────
 //  Design Tokens
@@ -414,6 +417,180 @@ class _HomeContentState extends State<_HomeContent>
     return '$hour12:$minute $period';
   }
 
+  void _onMealTap(MealEntity meal) {
+    HapticFeedback.selectionClick();
+    if (meal.items.length > 1) {
+      _showMultiItemPicker(meal);
+    } else {
+      final it = meal.items.isNotEmpty ? meal.items.first : null;
+      double p = 0.0, c = 0.0, f = 0.0, fib = 0.0;
+      for (final item in meal.items) {
+        p += item.protein;
+        c += item.carbs;
+        f += item.fat;
+        fib += item.fiber;
+      }
+      final mealLog = MealLog(
+        mealId: meal.id,
+        itemId: it?.id ?? '',
+        foodName: _mealName(meal),
+        calories: meal.totalCalories,
+        protein: p,
+        carbs: c,
+        fat: f,
+        fiber: fib,
+        servingSize: it?.servingSize ?? 100.0,
+        servingUnit: it?.servingUnit ?? 'g',
+        mealType: meal.mealType,
+        date: meal.createdAt ?? meal.date,
+      );
+      FoodNutritionDetailSheet.show(
+        context,
+        meal: mealLog,
+        dailyCalorieGoal: _dailyGoalKcal,
+        onRemove: () async {
+          final user = Supabase.instance.client.auth.currentUser;
+          if (user != null && it != null && it.id.isNotEmpty) {
+            await sl<MealRepository>().deleteMealItem(it.id, meal.id);
+            HomeDataRefreshNotifier.instance.refresh();
+            _loadData();
+          }
+        },
+      );
+    }
+  }
+
+  void _showMultiItemPicker(MealEntity meal) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return Container(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          decoration: BoxDecoration(
+            color: isDark ? AppDarkColors.surface : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${meal.mealType.toUpperCase()} FOOD ITEMS',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: kPurple,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  Text(
+                    '${meal.totalCalories} kcal total',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: kPurple,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              for (final it in meal.items) ...[
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: kPurple.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.restaurant_rounded, color: kPurple, size: 20),
+                  ),
+                  title: Text(
+                    it.foodName,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: isDark ? AppDarkColors.textPrimary : kHeadline,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'P ${it.protein.round()}g · C ${it.carbs.round()}g · F ${it.fat.round()}g',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark ? AppDarkColors.textSecondary : kBody,
+                    ),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${it.calories} kcal',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: kPurple,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.chevron_right_rounded, color: kPurple, size: 20),
+                    ],
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    final mealLog = MealLog(
+                      mealId: meal.id,
+                      itemId: it.id,
+                      foodName: it.foodName,
+                      calories: it.calories,
+                      protein: it.protein,
+                      carbs: it.carbs,
+                      fat: it.fat,
+                      fiber: it.fiber,
+                      servingSize: it.servingSize,
+                      servingUnit: it.servingUnit,
+                      mealType: meal.mealType,
+                      date: it.createdAt ?? meal.date,
+                    );
+                    FoodNutritionDetailSheet.show(
+                      context,
+                      meal: mealLog,
+                      dailyCalorieGoal: _dailyGoalKcal,
+                      onRemove: () async {
+                        final user = Supabase.instance.client.auth.currentUser;
+                        if (user != null && it.id.isNotEmpty) {
+                          await sl<MealRepository>().deleteMealItem(it.id, meal.id);
+                          HomeDataRefreshNotifier.instance.refresh();
+                          _loadData();
+                        }
+                      },
+                    );
+                  },
+                ),
+                const Divider(height: 1),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     HomeDataRefreshNotifier.instance.removeListener(_onExternalRefresh);
@@ -753,15 +930,31 @@ class _HomeContentState extends State<_HomeContent>
             else
               for (var i = 0; i < _meals.length; i++) ...[
                 if (i > 0) const SizedBox(height: 2),
-                _MealItem(
-                  animation: _entryController,
-                  index: i,
-                  imagePlaceholderColor: _mealColor(_meals[i].mealType),
-                  mealType: _meals[i].mealType,
-                  time: _formatMealTime(_meals[i]),
-                  name: _mealName(_meals[i]),
-                  kcal: '${_meals[i].totalCalories} kcal',
-                  icon: _mealIcon(_meals[i].mealType),
+                Builder(
+                  builder: (context) {
+                    final meal = _meals[i];
+                    double p = 0.0, c = 0.0, f = 0.0;
+                    for (final item in meal.items) {
+                      p += item.protein;
+                      c += item.carbs;
+                      f += item.fat;
+                    }
+                    return _MealItem(
+                      animation: _entryController,
+                      index: i,
+                      imagePlaceholderColor: _mealColor(meal.mealType),
+                      mealType: meal.mealType,
+                      time: _formatMealTime(meal),
+                      name: _mealName(meal),
+                      kcal: '${meal.totalCalories} kcal',
+                      icon: _mealIcon(meal.mealType),
+                      protein: p,
+                      carbs: c,
+                      fat: f,
+                      itemCount: meal.items.length,
+                      onTap: () => _onMealTap(meal),
+                    );
+                  },
                 ),
               ],
             const SizedBox(height: 100),
@@ -2402,6 +2595,11 @@ class _MealItem extends StatelessWidget {
     required this.name,
     required this.kcal,
     required this.icon,
+    this.protein = 0.0,
+    this.carbs = 0.0,
+    this.fat = 0.0,
+    this.itemCount = 1,
+    this.onTap,
   });
 
   final Animation<double> animation;
@@ -2412,6 +2610,11 @@ class _MealItem extends StatelessWidget {
   final String name;
   final String kcal;
   final IconData icon;
+  final double protein;
+  final double carbs;
+  final double fat;
+  final int itemCount;
+  final VoidCallback? onTap;
 
   Color get _mealTypeColor {
     switch (mealType.toLowerCase()) {
@@ -2450,7 +2653,6 @@ class _MealItem extends StatelessWidget {
           final isDark = Theme.of(context).brightness == Brightness.dark;
           return Container(
             margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: isDark ? AppDarkColors.surface : kCardBg,
               borderRadius: BorderRadius.circular(16),
@@ -2466,110 +2668,168 @@ class _MealItem extends StatelessWidget {
                 ),
               ],
             ),
-            child: Row(
-              children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: imagePlaceholderColor.withValues(alpha: 0.22),
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      icon,
-                      size: 24,
-                      color: isDark ? AppDarkColors.textPrimary : kHeadline,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 13),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  child: Row(
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: _mealTypeColor.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(100),
-                            ),
-                            child: Text(
-                              mealType,
-                              style: TextStyle(
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w700,
-                                color: _mealTypeColor,
-                                letterSpacing: 0.3,
-                              ),
-                            ),
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: imagePlaceholderColor.withValues(alpha: isDark ? 0.28 : 0.22),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            icon,
+                            size: 24,
+                            color: isDark ? AppDarkColors.textPrimary : kHeadline,
                           ),
-                          const SizedBox(width: 6),
-                          Icon(
-                            Icons.access_time_rounded,
-                            size: 12,
-                            color: isDark ? AppDarkColors.textSecondary : kBody,
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            time,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: isDark ? AppDarkColors.textSecondary : kBody,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.w700,
-                          color: isDark ? AppDarkColors.textPrimary : kHeadline,
-                          letterSpacing: -0.2,
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        kcal,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          color: isDark ? const Color(0xFF818CF8) : const Color(0xFF6366F1),
-                          fontWeight: FontWeight.w700,
+                      const SizedBox(width: 13),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: _mealTypeColor.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(100),
+                                  ),
+                                  child: Text(
+                                    mealType,
+                                    style: TextStyle(
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: _mealTypeColor,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Icon(
+                                  Icons.access_time_rounded,
+                                  size: 12,
+                                  color: isDark ? AppDarkColors.textSecondary : kBody,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  time,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: isDark ? AppDarkColors.textSecondary : kBody,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                if (itemCount > 1) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                    decoration: BoxDecoration(
+                                      color: isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF1F5F9),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      '$itemCount items',
+                                      style: TextStyle(
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark ? AppDarkColors.textSecondary : kBody,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 14.5,
+                                fontWeight: FontWeight.w700,
+                                color: isDark ? AppDarkColors.textPrimary : kHeadline,
+                                letterSpacing: -0.2,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Text(
+                                  kcal,
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    color: isDark ? const Color(0xFF818CF8) : const Color(0xFF6366F1),
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                if (protein > 0 || carbs > 0 || fat > 0) ...[
+                                  const SizedBox(width: 8),
+                                  _macroPill('P', '${protein.round()}g', const Color(0xFF6366F1), isDark),
+                                  const SizedBox(width: 4),
+                                  _macroPill('C', '${carbs.round()}g', const Color(0xFFF59E0B), isDark),
+                                  const SizedBox(width: 4),
+                                  _macroPill('F', '${fat.round()}g', const Color(0xFF06B6D4), isDark),
+                                ],
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF8F9FE),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isDark ? AppDarkColors.border : const Color(0xFFE2E8F0),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 13,
+                          color: kPurple,
                         ),
                       ),
                     ],
                   ),
                 ),
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: isDark ? AppDarkColors.surfaceAlt : const Color(0xFFF8F9FE),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: isDark ? AppDarkColors.border : const Color(0xFFE2E8F0),
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 13,
-                    color: isDark ? AppDarkColors.textSecondary : kBody,
-                  ),
-                ),
-              ],
+              ),
             ),
           );
         },
       ),
     );
+
+  Widget _macroPill(String label, String value, Color color, bool dark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: dark ? 0.20 : 0.10),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Text(
+        '$label $value',
+        style: TextStyle(
+          fontSize: 9.5,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
+      ),
+    );
+  }
 }
 
 class _ShineSweep extends StatefulWidget {
