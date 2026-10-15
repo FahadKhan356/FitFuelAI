@@ -28,6 +28,7 @@ import '../../../../shared/theme/app_theme.dart';
 import '../../../../core/domain/repositories/meal_repository.dart';
 import '../../../meal_tracking/presentation/pages/food_nutrition_detail_sheet.dart';
 import '../../../meal_tracking/presentation/pages/meal_tracking_screen.dart' show MealLog;
+import '../../../posture_coach/screens/posture_coach_screen.dart';
 
 // ─────────────────────────────────────────────
 //  Design Tokens
@@ -862,7 +863,14 @@ class _HomeContentState extends State<_HomeContent>
                 );
               },
               child: GestureDetector(
-                onTap: () => context.push(AppRoutes.postureCoach),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const PostureCoachScreen(),
+                    ),
+                  );
+                },
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
