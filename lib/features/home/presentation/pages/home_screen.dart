@@ -1270,12 +1270,17 @@ class _CalorieCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isOverBudget = dailyGoal > 0 && consumed > dailyGoal;
+    final overAmount = consumed - dailyGoal;
     final remaining = (dailyGoal - consumed).clamp(0, dailyGoal);
     final progress =
         dailyGoal <= 0 ? 0.0 : (consumed / dailyGoal).clamp(0.0, 1.0);
     final percentLeft = dailyGoal <= 0
         ? 0
         : ((remaining / dailyGoal) * 100).clamp(0, 100).round();
+    final percentOver = dailyGoal <= 0
+        ? 0
+        : ((overAmount / dailyGoal) * 100).round();
 
     return AnimatedBuilder(
       animation: animation,
@@ -1295,19 +1300,28 @@ class _CalorieCard extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [
-                    Color(0xFF4338CA),
-                    Color(0xFF6366F1),
-                    Color(0xFF7C3AED),
-                  ],
+                gradient: LinearGradient(
+                  colors: isOverBudget
+                      ? const [
+                          Color(0xFF4338CA),
+                          Color(0xFF5B21B6),
+                          Color(0xFF881337),
+                        ]
+                      : const [
+                          Color(0xFF4338CA),
+                          Color(0xFF6366F1),
+                          Color(0xFF7C3AED),
+                        ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF6366F1).withValues(alpha: 0.38),
+                    color: (isOverBudget
+                            ? const Color(0xFFE11D48)
+                            : const Color(0xFF6366F1))
+                        .withValues(alpha: 0.38),
                     blurRadius: 22,
                     offset: const Offset(0, 10),
                   ),
@@ -1323,21 +1337,33 @@ class _CalorieCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 5),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.16),
+                          color: isOverBudget
+                              ? const Color(0xFFEF4444).withValues(alpha: 0.28)
+                              : Colors.white.withValues(alpha: 0.16),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.22),
+                            color: isOverBudget
+                                ? const Color(0xFFFCA5A5)
+                                    .withValues(alpha: 0.5)
+                                : Colors.white.withValues(alpha: 0.22),
                           ),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.bolt_rounded,
-                                size: 14, color: Color(0xFFFDE047)),
-                            SizedBox(width: 4),
+                            Icon(
+                              isOverBudget
+                                  ? Icons.local_fire_department_rounded
+                                  : Icons.bolt_rounded,
+                              size: 14,
+                              color: isOverBudget
+                                  ? const Color(0xFFFCA5A5)
+                                  : const Color(0xFFFDE047),
+                            ),
+                            const SizedBox(width: 4),
                             Text(
-                              'REMAINING',
-                              style: TextStyle(
+                              isOverBudget ? 'OVER BUDGET' : 'REMAINING',
+                              style: const TextStyle(
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w800,
                                 color: Colors.white,
@@ -1357,8 +1383,10 @@ class _CalorieCard extends StatelessWidget {
                             color: Colors.white.withValues(alpha: 0.22),
                           ),
                         ),
-                        child: const Icon(
-                          Icons.trending_up_rounded,
+                        child: Icon(
+                          isOverBudget
+                              ? Icons.priority_high_rounded
+                              : Icons.trending_up_rounded,
                           size: 17,
                           color: Colors.white,
                         ),
@@ -1370,21 +1398,27 @@ class _CalorieCard extends StatelessWidget {
                     text: TextSpan(
                       children: [
                         TextSpan(
-                          text: remaining.toString(),
-                          style: const TextStyle(
+                          text: isOverBudget
+                              ? '+$overAmount'
+                              : remaining.toString(),
+                          style: TextStyle(
                             fontSize: 44,
                             fontWeight: FontWeight.w900,
-                            color: Colors.white,
+                            color: isOverBudget
+                                ? const Color(0xFFFFE4E6)
+                                : Colors.white,
                             letterSpacing: -2,
                             height: 1.05,
                           ),
                         ),
                         TextSpan(
-                          text: ' kcal',
+                          text: isOverBudget ? ' kcal over' : ' kcal',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white.withValues(alpha: 0.8),
+                            color: isOverBudget
+                                ? const Color(0xFFFECDD3)
+                                : Colors.white.withValues(alpha: 0.8),
                           ),
                         ),
                       ],
@@ -1426,14 +1460,26 @@ class _CalorieCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 2.5),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
+                          color: isOverBudget
+                              ? const Color(0xFFEF4444).withValues(alpha: 0.28)
+                              : Colors.white.withValues(alpha: 0.18),
                           borderRadius: BorderRadius.circular(8),
+                          border: isOverBudget
+                              ? Border.all(
+                                  color: const Color(0xFFFCA5A5)
+                                      .withValues(alpha: 0.45),
+                                )
+                              : null,
                         ),
                         child: Text(
-                          '$percentLeft% left',
-                          style: const TextStyle(
+                          isOverBudget
+                              ? '+$percentOver% over'
+                              : '$percentLeft% left',
+                          style: TextStyle(
                             fontSize: 11,
-                            color: Colors.white,
+                            color: isOverBudget
+                                ? const Color(0xFFFFE4E6)
+                                : Colors.white,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -1455,8 +1501,16 @@ class _CalorieCard extends StatelessWidget {
                           child: Container(
                             height: 7,
                             decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF38BDF8), Color(0xFFFDE047)],
+                              gradient: LinearGradient(
+                                colors: isOverBudget
+                                    ? const [
+                                        Color(0xFFF97316),
+                                        Color(0xFFEF4444),
+                                      ]
+                                    : const [
+                                        Color(0xFF38BDF8),
+                                        Color(0xFFFDE047),
+                                      ],
                               ),
                               borderRadius: BorderRadius.circular(100),
                             ),
