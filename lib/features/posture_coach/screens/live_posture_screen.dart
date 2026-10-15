@@ -4,11 +4,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:vibration/vibration.dart';
 
 import '../models/exercise_model.dart';
 import '../models/posture_result.dart';
 import '../painters/skeleton_painter.dart';
+import '../services/calories_calculator.dart';
 import '../services/pose_analyzer.dart';
 import '../services/posture_audio_service.dart';
 import '../widgets/feedback_banner.dart';
@@ -39,6 +41,7 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
   // Rep counting
   int _repCount = 0;
   int _setCount = 1;
+  int _totalRepsCompleted = 0;
   bool _isDown = false; // for rep detection
 
   // Session timer
@@ -46,10 +49,9 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
   bool _timerRunning = false;
 
   // Camera image size and rotation for painter
-  Size _imageSize = const Size(1, 1);
+  Size _imageSize = Size.zero;
   InputImageRotation _imageRotation = InputImageRotation.rotation0deg;
   bool _isFrontCamera = true;
-  int _frameCount = 0;
 
   @override
   void initState() {
@@ -70,37 +72,27 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
       );
       _isFrontCamera = camera.lensDirection == CameraLensDirection.front;
 
-      try {
-        _cameraCtrl = CameraController(
-          camera,
-          ResolutionPreset.medium, // medium = faster real-time processing
-          enableAudio: false,
-          imageFormatGroup: defaultTargetPlatform == TargetPlatform.android
-              ? ImageFormatGroup.nv21
-              : ImageFormatGroup.bgra8888,
-        );
-        await _cameraCtrl!.initialize();
-      } catch (e) {
-        debugPrint('[LivePostureScreen] Primary camera format failed, falling back: $e');
-        _cameraCtrl = CameraController(
-          camera,
-          ResolutionPreset.medium,
-          enableAudio: false,
-          imageFormatGroup: ImageFormatGroup.yuv420,
-        );
-        await _cameraCtrl!.initialize();
-      }
+      _cameraCtrl = CameraController(
+        camera,
+        ResolutionPreset.medium,
+        enableAudio: false,
+        imageFormatGroup: ImageFormatGroup.nv21,
+      );
 
-      if (!mounted) return;
+      await _cameraCtrl!.initialize();
 
-      final previewSize = _cameraCtrl!.value.previewSize;
-      if (previewSize != null) {
-        _imageSize = Size(previewSize.width, previewSize.height);
-      }
+      // Capture rotation from sensor
+      _imageRotation = InputImageRotationValue.fromRawValue(
+        camera.sensorOrientation,
+      ) ?? InputImageRotation.rotation90deg;
+
+      // Image size: note width/height swap for portrait
+      final previewSize = _cameraCtrl!.value.previewSize!;
+      _imageSize = Size(previewSize.height, previewSize.width);
 
       await _cameraCtrl!.startImageStream(_processCameraImage);
       _startTimer();
-      setState(() {});
+      if (mounted) setState(() {});
     } catch (e) {
       debugPrint('[LivePostureScreen] Camera init error: $e');
     }
@@ -127,7 +119,7 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
     _isDetecting = true;
 
     try {
-      final inputImage = _convertCameraImage(image);
+      final inputImage = _buildInputImage(image);
       if (inputImage == null) {
         _isDetecting = false;
         return;
@@ -137,11 +129,6 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
       if (!mounted) {
         _isDetecting = false;
         return;
-      }
-
-      _frameCount++;
-      if (_frameCount % 45 == 0) {
-        debugPrint('[LivePostureScreen] Frame $_frameCount processed: ${poses.length} pose(s) found');
       }
 
       if (poses.isEmpty) {
@@ -162,10 +149,8 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
       final pose = poses.first;
       final result = PoseAnalyzer.analyze(widget.exercise.type, pose);
 
-      // Rep counting logic
       _countRep(pose, result);
 
-      // Voice coaching feedback (throttled inside PostureAudioService)
       if (!result.isCorrect || result.isInjuryRisk) {
         PostureAudioService.speak(result.feedback);
       }
@@ -178,7 +163,7 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
         _result = result;
       });
     } catch (e) {
-      debugPrint('[LivePostureScreen] processCameraImage error: $e');
+      debugPrint('_processCameraImage error: $e');
     } finally {
       _isDetecting = false;
     }
@@ -215,6 +200,7 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
         if (a > 155 && _isDown) {
           _isDown = false;
           _repCount++;
+          _totalRepsCompleted++;
           _checkSetComplete();
         }
         break;
@@ -232,6 +218,7 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
         if (a > 155 && _isDown) {
           _isDown = false;
           _repCount++;
+          _totalRepsCompleted++;
           _checkSetComplete();
         }
         break;
@@ -258,6 +245,7 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
         if (a > 135 && _isDown) {
           _isDown = false;
           _repCount++;
+          _totalRepsCompleted++;
           _checkSetComplete();
         }
         break;
@@ -276,6 +264,7 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
         if (a > 145 && _isDown) {
           _isDown = false;
           _repCount++;
+          _totalRepsCompleted++;
           _checkSetComplete();
         }
         break;
@@ -292,6 +281,7 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
         if (a > 130 && _isDown) {
           _isDown = false;
           _repCount++;
+          _totalRepsCompleted++;
           _checkSetComplete();
         }
         break;
@@ -308,6 +298,7 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
         if (a > 165 && _isDown) {
           _isDown = false;
           _repCount++;
+          _totalRepsCompleted++;
           _checkSetComplete();
         }
         break;
@@ -325,6 +316,7 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
         if (a > 150 && _isDown) {
           _isDown = false;
           _repCount++;
+          _totalRepsCompleted++;
           _checkSetComplete();
         }
         break;
@@ -342,73 +334,38 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
     }
   }
 
-  InputImage? _convertCameraImage(CameraImage image) {
-    if (_cameraCtrl == null) return null;
-
+  // Fixed _buildInputImage — correct for both Android formats
+  InputImage? _buildInputImage(CameraImage image) {
     try {
-      final camera = _cameraCtrl!.description;
-      final sensorOrientation = camera.sensorOrientation;
-      InputImageRotation? rotation;
-
-      if (defaultTargetPlatform == TargetPlatform.iOS) {
-        rotation = InputImageRotationValue.fromRawValue(sensorOrientation);
-      } else if (defaultTargetPlatform == TargetPlatform.android) {
-        var rotationCompensation =
-            _orientations[_cameraCtrl!.value.deviceOrientation] ?? 0;
-        if (camera.lensDirection == CameraLensDirection.front) {
-          rotationCompensation = (sensorOrientation + rotationCompensation) % 360;
-        } else {
-          rotationCompensation =
-              (sensorOrientation - rotationCompensation + 360) % 360;
-        }
-        rotation = InputImageRotationValue.fromRawValue(rotationCompensation);
+      // NV21 / YUV_420_888
+      final WriteBuffer allBytes = WriteBuffer();
+      for (final Plane plane in image.planes) {
+        allBytes.putUint8List(plane.bytes);
       }
-      rotation ??= InputImageRotation.rotation0deg;
-      _imageRotation = rotation;
-      _imageSize = Size(image.width.toDouble(), image.height.toDouble());
+      final bytes = allBytes.done().buffer.asUint8List();
 
-      var format = InputImageFormatValue.fromRawValue(image.format.raw);
-      if (format == null) {
-        if (defaultTargetPlatform == TargetPlatform.android) {
-          format = InputImageFormat.nv21;
-        } else if (defaultTargetPlatform == TargetPlatform.iOS) {
-          format = InputImageFormat.bgra8888;
-        }
-      }
-      if (format == null) return null;
+      // Use first plane bytes per row
+      final bytesPerRow = image.planes.isNotEmpty
+          ? image.planes[0].bytesPerRow
+          : image.width;
 
-      final Uint8List bytes;
-      if (image.planes.length == 1) {
-        bytes = image.planes[0].bytes;
-      } else {
-        final allBytes = WriteBuffer();
-        for (final plane in image.planes) {
-          allBytes.putUint8List(plane.bytes);
-        }
-        bytes = allBytes.done().buffer.asUint8List();
-      }
+      final format = InputImageFormatValue.fromRawValue(image.format.raw)
+          ?? InputImageFormat.nv21;
 
       return InputImage.fromBytes(
         bytes: bytes,
         metadata: InputImageMetadata(
-          size: _imageSize,
-          rotation: rotation,
+          size: Size(image.width.toDouble(), image.height.toDouble()),
+          rotation: _imageRotation,
           format: format,
-          bytesPerRow: image.planes[0].bytesPerRow,
+          bytesPerRow: bytesPerRow,
         ),
       );
     } catch (e) {
-      debugPrint('[LivePostureScreen] convertCameraImage error: $e');
+      debugPrint('_buildInputImage error: $e');
       return null;
     }
   }
-
-  static const Map<DeviceOrientation, int> _orientations = {
-    DeviceOrientation.portraitUp: 0,
-    DeviceOrientation.landscapeLeft: 90,
-    DeviceOrientation.portraitDown: 180,
-    DeviceOrientation.landscapeRight: 270,
-  };
 
   @override
   void dispose() {
@@ -471,13 +428,9 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
                     CustomPaint(
                       painter: SkeletonPainter(
                         pose: _currentPose!,
-                        imageSize: _imageSize,
+                        absoluteImageSize: _imageSize,
                         rotation: _imageRotation,
-                        cameraLensDirection:
-                            _cameraCtrl!.description.lensDirection,
-                        statusColor: _result.isCorrect
-                            ? const Color(0xFF34C759)
-                            : _result.feedbackColor,
+                        cameraDirection: _cameraCtrl!.description.lensDirection,
                       ),
                     ),
                 ],
@@ -742,44 +695,239 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
         next,
         ResolutionPreset.medium,
         enableAudio: false,
-        imageFormatGroup: ImageFormatGroup.yuv420,
+        imageFormatGroup: ImageFormatGroup.nv21,
       );
 
       await _cameraCtrl!.initialize();
       if (!mounted) return;
 
-      final previewSize = _cameraCtrl!.value.previewSize;
-      if (previewSize != null) {
-        _imageSize = Size(previewSize.height, previewSize.width);
-      }
+      _imageRotation = InputImageRotationValue.fromRawValue(
+        next.sensorOrientation,
+      ) ?? InputImageRotation.rotation90deg;
+
+      final previewSize = _cameraCtrl!.value.previewSize!;
+      _imageSize = Size(previewSize.height, previewSize.width);
 
       await _cameraCtrl!.startImageStream(_processCameraImage);
-      setState(() {});
+      if (mounted) setState(() {});
     } catch (e) {
       debugPrint('[LivePostureScreen] _flipCamera error: $e');
     }
   }
 
-  void _showSummary() {
+  void _showSummary() async {
     _timerRunning = false;
     try {
       _cameraCtrl?.stopImageStream();
     } catch (_) {}
     PostureAudioService.stop();
 
+    // ── Get user weight from Supabase (or use default 70kg) ──────────
+    double userWeight = 70.0;
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId != null) {
+        final profile = await Supabase.instance.client
+            .from('user_profiles')
+            .select('weight_kg')
+            .eq('user_id', userId)
+            .single();
+        userWeight = (profile['weight_kg'] as num? ?? 70).toDouble();
+      }
+    } catch (_) {}
+
+    final completedSets = _setCount - 1 > 0 ? _setCount - 1 : 1;
+
+    // ── Calculate and save calories ───────────────────────────────────
+    final caloriesBurned = CaloriesCalculator.calculate(
+      exerciseName: widget.exercise.name,
+      sets: completedSets,
+      reps: _totalRepsCompleted,
+      durationSeconds: _seconds,
+      userWeightKg: userWeight,
+    );
+
+    await CaloriesCalculator.saveSession(
+      exerciseName: widget.exercise.name,
+      sets: completedSets,
+      reps: _totalRepsCompleted,
+      durationSeconds: _seconds,
+      userWeightKg: userWeight,
+    );
+
+    // ── Show summary bottom sheet ─────────────────────────────────────
+    if (!mounted) return;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) => StatsSummaryWidget(
-        timerDisplay: _timerDisplay,
-        repCount: _repCount,
-        completedSets: _setCount - 1 > 0 ? _setCount - 1 : 1,
-        onDone: () {
-          Navigator.pop(context); // close bottom sheet
-          Navigator.pop(context); // return to picker
-        },
+      builder: (_) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8E6F5),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            Text(
+              '${widget.exercise.emoji} Session Complete!',
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF14142B),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Stats row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _SummaryStat('⏱', _timerDisplay, 'Duration'),
+                _SummaryStat('🔁', '$_totalRepsCompleted', 'Total Reps'),
+                _SummaryStat('💪', '$completedSets', 'Sets'),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Calories burned card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF5B4EE8), Color(0xFF7B6FF0)],
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'CALORIES BURNED',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: '${caloriesBurned.round()}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 48,
+                            fontWeight: FontWeight.w900,
+                            height: 1,
+                          ),
+                        ),
+                        const TextSpan(
+                          text: ' kcal',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'MET ${kExerciseMET[widget.exercise.name]?.toStringAsFixed(1) ?? '4.0'} '
+                    '× ${userWeight.round()}kg × $_timerDisplay',
+                    style: const TextStyle(
+                      color: Colors.white38,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Done button
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF5B4EE8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Done',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+class _SummaryStat extends StatelessWidget {
+  final String emoji;
+  final String value;
+  final String label;
+
+  const _SummaryStat(this.emoji, this.value, this.label);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(emoji, style: const TextStyle(fontSize: 24)),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF14142B),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Color(0xFF8A8A9A),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }

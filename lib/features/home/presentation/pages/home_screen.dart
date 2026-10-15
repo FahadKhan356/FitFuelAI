@@ -29,6 +29,7 @@ import '../../../../core/domain/repositories/meal_repository.dart';
 import '../../../meal_tracking/presentation/pages/food_nutrition_detail_sheet.dart';
 import '../../../meal_tracking/presentation/pages/meal_tracking_screen.dart' show MealLog;
 import '../../../posture_coach/screens/posture_coach_screen.dart';
+import '../../../posture_coach/widgets/burned_calories_card.dart';
 
 // ─────────────────────────────────────────────
 //  Design Tokens
@@ -689,6 +690,8 @@ class _HomeContentState extends State<_HomeContent>
                 consumed: _consumedKcal,
                 burned: _burnedKcal,
               ),
+              const SizedBox(height: 14),
+              const BurnedCaloriesCard(),
               const SizedBox(height: 16),
               _MacroRow(
                 animation: _entryController,
@@ -2963,7 +2966,10 @@ class _MealItem extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            Row(
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 4,
+                              runSpacing: 2,
                               children: [
                                 Text(
                                   kcal,
@@ -2974,11 +2980,9 @@ class _MealItem extends StatelessWidget {
                                   ),
                                 ),
                                 if (protein > 0 || carbs > 0 || fat > 0) ...[
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: 4),
                                   _macroPill('P', '${protein.round()}g', const Color(0xFF6366F1), isDark),
-                                  const SizedBox(width: 4),
                                   _macroPill('C', '${carbs.round()}g', const Color(0xFFF59E0B), isDark),
-                                  const SizedBox(width: 4),
                                   _macroPill('F', '${fat.round()}g', const Color(0xFF06B6D4), isDark),
                                 ],
                               ],
