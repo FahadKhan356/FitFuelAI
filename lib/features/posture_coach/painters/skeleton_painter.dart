@@ -1,59 +1,79 @@
+import 'dart:io';
+import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
 class SkeletonPainter extends CustomPainter {
   final Pose pose;
   final Size imageSize;
-  final Color color;
-  final bool isFrontCamera;
+  final InputImageRotation rotation;
+  final CameraLensDirection cameraLensDirection;
+  final Color statusColor;
 
   const SkeletonPainter({
     required this.pose,
     required this.imageSize,
-    this.color = const Color(0xFF5B4EE8),
-    this.isFrontCamera = true,
+    required this.rotation,
+    this.cameraLensDirection = CameraLensDirection.front,
+    this.statusColor = const Color(0xFF34C759),
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     if (imageSize.width <= 0 || imageSize.height <= 0) return;
 
-    final jointPaint = Paint()
-      ..color = color
-      ..strokeWidth = 6
-      ..style = PaintingStyle.fill;
+    final isFront = cameraLensDirection == CameraLensDirection.front;
 
-    final bonePaint = Paint()
-      ..color = color.withValues(alpha: 0.7)
-      ..strokeWidth = 3
+    // Bone Paint - solid vibrant line with glow
+    final boneGlowPaint = Paint()
+      ..color = statusColor.withValues(alpha: 0.35)
+      ..strokeWidth = 7.0
+      ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
 
+    final bonePaint = Paint()
+      ..color = statusColor
+      ..strokeWidth = 3.5
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    // Joint Outer Glow Paint
+    final jointGlowPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.85)
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
+
+    // Joint Inner Fill Paint
+    final jointFillPaint = Paint()
+      ..color = statusColor
+      ..style = PaintingStyle.fill;
+
+    // Joint Center Dot Paint (White core)
+    final jointCorePaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+
     // Draw bones (connections)
-    _drawConnections(canvas, size, bonePaint);
-
-    // Draw joints (dots)
-    for (final lm in pose.landmarks.values) {
-      if (lm.likelihood < 0.5) continue;
-      final point = _translate(lm, size);
-      canvas.drawCircle(point, 5, jointPaint);
-    }
-  }
-
-  void _drawConnections(Canvas canvas, Size size, Paint paint) {
     final connections = [
+      // Head / Neck
+      [PoseLandmarkType.nose, PoseLandmarkType.leftShoulder],
+      [PoseLandmarkType.nose, PoseLandmarkType.rightShoulder],
       // Torso
       [PoseLandmarkType.leftShoulder, PoseLandmarkType.rightShoulder],
       [PoseLandmarkType.leftShoulder, PoseLandmarkType.leftHip],
       [PoseLandmarkType.rightShoulder, PoseLandmarkType.rightHip],
       [PoseLandmarkType.leftHip, PoseLandmarkType.rightHip],
-      // Arms
+      // Left Arm
       [PoseLandmarkType.leftShoulder, PoseLandmarkType.leftElbow],
       [PoseLandmarkType.leftElbow, PoseLandmarkType.leftWrist],
+      // Right Arm
       [PoseLandmarkType.rightShoulder, PoseLandmarkType.rightElbow],
       [PoseLandmarkType.rightElbow, PoseLandmarkType.rightWrist],
-      // Legs
+      // Left Leg
       [PoseLandmarkType.leftHip, PoseLandmarkType.leftKnee],
       [PoseLandmarkType.leftKnee, PoseLandmarkType.leftAnkle],
+      // Right Leg
       [PoseLandmarkType.rightHip, PoseLandmarkType.rightKnee],
       [PoseLandmarkType.rightKnee, PoseLandmarkType.rightAnkle],
     ];
@@ -62,20 +82,73 @@ class SkeletonPainter extends CustomPainter {
       final a = pose.landmarks[conn[0]];
       final b = pose.landmarks[conn[1]];
       if (a == null || b == null) continue;
-      if (a.likelihood < 0.4 || b.likelihood < 0.4) continue;
-      canvas.drawLine(_translate(a, size), _translate(b, size), paint);
+      if (a.likelihood < 0.25 || b.likelihood < 0.25) continue;
+
+      final pA = _translate(a, size, isFront);
+      final pB = _translate(b, size, isFront);
+      canvas.drawLine(pA, pB, boneGlowPaint);
+      canvas.drawLine(pA, pB, bonePaint);
+    }
+
+    // Draw joints (dots with glow ring)
+    for (final lm in pose.landmarks.values) {
+      if (lm.likelihood < 0.25) continue;
+      final point = _translate(lm, size, isFront);
+      // Outer glow circle
+      canvas.drawCircle(point, 7.0, jointGlowPaint);
+      // Main colored circle
+      canvas.drawCircle(point, 5.0, jointFillPaint);
+      // Core white dot
+      canvas.drawCircle(point, 2.0, jointCorePaint);
     }
   }
 
-  Offset _translate(PoseLandmark lm, Size canvasSize) {
-    double x = (lm.x / imageSize.width) * canvasSize.width;
-    final double y = (lm.y / imageSize.height) * canvasSize.height;
-    if (isFrontCamera) {
-      x = canvasSize.width - x; // mirror flip for front camera
+  Offset _translate(PoseLandmark lm, Size canvasSize, bool isFront) {
+    // When image is rotated 90 or 270 degrees, sensor width & height swap
+    final double rawW = imageSize.width;
+    final double rawH = imageSize.height;
+
+    double x;
+    double y;
+
+    switch (rotation) {
+      case InputImageRotation.rotation90deg:
+        x = lm.x *
+            canvasSize.width /
+            (defaultTargetPlatform == TargetPlatform.iOS ? rawW : rawH);
+        y = lm.y *
+            canvasSize.height /
+            (defaultTargetPlatform == TargetPlatform.iOS ? rawH : rawW);
+        break;
+      case InputImageRotation.rotation270deg:
+        x = canvasSize.width -
+            (lm.x *
+                canvasSize.width /
+                (defaultTargetPlatform == TargetPlatform.iOS ? rawW : rawH));
+        y = lm.y *
+            canvasSize.height /
+            (defaultTargetPlatform == TargetPlatform.iOS ? rawH : rawW);
+        break;
+      case InputImageRotation.rotation180deg:
+        x = canvasSize.width - (lm.x * canvasSize.width / rawW);
+        y = canvasSize.height - (lm.y * canvasSize.height / rawH);
+        break;
+      case InputImageRotation.rotation0deg:
+      default:
+        x = isFront
+            ? canvasSize.width - (lm.x * canvasSize.width / rawW)
+            : lm.x * canvasSize.width / rawW;
+        y = lm.y * canvasSize.height / rawH;
+        break;
     }
+
     return Offset(x, y);
   }
 
   @override
-  bool shouldRepaint(SkeletonPainter old) => old.pose != pose || old.color != color;
+  bool shouldRepaint(SkeletonPainter old) =>
+      old.pose != pose ||
+      old.statusColor != statusColor ||
+      old.imageSize != imageSize ||
+      old.rotation != rotation;
 }

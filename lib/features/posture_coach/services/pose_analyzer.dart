@@ -15,7 +15,7 @@ class PoseAnalyzer {
 
   // ── Check if landmark is reliably detected ────────────────────────
   static bool _reliable(PoseLandmark? lm) =>
-      lm != null && lm.likelihood > 0.5;
+      lm != null && lm.likelihood > 0.28;
 
   // ── Main analyze method ───────────────────────────────────────────
   static PostureResult analyze(ExerciseType type, Pose pose) {
@@ -218,18 +218,35 @@ class PoseAnalyzer {
   // ════════════════════════════════════════════════
   static PostureResult _bicepCurl(Pose pose) {
     final lm = pose.landmarks;
-    final shoulder =
-        lm[PoseLandmarkType.leftShoulder] ?? lm[PoseLandmarkType.rightShoulder];
-    final elbow =
-        lm[PoseLandmarkType.leftElbow] ?? lm[PoseLandmarkType.rightElbow];
-    final wrist =
-        lm[PoseLandmarkType.leftWrist] ?? lm[PoseLandmarkType.rightWrist];
-    final hip = lm[PoseLandmarkType.leftHip] ?? lm[PoseLandmarkType.rightHip];
+
+    // Detect left arm vs right arm based on landmark confidence
+    final lShoulder = lm[PoseLandmarkType.leftShoulder];
+    final lElbow = lm[PoseLandmarkType.leftElbow];
+    final lWrist = lm[PoseLandmarkType.leftWrist];
+    final lHip = lm[PoseLandmarkType.leftHip];
+
+    final rShoulder = lm[PoseLandmarkType.rightShoulder];
+    final rElbow = lm[PoseLandmarkType.rightElbow];
+    final rWrist = lm[PoseLandmarkType.rightWrist];
+    final rHip = lm[PoseLandmarkType.rightHip];
+
+    final lConfidence = (lShoulder?.likelihood ?? 0) +
+        (lElbow?.likelihood ?? 0) +
+        (lWrist?.likelihood ?? 0);
+    final rConfidence = (rShoulder?.likelihood ?? 0) +
+        (rElbow?.likelihood ?? 0) +
+        (rWrist?.likelihood ?? 0);
+
+    final useRight = rConfidence > lConfidence;
+    final shoulder = useRight ? rShoulder : lShoulder;
+    final elbow = useRight ? rElbow : lElbow;
+    final wrist = useRight ? rWrist : lWrist;
+    final hip = useRight ? (rHip ?? lHip) : (lHip ?? rHip);
 
     if (!_reliable(shoulder) || !_reliable(elbow) || !_reliable(wrist)) {
       return const PostureResult(
         isCorrect: false,
-        feedback: 'Arm not clearly visible — face the camera',
+        feedback: 'Position arm in camera view',
         severity: FormSeverity.low,
       );
     }
@@ -237,27 +254,27 @@ class PoseAnalyzer {
     final elbowAngle = angle(shoulder!, elbow!, wrist!);
 
     // Elbow swinging forward (cheating)
-    if (hip != null) {
+    if (hip != null && hip.likelihood > 0.4) {
       final elbowSwing = angle(hip, shoulder, elbow);
-      if (elbowSwing > 35) {
+      if (elbowSwing > 50) {
         return const PostureResult(
           isCorrect: false,
-          feedback: 'Elbow swinging — pin it to your side',
+          feedback: 'Elbow moving forward — keep it pinned at your side',
           severity: FormSeverity.medium,
-          tip: 'Swinging uses momentum not muscle — less gains',
+          tip: 'Keep your upper arm stationary during the curl',
         );
       }
     }
 
-    if (elbowAngle > 150) {
+    if (elbowAngle > 140) {
       return PostureResult.good('Full extension ✓ Curl up!');
     }
 
-    if (elbowAngle < 45) {
-      return PostureResult.good('Full curl ✓ Squeeze at top!');
+    if (elbowAngle < 60) {
+      return PostureResult.good('Peak curl ✓ Squeeze bicep at top!');
     }
 
-    return PostureResult.good('Good curl form ✓');
+    return PostureResult.good('Good form ✓ (${elbowAngle.round()}°) Keep curling!');
   }
 
   // ════════════════════════════════════════════════

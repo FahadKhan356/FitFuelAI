@@ -45,9 +45,11 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
   int _seconds = 0;
   bool _timerRunning = false;
 
-  // Camera image size for painter
+  // Camera image size and rotation for painter
   Size _imageSize = const Size(1, 1);
+  InputImageRotation _imageRotation = InputImageRotation.rotation0deg;
   bool _isFrontCamera = true;
+  int _frameCount = 0;
 
   @override
   void initState() {
@@ -68,19 +70,32 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
       );
       _isFrontCamera = camera.lensDirection == CameraLensDirection.front;
 
-      _cameraCtrl = CameraController(
-        camera,
-        ResolutionPreset.medium, // medium = faster processing
-        enableAudio: false,
-        imageFormatGroup: ImageFormatGroup.yuv420,
-      );
+      try {
+        _cameraCtrl = CameraController(
+          camera,
+          ResolutionPreset.medium, // medium = faster real-time processing
+          enableAudio: false,
+          imageFormatGroup: defaultTargetPlatform == TargetPlatform.android
+              ? ImageFormatGroup.nv21
+              : ImageFormatGroup.bgra8888,
+        );
+        await _cameraCtrl!.initialize();
+      } catch (e) {
+        debugPrint('[LivePostureScreen] Primary camera format failed, falling back: $e');
+        _cameraCtrl = CameraController(
+          camera,
+          ResolutionPreset.medium,
+          enableAudio: false,
+          imageFormatGroup: ImageFormatGroup.yuv420,
+        );
+        await _cameraCtrl!.initialize();
+      }
 
-      await _cameraCtrl!.initialize();
       if (!mounted) return;
 
       final previewSize = _cameraCtrl!.value.previewSize;
       if (previewSize != null) {
-        _imageSize = Size(previewSize.height, previewSize.width);
+        _imageSize = Size(previewSize.width, previewSize.height);
       }
 
       await _cameraCtrl!.startImageStream(_processCameraImage);
@@ -119,8 +134,18 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
       }
 
       final poses = await _detector.processImage(inputImage);
+      if (!mounted) {
+        _isDetecting = false;
+        return;
+      }
+
+      _frameCount++;
+      if (_frameCount % 45 == 0) {
+        debugPrint('[LivePostureScreen] Frame $_frameCount processed: ${poses.length} pose(s) found');
+      }
+
       if (poses.isEmpty) {
-        if (mounted && _currentPose != null) {
+        if (_currentPose != null) {
           setState(() {
             _currentPose = null;
             _result = const PostureResult(
@@ -140,23 +165,23 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
       // Rep counting logic
       _countRep(pose, result);
 
-      // Injury alert
-      if (result.isInjuryRisk) {
+      // Voice coaching feedback (throttled inside PostureAudioService)
+      if (!result.isCorrect || result.isInjuryRisk) {
         PostureAudioService.speak(result.feedback);
+      }
+      if (result.isInjuryRisk) {
         _triggerVibration();
       }
 
-      if (mounted) {
-        setState(() {
-          _currentPose = pose;
-          _result = result;
-        });
-      }
+      setState(() {
+        _currentPose = pose;
+        _result = result;
+      });
     } catch (e) {
       debugPrint('[LivePostureScreen] processCameraImage error: $e');
+    } finally {
+      _isDetecting = false;
     }
-
-    _isDetecting = false;
   }
 
   Future<void> _triggerVibration() async {
@@ -212,6 +237,31 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
         break;
 
       case ExerciseType.bicepCurl:
+        final lSh = lm[PoseLandmarkType.leftShoulder];
+        final lEl = lm[PoseLandmarkType.leftElbow];
+        final lWr = lm[PoseLandmarkType.leftWrist];
+
+        final rSh = lm[PoseLandmarkType.rightShoulder];
+        final rEl = lm[PoseLandmarkType.rightElbow];
+        final rWr = lm[PoseLandmarkType.rightWrist];
+
+        final lConf = (lSh?.likelihood ?? 0) + (lEl?.likelihood ?? 0) + (lWr?.likelihood ?? 0);
+        final rConf = (rSh?.likelihood ?? 0) + (rEl?.likelihood ?? 0) + (rWr?.likelihood ?? 0);
+
+        final sh = (rConf > lConf) ? (rSh ?? lSh) : (lSh ?? rSh);
+        final el = (rConf > lConf) ? (rEl ?? lEl) : (lEl ?? rEl);
+        final wr = (rConf > lConf) ? (rWr ?? lWr) : (lWr ?? rWr);
+
+        if (sh == null || el == null || wr == null) break;
+        final a = PoseAnalyzer.angle(sh, el, wr);
+        if (a < 65 && !_isDown) _isDown = true;
+        if (a > 135 && _isDown) {
+          _isDown = false;
+          _repCount++;
+          _checkSetComplete();
+        }
+        break;
+
       case ExerciseType.shoulderPress:
       case ExerciseType.lateralRaise:
         final sh =
@@ -223,7 +273,7 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
         if (sh == null || el == null || wr == null) break;
         final a = PoseAnalyzer.angle(sh, el, wr);
         if (a < 65 && !_isDown) _isDown = true;
-        if (a > 150 && _isDown) {
+        if (a > 145 && _isDown) {
           _isDown = false;
           _repCount++;
           _checkSetComplete();
@@ -304,8 +354,7 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
         rotation = InputImageRotationValue.fromRawValue(sensorOrientation);
       } else if (defaultTargetPlatform == TargetPlatform.android) {
         var rotationCompensation =
-            _orientations[_cameraCtrl!.value.deviceOrientation];
-        if (rotationCompensation == null) return null;
+            _orientations[_cameraCtrl!.value.deviceOrientation] ?? 0;
         if (camera.lensDirection == CameraLensDirection.front) {
           rotationCompensation = (sensorOrientation + rotationCompensation) % 360;
         } else {
@@ -315,22 +364,41 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
         rotation = InputImageRotationValue.fromRawValue(rotationCompensation);
       }
       rotation ??= InputImageRotation.rotation0deg;
+      _imageRotation = rotation;
+      _imageSize = Size(image.width.toDouble(), image.height.toDouble());
 
-      final format = InputImageFormatValue.fromRawValue(image.format.raw);
+      var format = InputImageFormatValue.fromRawValue(image.format.raw);
+      if (format == null) {
+        if (defaultTargetPlatform == TargetPlatform.android) {
+          format = InputImageFormat.nv21;
+        } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+          format = InputImageFormat.bgra8888;
+        }
+      }
       if (format == null) return null;
 
-      final bytes = _concatenatePlanes(image.planes);
+      final Uint8List bytes;
+      if (image.planes.length == 1) {
+        bytes = image.planes[0].bytes;
+      } else {
+        final allBytes = WriteBuffer();
+        for (final plane in image.planes) {
+          allBytes.putUint8List(plane.bytes);
+        }
+        bytes = allBytes.done().buffer.asUint8List();
+      }
 
       return InputImage.fromBytes(
         bytes: bytes,
         metadata: InputImageMetadata(
-          size: Size(image.width.toDouble(), image.height.toDouble()),
+          size: _imageSize,
           rotation: rotation,
           format: format,
           bytesPerRow: image.planes[0].bytesPerRow,
         ),
       );
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[LivePostureScreen] convertCameraImage error: $e');
       return null;
     }
   }
@@ -341,14 +409,6 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
     DeviceOrientation.portraitDown: 180,
     DeviceOrientation.landscapeRight: 270,
   };
-
-  Uint8List _concatenatePlanes(List<Plane> planes) {
-    final allBytes = WriteBuffer();
-    for (final plane in planes) {
-      allBytes.putUint8List(plane.bytes);
-    }
-    return allBytes.done().buffer.asUint8List();
-  }
 
   @override
   void dispose() {
@@ -381,35 +441,49 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
       );
     }
 
+    final previewSize = _cameraCtrl!.value.previewSize;
+    final double previewW;
+    final double previewH;
+    if (previewSize != null) {
+      previewW = previewSize.width < previewSize.height ? previewSize.width : previewSize.height;
+      previewH = previewSize.width < previewSize.height ? previewSize.height : previewSize.width;
+    } else {
+      previewW = 720.0;
+      previewH = 1280.0;
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // ── Camera Feed ──────────────────────────────────────────
+          // ── Camera Feed & Skeleton Joint Overlay (Pixel-Locked) ────
           FittedBox(
             fit: BoxFit.cover,
             child: SizedBox(
-              width: _cameraCtrl!.value.previewSize?.height ?? 1,
-              height: _cameraCtrl!.value.previewSize?.width ?? 1,
-              child: CameraPreview(_cameraCtrl!),
-            ),
-          ),
-
-          // ── Skeleton Joint Overlay ───────────────────────────────
-          if (_currentPose != null)
-            Positioned.fill(
-              child: CustomPaint(
-                painter: SkeletonPainter(
-                  pose: _currentPose!,
-                  imageSize: _imageSize,
-                  color: _result.isCorrect
-                      ? const Color(0xFF34C759)
-                      : _result.feedbackColor,
-                  isFrontCamera: _isFrontCamera,
-                ),
+              width: previewW,
+              height: previewH,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  CameraPreview(_cameraCtrl!),
+                  if (_currentPose != null)
+                    CustomPaint(
+                      painter: SkeletonPainter(
+                        pose: _currentPose!,
+                        imageSize: _imageSize,
+                        rotation: _imageRotation,
+                        cameraLensDirection:
+                            _cameraCtrl!.description.lensDirection,
+                        statusColor: _result.isCorrect
+                            ? const Color(0xFF34C759)
+                            : _result.feedbackColor,
+                      ),
+                    ),
+                ],
               ),
             ),
+          ),
 
           // ── Top Navigation Bar ────────────────────────────────────
           Positioned(
