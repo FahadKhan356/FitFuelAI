@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
+import '../../../../shared/theme/app_theme.dart';
 import '../providers/daily_summary_provider.dart';
 
 /// Top snapshot strip containing 3 glass cards with 46 px animated progress rings.
@@ -119,6 +120,14 @@ class _SnapshotStripState extends State<SnapshotStrip>
     required String semanticLabel,
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark
+        ? const Color(0xFF1E1714).withValues(alpha: 0.22)
+        : Colors.white.withValues(alpha: 0.22);
+    final cardBorder = isDark
+        ? AppDarkColors.border.withValues(alpha: 0.35)
+        : Colors.white.withValues(alpha: 0.55);
+
     return Semantics(
       label: semanticLabel,
       button: true,
@@ -127,19 +136,19 @@ class _SnapshotStripState extends State<SnapshotStrip>
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.72),
+                color: cardBg,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.80),
+                  color: cardBorder,
                   width: 1.0,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF5B4BDB).withValues(alpha: 0.04),
+                    color: Colors.black.withValues(alpha: isDark ? 0.20 : 0.04),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
@@ -159,15 +168,17 @@ class _SnapshotStripState extends State<SnapshotStrip>
                           value: ratio.clamp(0.0, 1.0),
                           strokeWidth: 4.5,
                           strokeCap: StrokeCap.round,
-                          backgroundColor: trackColor,
+                          backgroundColor: isDark
+                              ? Colors.white.withValues(alpha: 0.10)
+                              : trackColor.withValues(alpha: 0.50),
                           valueColor: AlwaysStoppedAnimation<Color>(progressColor),
                         ),
                         Text(
                           percentText,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1E1B3A),
+                            color: isDark ? AppDarkColors.textPrimary : const Color(0xFF1E1B3A),
                           ),
                         ),
                       ],
@@ -176,10 +187,10 @@ class _SnapshotStripState extends State<SnapshotStrip>
                   const SizedBox(height: 8),
                   Text(
                     valueLabel,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF1E1B3A),
+                      color: isDark ? AppDarkColors.textPrimary : const Color(0xFF1E1B3A),
                     ),
                   ),
                 ],

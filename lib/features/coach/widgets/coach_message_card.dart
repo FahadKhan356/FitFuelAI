@@ -33,37 +33,62 @@ class CoachMessageCard extends StatelessWidget {
     return _buildCoachReplyCard(context);
   }
 
-  /// User bubble: solid #5B4BDB, white text, radius 16 with a 4px tail corner.
+  /// User bubble: translucent glassmorphic purple bubble with blur, subtle white border, and 4px tail corner.
   Widget _buildUserBubble() {
     return Align(
       alignment: Alignment.centerRight,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         constraints: const BoxConstraints(maxWidth: 290),
-        decoration: const BoxDecoration(
-          color: Color(0xFF5B4BDB),
-          borderRadius: BorderRadius.only(
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(16),
             topRight: Radius.circular(16),
             bottomLeft: Radius.circular(16),
             bottomRight: Radius.circular(4), // 4 px tail corner
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Color(0x285B4BDB),
-              blurRadius: 10,
-              offset: Offset(0, 3),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF6352E8).withValues(alpha: 0.78),
+                    const Color(0xFF5140D0).withValues(alpha: 0.84),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                  bottomLeft: Radius.circular(16),
+                  bottomRight: Radius.circular(4),
+                ),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.35),
+                  width: 1.0,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF5B4BDB).withValues(alpha: 0.25),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Text(
+                message.userText ?? '',
+                style: const TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                  height: 1.35,
+                ),
+              ),
             ),
-          ],
-        ),
-        child: Text(
-          message.userText ?? '',
-          style: const TextStyle(
-            fontSize: 14.5,
-            fontWeight: FontWeight.w500,
-            color: Colors.white,
-            height: 1.35,
           ),
         ),
       ),
@@ -79,11 +104,11 @@ class CoachMessageCard extends StatelessWidget {
 
     // Highly transparent glassmorphic aesthetic matching user request
     final cardBg = isDark
-        ? const Color(0xFF1E1714).withValues(alpha: 0.38)
-        : Colors.white.withValues(alpha: 0.38);
+        ? const Color(0xFF1E1714).withValues(alpha: 0.25)
+        : Colors.white.withValues(alpha: 0.25);
     final cardBorder = isDark
-        ? AppDarkColors.border.withValues(alpha: 0.45)
-        : Colors.white.withValues(alpha: 0.50);
+        ? AppDarkColors.border.withValues(alpha: 0.38)
+        : Colors.white.withValues(alpha: 0.60);
 
     return Align(
       alignment: Alignment.centerLeft,
@@ -196,7 +221,7 @@ class CoachMessageCard extends StatelessWidget {
     );
   }
 
-  /// Action chips: first filled purple, others subtle transparent tint.
+  /// Action chips: first filled purple, others translucent frosted glass.
   Widget _buildActionChip(CoachActionItem action, {required bool isFirst, required bool isDark}) {
     IconData iconData = Icons.touch_app_rounded;
     if (action.icon == 'water_drop') {
@@ -206,16 +231,16 @@ class CoachMessageCard extends StatelessWidget {
     }
 
     final chipBg = isFirst
-        ? const Color(0xFF5B4BDB)
+        ? const Color(0xFF5B4BDB).withValues(alpha: 0.88)
         : (isDark
-            ? AppDarkColors.surfaceAlt.withValues(alpha: 0.35)
-            : Colors.white.withValues(alpha: 0.50));
+            ? AppDarkColors.surfaceAlt.withValues(alpha: 0.25)
+            : Colors.white.withValues(alpha: 0.28));
     final chipBorder = isFirst
-        ? null
+        ? Border.all(color: Colors.white.withValues(alpha: 0.30), width: 1.0)
         : Border.all(
             color: isDark
-                ? AppDarkColors.border.withValues(alpha: 0.45)
-                : const Color(0xFFD9D3FF).withValues(alpha: 0.60),
+                ? AppDarkColors.border.withValues(alpha: 0.40)
+                : Colors.white.withValues(alpha: 0.65),
             width: 1.0,
           );
     final contentColor = isFirst
@@ -224,69 +249,83 @@ class CoachMessageCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: () => onTapAction(action),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: chipBg,
-          borderRadius: BorderRadius.circular(20),
-          border: chipBorder,
-          boxShadow: [
-            BoxShadow(
-              color: isFirst
-                  ? const Color(0xFF5B4BDB).withValues(alpha: 0.25)
-                  : Colors.black.withValues(alpha: isDark ? 0.15 : 0.03),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: chipBg,
+              borderRadius: BorderRadius.circular(20),
+              border: chipBorder,
+              boxShadow: [
+                BoxShadow(
+                  color: isFirst
+                      ? const Color(0xFF5B4BDB).withValues(alpha: 0.25)
+                      : Colors.black.withValues(alpha: isDark ? 0.15 : 0.03),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              iconData,
-              size: 15,
-              color: contentColor,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  iconData,
+                  size: 15,
+                  color: contentColor,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  action.label,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: contentColor,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 6),
-            Text(
-              action.label,
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-                color: contentColor,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  /// Small followup question chip under actions with transparent frosted style.
+  /// Small followup question chip under actions with transparent frosted glass style.
   Widget _buildFollowupChip(String text, {required bool isDark}) {
     return GestureDetector(
       onTap: () => onTapFollowup(text),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: isDark
-              ? AppDarkColors.surfaceAlt.withValues(alpha: 0.28)
-              : const Color(0xFFEDE9FF).withValues(alpha: 0.40),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isDark
-                ? AppDarkColors.border.withValues(alpha: 0.35)
-                : const Color(0xFFE3DEFF).withValues(alpha: 0.50),
-            width: 0.8,
-          ),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 11.5,
-            fontWeight: FontWeight.w500,
-            color: isDark ? AppDarkColors.textSecondary : const Color(0xFF4A4670),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? AppDarkColors.surfaceAlt.withValues(alpha: 0.20)
+                  : Colors.white.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isDark
+                    ? AppDarkColors.border.withValues(alpha: 0.35)
+                    : Colors.white.withValues(alpha: 0.60),
+                width: 0.8,
+              ),
+            ),
+            child: Text(
+              text,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 11.5,
+                fontWeight: FontWeight.w500,
+                color: isDark ? const Color(0xFFC4B8FF) : const Color(0xFF5B4BDB),
+              ),
+            ),
           ),
         ),
       ),
@@ -308,13 +347,13 @@ class CoachMessageCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: isDark
-                    ? const Color(0xFF1E1714).withValues(alpha: 0.38)
-                    : Colors.white.withValues(alpha: 0.38),
+                    ? const Color(0xFF1E1714).withValues(alpha: 0.25)
+                    : Colors.white.withValues(alpha: 0.25),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isDark
-                      ? AppDarkColors.border.withValues(alpha: 0.45)
-                      : Colors.white.withValues(alpha: 0.50),
+                      ? AppDarkColors.border.withValues(alpha: 0.38)
+                      : Colors.white.withValues(alpha: 0.60),
                   width: 1.0,
                 ),
               ),
@@ -401,13 +440,13 @@ class CoachThinkingBubble extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: isDark
-                    ? const Color(0xFF1E1714).withValues(alpha: 0.38)
-                    : Colors.white.withValues(alpha: 0.38),
+                    ? const Color(0xFF1E1714).withValues(alpha: 0.25)
+                    : Colors.white.withValues(alpha: 0.25),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: isDark
-                      ? AppDarkColors.border.withValues(alpha: 0.45)
-                      : Colors.white.withValues(alpha: 0.50),
+                      ? AppDarkColors.border.withValues(alpha: 0.38)
+                      : Colors.white.withValues(alpha: 0.60),
                   width: 1.0,
                 ),
               ),

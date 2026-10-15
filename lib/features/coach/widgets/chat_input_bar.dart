@@ -50,24 +50,24 @@ class _ChatInputBarState extends State<ChatInputBar> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(28),
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
                 child: Container(
                   height: 48,
                   padding: const EdgeInsets.symmetric(horizontal: 18),
                   decoration: BoxDecoration(
                     color: isDark
-                        ? const Color(0xFF141824).withValues(alpha: 0.85)
-                        : Colors.white.withValues(alpha: 0.72),
+                        ? const Color(0xFF141824).withValues(alpha: 0.28)
+                        : Colors.white.withValues(alpha: 0.28),
                     borderRadius: BorderRadius.circular(28),
                     border: Border.all(
                       color: isDark
-                          ? const Color(0xFF282D4A)
-                          : Colors.white.withValues(alpha: 0.8),
-                      width: 1,
+                          ? AppDarkColors.border.withValues(alpha: 0.40)
+                          : Colors.white.withValues(alpha: 0.60),
+                      width: 1.0,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF5B4BDB).withValues(alpha: 0.05),
+                        color: Colors.black.withValues(alpha: isDark ? 0.20 : 0.04),
                         blurRadius: 14,
                         offset: const Offset(0, 4),
                       ),
@@ -114,12 +114,12 @@ class _ChatInputBarState extends State<ChatInputBar> {
                             ),
                           );
                         },
-                        child: const Padding(
-                          padding: EdgeInsets.all(4.0),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4.0),
                           child: Icon(
                             Icons.mic_none_rounded,
                             size: 22,
-                            color: Color(0xFF5B4BDB),
+                            color: isDark ? const Color(0xFFB4A8FF) : const Color(0xFF5B4BDB),
                           ),
                         ),
                       ),

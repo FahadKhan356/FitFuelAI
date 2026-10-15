@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../../../shared/theme/app_theme.dart';
 
 /// Horizontal glass chips shown above the input bar.
 /// Offers quick insight queries: "Today's balance", "Macro gaps", "Hydration", "Weekly trend".
@@ -55,6 +56,17 @@ class QuickChips extends StatelessWidget {
   }
 
   Widget _buildChip(BuildContext context, _QuickChipItem item) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final chipBg = isDark
+        ? const Color(0xFF1E1714).withValues(alpha: 0.25)
+        : Colors.white.withValues(alpha: 0.25);
+    final chipBorder = isDark
+        ? AppDarkColors.border.withValues(alpha: 0.40)
+        : Colors.white.withValues(alpha: 0.60);
+    final contentColor = isDark
+        ? const Color(0xFFB4A8FF)
+        : const Color(0xFF5B4BDB);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -63,19 +75,19 @@ class QuickChips extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(20),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.72),
+                color: chipBg,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  width: 1,
+                  color: chipBorder,
+                  width: 1.0,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF5B4BDB).withValues(alpha: 0.04),
+                    color: Colors.black.withValues(alpha: isDark ? 0.20 : 0.03),
                     blurRadius: 10,
                     offset: const Offset(0, 3),
                   ),
@@ -87,16 +99,16 @@ class QuickChips extends StatelessWidget {
                   Icon(
                     item.icon,
                     size: 15,
-                    color: const Color(0xFF5B4BDB),
+                    color: contentColor,
                   ),
                   const SizedBox(width: 6),
                   Text(
                     item.label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: 'Inter',
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF5B4BDB),
+                      color: contentColor,
                       letterSpacing: -0.1,
                     ),
                   ),
