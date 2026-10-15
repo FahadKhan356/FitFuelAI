@@ -1,109 +1,147 @@
-// lib/services/food_search_service.dart
-// This is the ONLY file the rest of the app calls.
-// UI never calls FatSecret or Gemini directly.
-
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../models/food_result.dart';
 import 'fatsecret_service.dart';
 import 'gemini_food_service.dart';
+import 'usda_service.dart';
 
 class FoodSearchService {
   static SupabaseClient get _db => Supabase.instance.client;
 
-  // ── Normalize search key (prevents duplicate cache entries) ────────
-  static String _normalizeKey(String input) =>
-      input.toLowerCase().trim().replaceAll(RegExp(r'\s+'), ' ');
+  // ── Normalize search key ───────────────────────────────────────────
+  static String _key(String q) =>
+      q.toLowerCase().trim().replaceAll(RegExp(r'\s+'), ' ');
 
-  // ── MAIN SEARCH — call this from UI ───────────────────────────────
-  // query: what user typed
-  // countryCode: 'PK', 'IN', 'US', 'GB', etc.
+  // ── MAIN METHOD — UI calls only this ──────────────────────────────
   static Future<List<FoodResult>> search(
     String query, {
-    String countryCode = 'PK',
+    String countryCode = 'GLOBAL',
   }) async {
-    final key = _normalizeKey(query);
-    if (key.isEmpty) {
-      return [];
+    final key = _key(query);
+    if (key.isEmpty) return [];
+
+    List<FoodResult> results = [];
+
+    // ══ TIER 1: USDA Foundation Foods ════════════════════════════════
+    // Best for generic foods: chicken, rice, apple, egg, milk, etc.
+    // Free: 1000 calls/hour | Verified USDA laboratory data
+    debugPrint('[Search] TIER 1 — USDA: $key');
+    results = await UsdaService.search(query);
+    if (results.isNotEmpty) {
+      debugPrint('[Search] USDA hit ✓ (${results.length} results)');
+      unawaited(_cacheToSupabase(results.first, key, countryCode));
+      return results;
     }
 
-    // ── TIER 1: Supabase cache ──────────────────────────────────────
-    final cached = await _searchSupabase(key, countryCode);
-    if (cached.isNotEmpty) {
-      debugPrint('[FoodSearch] Cache hit: $key');
-      return cached;
+    // ══ TIER 2: Supabase Cache ════════════════════════════════════════
+    // Our local DB — Open Food Facts bulk data + previously cached items
+    // Fastest tier once data is imported
+    debugPrint('[Search] TIER 2 — Supabase: $key');
+    results = await _searchSupabase(key);
+    if (results.isNotEmpty) {
+      debugPrint('[Search] Supabase hit ✓ (${results.length} results)');
+      return results;
     }
 
-    // ── TIER 2: FatSecret (all countries — generic foods) ──────────
-    final fatSecretResults = await FatSecretService.search(query);
-    if (fatSecretResults.isNotEmpty) {
-      debugPrint('[FoodSearch] FatSecret hit: $key');
-      // Cache top result in Supabase (check duplicate first)
-      await _saveToSupabase(fatSecretResults.first, key, countryCode);
-      return fatSecretResults;
+    // ══ TIER 3: FatSecret API ═════════════════════════════════════════
+    // 1.9M branded + restaurant foods | Free: 5000 calls/day
+    debugPrint('[Search] TIER 3 — FatSecret: $key');
+    results = await FatSecretService.search(query);
+    if (results.isNotEmpty) {
+      debugPrint('[Search] FatSecret hit ✓ (${results.length} results)');
+      unawaited(_cacheToSupabase(results.first, key, countryCode));
+      return results;
     }
 
-    // ── TIER 3: Gemini (regional/cuisine fallback) ─────────────────
-    debugPrint('[FoodSearch] Gemini fallback: $key ($countryCode)');
-    final geminiResult = await GeminiFoodService.fetch(query, countryCode);
-    if (geminiResult != null) {
-      await _saveToSupabase(geminiResult, key, countryCode);
-      return [geminiResult];
+    // ══ TIER 4: Gemini AI (LAST RESORT) ══════════════════════════════
+    // Only for regional cuisine not in any database
+    // e.g. "Nihari", "Haleem", "Aloo Palak"
+    // accuracyWarning = true → amber badge in UI
+    debugPrint('[Search] TIER 4 — Gemini fallback: $key ($countryCode)');
+    final gemini = await GeminiFoodService.fetch(query, countryCode);
+    if (gemini != null) {
+      debugPrint('[Search] Gemini hit ✓ (AI estimated)');
+      unawaited(_cacheToSupabase(gemini, key, countryCode));
+      return [gemini];
     }
 
-    // Nothing found anywhere
+    debugPrint('[Search] No results found for: $key');
     return [];
   }
 
-  // ── Supabase cache lookup ──────────────────────────────────────────
-  static Future<List<FoodResult>> _searchSupabase(
-    String key,
-    String countryCode,
-  ) async {
+  // ── Supabase smart search ──────────────────────────────────────────
+  static Future<List<FoodResult>> _searchSupabase(String key) async {
     try {
-      // Search by exact key first, then partial match
-      final rows = await _db
+      // 1. Try exact key match first (fastest)
+      var rows = await _db
           .from('food_items')
           .select()
-          .or('search_key.eq.$key,food_name.ilike.%$key%')
+          .eq('search_key', key)
+          .limit(5);
+
+      if ((rows as List).isNotEmpty) {
+        return rows
+            .map((r) => FoodResult.fromSupabase(r as Map<String, dynamic>))
+            .toList();
+      }
+
+      // 2. Full-text search (uses GIN index — fast even with 200k+ rows)
+      try {
+        rows = await _db
+            .from('food_items')
+            .select()
+            .textSearch('search_vector', key, config: 'english')
+            .limit(10);
+
+        if ((rows as List).isNotEmpty) {
+          return rows
+              .map((r) => FoodResult.fromSupabase(r as Map<String, dynamic>))
+              .toList();
+        }
+      } catch (_) {
+        // If search_vector column is not yet migrated, fall back to ilike
+      }
+
+      // 3. Fallback: partial name match (ilike)
+      rows = await _db
+          .from('food_items')
+          .select()
+          .ilike('food_name', '%$key%')
           .limit(10);
 
       return (rows as List)
           .map((r) => FoodResult.fromSupabase(r as Map<String, dynamic>))
           .toList();
-    } on Object catch (e) {
-      debugPrint('FoodSearchService._searchSupabase error: $e');
+    } catch (e) {
+      debugPrint('[FoodSearchService] _searchSupabase error: $e');
       return [];
     }
   }
 
-  // ── Save to Supabase cache ─────────────────────────────────────────
-  static Future<void> _saveToSupabase(
+  // ── Save to Supabase cache (non-blocking) ──────────────────────────
+  static Future<void> _cacheToSupabase(
     FoodResult result,
     String searchKey,
     String countryCode,
   ) async {
     try {
-      final safeCountryCode =
-          countryCode.length > 5 ? countryCode.substring(0, 5) : countryCode;
-      // Prevent duplicate row for same search_key and country_code
+      // Check if already exists to avoid duplicates
       final existing = await _db
           .from('food_items')
           .select('id')
           .eq('search_key', searchKey)
-          .eq('country_code', safeCountryCode)
           .limit(1);
 
-      if ((existing as List).isNotEmpty) {
-        return;
-      }
+      if ((existing as List).isNotEmpty) return; // already cached
 
       await _db.from('food_items').insert(
-            result.toSupabaseMap(searchKey, safeCountryCode),
+            result.toSupabaseMap(searchKey, countryCode),
           );
-    } on Object catch (e) {
-      // Don't crash if cache write fails — just log
-      debugPrint('FoodSearchService._saveToSupabase error: $e');
+    } catch (e) {
+      debugPrint('[FoodSearchService] _cacheToSupabase error: $e');
+      // Never crash — cache write failure is non-critical
     }
   }
 }

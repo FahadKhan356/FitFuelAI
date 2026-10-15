@@ -26,7 +26,7 @@ class FoodResult {
         proteinG: (row['protein_g'] as num).toDouble(),
         carbsG: (row['carbs_g'] as num).toDouble(),
         fatG: (row['fat_g'] as num).toDouble(),
-        source: 'supabase_cache',
+        source: row['source'] as String? ?? 'supabase_cache',
         cuisineType: row['cuisine_type'] as String?,
         sodiumMg: (row['sodium_mg'] as num? ?? 0).toDouble(),
         potassiumMg: (row['potassium_mg'] as num? ?? 0).toDouble(),
@@ -77,7 +77,8 @@ class FoodResult {
 
   Map<String, dynamic> toSupabaseMap(String searchKey, String countryCode) => {
         'search_key': searchKey,
-        'country_code': countryCode,
+        'country_code':
+            countryCode.length > 5 ? countryCode.substring(0, 5) : countryCode,
         'food_name': foodName,
         'cuisine_type': cuisineType,
         'serving_quantity': servingQuantity,

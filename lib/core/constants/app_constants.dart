@@ -58,6 +58,10 @@ class AppConstants {
   static String get fatSecretClientId => envValue('FATSECRET_CLIENT_ID', '');
   static String get fatSecretClientSecret =>
       envValue('FATSECRET_CLIENT_SECRET', '');
+  static String get usdaApiKey =>
+      envValue('USDA_API_KEY', 'bjw4xgN7S5EqQHqycCbyyf1Co2vNhbg549Y1fqeb');
+  static String get usdaApiBase =>
+      envValue('USDA_API_BASE', 'https://api.nal.usda.gov/fdc/v1');
 
   // AI Coach context layer
   static const int aiContextHistoryDays = 7;
