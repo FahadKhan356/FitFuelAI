@@ -51,6 +51,7 @@ class GeminiService {
     required String systemInstruction,
     required String userPrompt,
     double temperature = 0.6,
+    String? responseMimeType,
   }) async {
     if (!isConfigured) {
       throw const GeminiException(
@@ -80,6 +81,7 @@ class GeminiService {
         'temperature': temperature,
         'topP': 0.95,
         'maxOutputTokens': AppConstants.aiCoachMaxOutputTokens,
+        if (responseMimeType != null) 'responseMimeType': responseMimeType,
       },
     });
 

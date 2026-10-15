@@ -63,7 +63,7 @@ class AppConstants {
   static const int aiContextHistoryDays = 7;
   static const int aiContextWeightDays = 30;
   static const int aiContextMaxRecentMeals = 40;
-  static const int aiCoachMaxOutputTokens = 900;
+  static const int aiCoachMaxOutputTokens = 2048;
   static const Duration aiContextCacheTtl = Duration(minutes: 3);
   static const int aiCoachTimeoutSeconds = 30;
 

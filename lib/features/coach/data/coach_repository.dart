@@ -262,6 +262,7 @@ User Question: $question
         final raw = await _gemini.generateContent(
           systemInstruction: systemPrompt,
           userPrompt: userPrompt,
+          responseMimeType: 'application/json',
         );
 
         final res = CoachResponse.parse(raw);

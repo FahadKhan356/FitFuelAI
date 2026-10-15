@@ -50,37 +50,104 @@ class CoachResponse {
     }
 
     String cleaned = text.trim();
-    if (cleaned.startsWith('```json')) {
-      cleaned = cleaned.substring(7);
-    } else if (cleaned.startsWith('```')) {
-      cleaned = cleaned.substring(3);
-    }
-    if (cleaned.endsWith('```')) {
-      cleaned = cleaned.substring(0, cleaned.length - 3);
-    }
+
+    // 1. Strip markdown fences if present
+    cleaned = cleaned.replaceAll(RegExp(r'^```(?:json)?\s*', multiLine: true), '');
+    cleaned = cleaned.replaceAll(RegExp(r'```\s*$', multiLine: true), '');
     cleaned = cleaned.trim();
 
+    // 2. Try to isolate pure JSON if surrounded by extraneous text
+    final firstBrace = cleaned.indexOf('{');
+    final lastBrace = cleaned.lastIndexOf('}');
+    if (firstBrace != -1 && lastBrace > firstBrace) {
+      final jsonCandidate = cleaned.substring(firstBrace, lastBrace + 1).trim();
+      try {
+        final decoded = jsonDecode(jsonCandidate);
+        if (decoded is Map<String, dynamic>) {
+          return CoachResponse.fromJson(decoded);
+        }
+      } catch (_) {
+        // Continue to resilient parsing
+      }
+    }
+
+    // 3. Try decoding the cleaned string directly
     try {
       final decoded = jsonDecode(cleaned);
       if (decoded is Map<String, dynamic>) {
         return CoachResponse.fromJson(decoded);
       }
     } catch (_) {
-      // Fall through to raw text fallback
+      // Continue to resilient regex extraction
     }
 
-    // Markdown/raw text fallback without breakages
-    final lines = text.split('\n').where((l) => l.trim().isNotEmpty).toList();
+    // 4. Resilient regex extraction for truncated or slightly malformed JSON
+    final headlineMatch = RegExp(r'"headline"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"').firstMatch(cleaned);
+    final summaryMatch = RegExp(r'"summary"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"').firstMatch(cleaned);
+
+    if (headlineMatch != null || summaryMatch != null) {
+      final head = headlineMatch?.group(1) ?? 'AI Coach Insight';
+      var rest = summaryMatch?.group(1) ?? '';
+
+      // If summary was cut off before closing quote, extract whatever followed "summary": "
+      if (rest.isEmpty) {
+        final summaryOpenMatch = RegExp(r'"summary"\s*:\s*"([^"\n\r]*)').firstMatch(cleaned);
+        if (summaryOpenMatch != null) {
+          rest = summaryOpenMatch.group(1) ?? '';
+        }
+      }
+
+      // Extract any followups if available
+      final followupsList = <String>[];
+      final followupMatches = RegExp(r'"(?:followups|questions)"\s*:\s*\[([^\]]*)\]').firstMatch(cleaned);
+      if (followupMatches != null) {
+        final inside = followupMatches.group(1) ?? '';
+        final items = RegExp(r'"([^"\\]*(?:\\.[^"\\]*)*)"').allMatches(inside);
+        for (final m in items) {
+          final str = m.group(1);
+          if (str != null && str.isNotEmpty) followupsList.add(str);
+        }
+      }
+
+      return CoachResponse(
+        headline: _sanitizeText(head),
+        summary: _sanitizeText(rest),
+        isRawFallback: false,
+        followups: followupsList.isNotEmpty
+            ? followupsList
+            : const [
+                "How is my calorie balance today?",
+                "Show my weekly calories",
+                "How is my hydration?"
+              ],
+      );
+    }
+
+    // 5. Plain text fallback: Clean out any markdown ticks, braces, or JSON markers
+    final sanitized = cleaned
+        .replaceAll('```json', '')
+        .replaceAll('```', '')
+        .replaceAll(RegExp(r'^\s*\{\s*', multiLine: true), '')
+        .replaceAll(RegExp(r'\s*\}\s*$', multiLine: true), '')
+        .replaceAll(RegExp(r'"(headline|summary)"\s*:\s*'), '')
+        .trim();
+
+    final lines = sanitized
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty && l != '{' && l != '}' && !l.startsWith('```'))
+        .toList();
+
     final String head;
     final String rest;
     if (lines.length > 1) {
       head = _sanitizeText(lines.first);
       rest = lines.sublist(1).map(_sanitizeText).join('\n');
     } else if (lines.length == 1) {
-      head = 'AI Coach';
+      head = 'AI Coach Insight';
       rest = _sanitizeText(lines.first);
     } else {
-      head = 'AI Coach';
+      head = 'AI Coach Insight';
       rest = '';
     }
 
