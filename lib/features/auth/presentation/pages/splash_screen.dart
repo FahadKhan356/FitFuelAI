@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:fitfuel_ai/core/config/routes.dart';
 import 'package:fitfuel_ai/core/services/home_data_cache.dart';
+import 'package:fitfuel_ai/shared/widgets/fitfuel_loading.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -55,9 +56,11 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _resolveInitialRoute() async {
-    if (!mounted || _navigated) return;
+    if (!mounted || _navigated) {
+      return;
+    }
     _navigated = true;
-    HapticFeedback.mediumImpact();
+    unawaited(HapticFeedback.mediumImpact());
 
     // Check if this is the first time user is opening the app
     final prefs = await SharedPreferences.getInstance();
@@ -79,22 +82,32 @@ class _SplashScreenState extends State<SplashScreen>
             await prefs.setBool('onboarding_completed', true);
             shouldGoHome = true;
           }
-        } catch (_) {}
+        } on Exception catch (_) {}
       }
 
       if (shouldGoHome) {
         try {
           await HomeDataCache.loadPersistent(currentUser.id);
-        } catch (_) {}
+        } on Exception catch (_) {}
+      }
+
+      if (!mounted) {
+        return;
       }
       // User is already logged in:
       // - Onboarding complete → straight to Home dashboard
       // - Onboarding pending (e.g. new signup) → OnboardingFlow first
       context.go(shouldGoHome ? AppRoutes.home : AppRoutes.onboarding);
     } else if (hasCompletedOnboarding) {
+      if (!mounted) {
+        return;
+      }
       // Returning user who completed onboarding → go to login
       context.go(AppRoutes.login);
     } else {
+      if (!mounted) {
+        return;
+      }
       // Brand new user: show onboarding first (can save locally), then prompt login
       context.go(AppRoutes.onboarding);
     }
@@ -154,66 +167,36 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
             Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const _CentralOrb(),
-                  const SizedBox(height: 28),
-                  const Text(
-                    'FITFUEL AI',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: 'SF Pro Display',
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF0F172A),
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'ADVANCED VISUAL NUTRITION',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: 'SF Pro Text',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF64748B),
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  const SizedBox(height: 132),
-                  const Text(
+              child: AnimatedBuilder(
+                animation: _progressController,
+                builder: (context, child) => FitFuelLoadingProgress(
+                  size: 145,
+                  progress: _progressController.value,
+                  title: 'FITFUEL AI',
+                  logoAsset: 'assets/images/app_logo.png',
+                  showPercentage: true,
+                  showLinearBar: true,
+                  statusMessages: const [
                     'INITIALIZING NEURAL ENGINE...',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: 'SF Pro Text',
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF818CF8),
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                  AnimatedBuilder(
-                    animation: _progressController,
-                    builder: (context, child) => _ProgressPill(progress: _progressController.value),
-                  ),
-                  const SizedBox(height: 14),
-                  const Text(
-                    'VER 2.4.0 • DISTRIBUTED INTELLIGENCE',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontFamily: 'SF Pro Text',
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF94A3B8),
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
+                    'SYNCHRONIZING PROFILE & METRICS...',
+                    'CALIBRATING VISUAL NUTRITION...',
+                    'PREPARING AI DASHBOARD...',
+                  ],
+                ),
+              ),
+            ),
+            const Positioned(
+              bottom: 24,
+              child: Text(
+                'VER 2.4.0 • DISTRIBUTED INTELLIGENCE',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'SF Pro Text',
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF94A3B8),
+                  letterSpacing: 1.5,
+                ),
               ),
             ),
           ],
@@ -222,83 +205,6 @@ class _SplashScreenState extends State<SplashScreen>
     );
 }
 
-class _CentralOrb extends StatelessWidget {
-  const _CentralOrb();
-
-  @override
-  Widget build(BuildContext context) => Container(
-      width: 122,
-      height: 122,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: 0.64),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.78), width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 26,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Center(
-        child: Container(
-          width: 68,
-          height: 68,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF7C3AED), Color(0xFF4F46E5)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF6366F1).withValues(alpha: 0.38),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: const Icon(
-            Icons.bolt_rounded,
-            color: Colors.white,
-            size: 38,
-          ),
-        ),
-      ),
-    );
-}
-
-class _ProgressPill extends StatelessWidget {
-  const _ProgressPill({required this.progress});
-
-  final double progress;
-
-  @override
-  Widget build(BuildContext context) => Container(
-      width: 150,
-      height: 8,
-      decoration: BoxDecoration(
-        color: const Color(0xFFE2E8F0),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Container(
-          width: 150 * progress,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-      ),
-    );
-}
 
 class DottedCirclePainter extends CustomPainter {
 
@@ -323,7 +229,7 @@ class DottedCirclePainter extends CustomPainter {
     final sweepAngle = (2 * math.pi) / dashCount;
 
     for (var i = 0; i < dashCount; i++) {
-      if (i % 2 == 0) {
+      if (i.isEven) {
         canvas.drawArc(
           Rect.fromCircle(center: center, radius: radius),
           i * sweepAngle,
