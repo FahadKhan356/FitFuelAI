@@ -25,19 +25,21 @@ class PostureResult {
   });
 
   // Factory: Good form
-  factory PostureResult.good(String feedback) => PostureResult(
+  factory PostureResult.good(String feedback, {double? angle}) => PostureResult(
         isCorrect: true,
         feedback: feedback,
         severity: FormSeverity.good,
+        angle: angle,
       );
 
   // Factory: Injury risk
-  factory PostureResult.injury(String feedback, {String? tip}) => PostureResult(
+  factory PostureResult.injury(String feedback, {String? tip, double? angle}) => PostureResult(
         isCorrect: false,
         feedback: feedback,
         tip: tip,
         severity: FormSeverity.high,
         isInjuryRisk: true,
+        angle: angle,
       );
 
   Color get feedbackColor {
@@ -58,11 +60,11 @@ class PostureResult {
       case FormSeverity.good:
         return '✓ Good Form';
       case FormSeverity.low:
-        return '⚠ Minor Issue';
+        return '⚠️ Form Tip';
       case FormSeverity.medium:
-        return '⚠ Fix Form';
+        return '⚠️ Fix Form';
       case FormSeverity.high:
-        return '🚨 Injury Risk!';
+        return '🚨 INJURY RISK';
     }
   }
 }

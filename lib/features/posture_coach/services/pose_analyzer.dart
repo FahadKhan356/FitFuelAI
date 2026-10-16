@@ -13,9 +13,9 @@ class PoseAnalyzer {
     return deg;
   }
 
-  // ── Check if landmark is reliably detected ────────────────────────
+  // ── Trick 2: Check if landmark is reliably detected (>= 50% confidence)
   static bool _reliable(PoseLandmark? lm) =>
-      lm != null && lm.likelihood > 0.28;
+      lm != null && lm.likelihood >= 0.50;
 
   // ── Main analyze method ───────────────────────────────────────────
   static PostureResult analyze(ExerciseType type, Pose pose) {
@@ -44,7 +44,7 @@ class PoseAnalyzer {
   }
 
   // ════════════════════════════════════════════════
-  //  SQUAT
+  //  SQUAT (Side view recommended)
   // ════════════════════════════════════════════════
   static PostureResult _squat(Pose pose) {
     final lm = pose.landmarks;
@@ -58,7 +58,7 @@ class PoseAnalyzer {
     if (!_reliable(hip) || !_reliable(knee) || !_reliable(ankle)) {
       return const PostureResult(
         isCorrect: false,
-        feedback: 'Full body not visible — step back from camera',
+        feedback: 'Step back — full lower body must be in view',
         severity: FormSeverity.low,
       );
     }
@@ -66,55 +66,133 @@ class PoseAnalyzer {
     final kneeAngle = angle(hip!, knee!, ankle!);
     final backAngle = shoulder != null ? angle(shoulder, hip, knee) : 180.0;
 
-    // Back rounding — INJURY RISK
-    if (backAngle < 145) {
+    // Back rounding check — HIGHEST INJURY RISK
+    if (backAngle < 160) {
       return PostureResult.injury(
-        '🚨 Back rounding detected — STOP',
-        tip: 'Keep chest up and back straight to avoid spine injury',
+        '🚨 STOP — kamar round ho rahi hai',
+        tip: 'Keep chest high and arch spine neutrally to avoid lumbar disc injury',
+        angle: backAngle,
       );
     }
 
-    // Knees caving in (check left vs right knee x position)
+    // Knees caving in (front/angled view check)
     final lKnee = lm[PoseLandmarkType.leftKnee];
     final rKnee = lm[PoseLandmarkType.rightKnee];
     final lAnkle = lm[PoseLandmarkType.leftAnkle];
     final rAnkle = lm[PoseLandmarkType.rightAnkle];
     if (lKnee != null && rKnee != null && lAnkle != null && rAnkle != null) {
-      final kneeWidth = (lKnee.x - rKnee.x).abs();
-      final ankleWidth = (lAnkle.x - rAnkle.x).abs();
-      if (kneeWidth < ankleWidth * 0.7) {
-        return const PostureResult(
-          isCorrect: false,
-          feedback: 'Knees caving in — push knees out over toes',
-          severity: FormSeverity.high,
-          isInjuryRisk: true,
-        );
+      if (lKnee.likelihood >= 0.5 && rKnee.likelihood >= 0.5) {
+        final kneeWidth = (lKnee.x - rKnee.x).abs();
+        final ankleWidth = (lAnkle.x - rAnkle.x).abs();
+        if (kneeWidth < ankleWidth * 0.70) {
+          return const PostureResult(
+            isCorrect: false,
+            feedback: 'Knees caving in — push knees out over toes',
+            severity: FormSeverity.high,
+            isInjuryRisk: true,
+          );
+        }
       }
     }
 
+    // Depth checks
     if (kneeAngle > 140) {
       return PostureResult(
         isCorrect: false,
-        feedback: 'Go deeper — aim for parallel or below',
+        feedback: 'Aur neeche jao — squat lower',
         severity: FormSeverity.low,
         angle: kneeAngle,
       );
     }
 
-    if (kneeAngle < 60) {
+    if (kneeAngle < 70) {
       return PostureResult(
         isCorrect: false,
-        feedback: 'Too deep — come up slightly',
+        feedback: 'Thora upar aao — too deep',
         severity: FormSeverity.medium,
         angle: kneeAngle,
       );
     }
 
-    return PostureResult.good('Perfect squat depth ✓ (${kneeAngle.round()}°)');
+    if (kneeAngle >= 85 && kneeAngle <= 105) {
+      return PostureResult.good(
+        'Perfect squat depth ✓ (${kneeAngle.round()}°)',
+        angle: kneeAngle,
+      );
+    }
+
+    return PostureResult.good(
+      'Good squat position (${kneeAngle.round()}°)',
+      angle: kneeAngle,
+    );
   }
 
   // ════════════════════════════════════════════════
-  //  PUSH-UP
+  //  BICEP CURL (Front or side view, seated or standing)
+  // ════════════════════════════════════════════════
+  static PostureResult _bicepCurl(Pose pose) {
+    final lm = pose.landmarks;
+
+    final lShoulder = lm[PoseLandmarkType.leftShoulder];
+    final lElbow = lm[PoseLandmarkType.leftElbow];
+    final lWrist = lm[PoseLandmarkType.leftWrist];
+
+    final rShoulder = lm[PoseLandmarkType.rightShoulder];
+    final rElbow = lm[PoseLandmarkType.rightElbow];
+    final rWrist = lm[PoseLandmarkType.rightWrist];
+
+    final lConfidence = (lShoulder?.likelihood ?? 0) +
+        (lElbow?.likelihood ?? 0) +
+        (lWrist?.likelihood ?? 0);
+    final rConfidence = (rShoulder?.likelihood ?? 0) +
+        (rElbow?.likelihood ?? 0) +
+        (rWrist?.likelihood ?? 0);
+
+    // Pick arm with highest joint visibility
+    final useRight = rConfidence > lConfidence;
+    final shoulder = useRight ? rShoulder : lShoulder;
+    final elbow = useRight ? rElbow : lElbow;
+    final wrist = useRight ? rWrist : lWrist;
+
+    if (!_reliable(shoulder) || !_reliable(elbow) || !_reliable(wrist)) {
+      return const PostureResult(
+        isCorrect: false,
+        feedback: 'Position arm in camera view to start curling',
+        severity: FormSeverity.low,
+      );
+    }
+
+    final elbowAngle = angle(shoulder!, elbow!, wrist!);
+
+    // Elbow forward swing cheat check (upper arm should stay near vertical)
+    final verticalUpperArm = (elbow.y - shoulder.y).abs();
+    final horizontalDrift = (elbow.x - shoulder.x).abs();
+    if (verticalUpperArm > 40 && horizontalDrift > verticalUpperArm * 0.40) {
+      return PostureResult(
+        isCorrect: false,
+        feedback: 'Elbow moving forward — keep it pinned at your side',
+        severity: FormSeverity.medium,
+        tip: 'Lock your elbow beside your torso. Do not swing your upper arm.',
+        angle: elbowAngle,
+      );
+    }
+
+    if (elbowAngle > 145) {
+      return PostureResult.good('Full extension ✓ Now curl up!', angle: elbowAngle);
+    }
+
+    if (elbowAngle < 65) {
+      return PostureResult.good('Peak curl squeeze ✓ Squeeze at top!', angle: elbowAngle);
+    }
+
+    return PostureResult.good(
+      'Good curl form ✓ (${elbowAngle.round()}°)',
+      angle: elbowAngle,
+    );
+  }
+
+  // ════════════════════════════════════════════════
+  //  PUSH-UP (Side floor view)
   // ════════════════════════════════════════════════
   static PostureResult _pushUp(Pose pose) {
     final lm = pose.landmarks;
@@ -131,7 +209,7 @@ class PoseAnalyzer {
     if (!_reliable(shoulder) || !_reliable(elbow) || !_reliable(wrist)) {
       return const PostureResult(
         isCorrect: false,
-        feedback: 'Arms not clearly visible — adjust camera',
+        feedback: 'Arms not clearly visible — adjust camera angle',
         severity: FormSeverity.low,
       );
     }
@@ -145,33 +223,36 @@ class PoseAnalyzer {
     if (bodyAngle < 155) {
       return PostureResult.injury(
         '🚨 Hips sagging — tighten core NOW',
-        tip: 'Sagging hips cause lower back injury',
+        tip: 'Sagging hips put intense pressure on lower vertebrae',
+        angle: bodyAngle,
       );
     }
 
-    // Hips too high
     if (bodyAngle > 195) {
-      return const PostureResult(
+      return PostureResult(
         isCorrect: false,
-        feedback: 'Hips too high — lower them for straight body',
+        feedback: 'Hips too high — straighten body like a plank',
         severity: FormSeverity.medium,
+        angle: bodyAngle,
       );
     }
 
-    // Elbow angle check
-    if (elbowAngle < 80) {
-      return PostureResult.good('Bottom position ✓ Push up!');
+    if (elbowAngle < 90) {
+      return PostureResult.good('Great depth ✓ Push back up!', angle: elbowAngle);
     }
 
-    if (elbowAngle > 160) {
-      return PostureResult.good('Top position ✓ Lower down slowly');
+    if (elbowAngle > 155) {
+      return PostureResult.good('Top plank position ✓ Lower down slowly', angle: elbowAngle);
     }
 
-    return PostureResult.good('Good push-up form ✓ (${elbowAngle.round()}°)');
+    return PostureResult.good(
+      'Good push-up form ✓ (${elbowAngle.round()}°)',
+      angle: elbowAngle,
+    );
   }
 
   // ════════════════════════════════════════════════
-  //  DEADLIFT
+  //  DEADLIFT (Side view)
   // ════════════════════════════════════════════════
   static PostureResult _deadlift(Pose pose) {
     final lm = pose.landmarks;
@@ -183,25 +264,25 @@ class PoseAnalyzer {
     if (!_reliable(shoulder) || !_reliable(hip) || !_reliable(knee)) {
       return const PostureResult(
         isCorrect: false,
-        feedback: 'Full body not visible — step back',
+        feedback: 'Step back — full body side view required',
         severity: FormSeverity.low,
       );
     }
 
     final backAngle = angle(shoulder!, hip!, knee!);
 
-    // Rounded back — HIGHEST INJURY RISK in deadlift
-    if (backAngle < 150) {
+    if (backAngle < 160) {
       return PostureResult.injury(
-        '🚨 STOP — Back is rounding badly',
-        tip: 'Rounded back + heavy weight = disc injury. Lighten the weight.',
+        '🚨 STOP — kamar round ho rahi hai',
+        tip: 'Rounded spine during pull can cause disc herniation. Chest up!',
+        angle: backAngle,
       );
     }
 
-    if (backAngle < 165) {
+    if (backAngle < 170) {
       return PostureResult(
         isCorrect: false,
-        feedback: 'Back slightly rounded — chest up, neutral spine',
+        feedback: 'Back slightly rounded — pull shoulder blades back',
         severity: FormSeverity.high,
         isInjuryRisk: true,
         angle: backAngle,
@@ -209,76 +290,13 @@ class PoseAnalyzer {
     }
 
     return PostureResult.good(
-      backAngle > 175 ? 'Lockout position ✓' : 'Good back position ✓',
+      backAngle > 175 ? 'Lockout position ✓' : 'Good flat back ✓',
+      angle: backAngle,
     );
   }
 
   // ════════════════════════════════════════════════
-  //  BICEP CURL
-  // ════════════════════════════════════════════════
-  static PostureResult _bicepCurl(Pose pose) {
-    final lm = pose.landmarks;
-
-    // Detect left arm vs right arm based on landmark confidence
-    final lShoulder = lm[PoseLandmarkType.leftShoulder];
-    final lElbow = lm[PoseLandmarkType.leftElbow];
-    final lWrist = lm[PoseLandmarkType.leftWrist];
-    final lHip = lm[PoseLandmarkType.leftHip];
-
-    final rShoulder = lm[PoseLandmarkType.rightShoulder];
-    final rElbow = lm[PoseLandmarkType.rightElbow];
-    final rWrist = lm[PoseLandmarkType.rightWrist];
-    final rHip = lm[PoseLandmarkType.rightHip];
-
-    final lConfidence = (lShoulder?.likelihood ?? 0) +
-        (lElbow?.likelihood ?? 0) +
-        (lWrist?.likelihood ?? 0);
-    final rConfidence = (rShoulder?.likelihood ?? 0) +
-        (rElbow?.likelihood ?? 0) +
-        (rWrist?.likelihood ?? 0);
-
-    final useRight = rConfidence > lConfidence;
-    final shoulder = useRight ? rShoulder : lShoulder;
-    final elbow = useRight ? rElbow : lElbow;
-    final wrist = useRight ? rWrist : lWrist;
-    final hip = useRight ? (rHip ?? lHip) : (lHip ?? rHip);
-
-    if (!_reliable(shoulder) || !_reliable(elbow) || !_reliable(wrist)) {
-      return const PostureResult(
-        isCorrect: false,
-        feedback: 'Position arm in camera view',
-        severity: FormSeverity.low,
-      );
-    }
-
-    final elbowAngle = angle(shoulder!, elbow!, wrist!);
-
-    // Elbow swinging forward (cheating)
-    if (hip != null && hip.likelihood > 0.4) {
-      final elbowSwing = angle(hip, shoulder, elbow);
-      if (elbowSwing > 50) {
-        return const PostureResult(
-          isCorrect: false,
-          feedback: 'Elbow moving forward — keep it pinned at your side',
-          severity: FormSeverity.medium,
-          tip: 'Keep your upper arm stationary during the curl',
-        );
-      }
-    }
-
-    if (elbowAngle > 140) {
-      return PostureResult.good('Full extension ✓ Curl up!');
-    }
-
-    if (elbowAngle < 60) {
-      return PostureResult.good('Peak curl ✓ Squeeze bicep at top!');
-    }
-
-    return PostureResult.good('Good form ✓ (${elbowAngle.round()}°) Keep curling!');
-  }
-
-  // ════════════════════════════════════════════════
-  //  SHOULDER PRESS
+  //  SHOULDER PRESS (Front view)
   // ════════════════════════════════════════════════
   static PostureResult _shoulderPress(Pose pose) {
     final lm = pose.landmarks;
@@ -294,40 +312,40 @@ class PoseAnalyzer {
     if (!_reliable(shoulder) || !_reliable(elbow)) {
       return const PostureResult(
         isCorrect: false,
-        feedback: 'Stand facing camera — full body visible',
+        feedback: 'Stand facing camera with full upper body visible',
         severity: FormSeverity.low,
       );
     }
 
     final pressAngle = angle(shoulder!, elbow!, wrist ?? elbow);
 
-    // Lower back arching (common cheat)
     if (hip != null && knee != null) {
       final leanBack = angle(shoulder, hip, knee);
       if (leanBack < 155) {
         return PostureResult.injury(
-          '🚨 Lower back arching — brace your core',
-          tip: 'Arching back shifts load to spine — injury risk',
+          '🚨 Lower back arching — brace core',
+          tip: 'Arching backwards shifts load from shoulders to spine',
+          angle: leanBack,
         );
       }
     }
 
-    if (pressAngle < 170 && pressAngle > 90) {
-      return PostureResult(
-        isCorrect: false,
-        feedback: 'Extend arms fully overhead',
-        severity: FormSeverity.low,
-        angle: pressAngle,
-      );
+    if (pressAngle > 155) {
+      return PostureResult.good('Overhead lockout ✓ Lower with control', angle: pressAngle);
+    }
+
+    if (pressAngle < 80) {
+      return PostureResult.good('Bottom press position ✓ Drive straight up!', angle: pressAngle);
     }
 
     return PostureResult.good(
-      pressAngle > 170 ? 'Full lockout ✓' : 'Good press form ✓',
+      'Good overhead form ✓ (${pressAngle.round()}°)',
+      angle: pressAngle,
     );
   }
 
   // ════════════════════════════════════════════════
-  //  PLANK (time-based, no reps)
+  //  PLANK (Side floor view)
   // ════════════════════════════════════════════════
   static PostureResult _plank(Pose pose) {
     final lm = pose.landmarks;
@@ -340,33 +358,35 @@ class PoseAnalyzer {
     if (!_reliable(shoulder) || !_reliable(hip) || !_reliable(ankle)) {
       return const PostureResult(
         isCorrect: false,
-        feedback: 'Side view needed — adjust camera angle',
+        feedback: 'Position phone at floor level to your side',
         severity: FormSeverity.low,
       );
     }
 
-    final bodyLine = angle(shoulder!, hip!, ankle!);
+    final bodyAngle = angle(shoulder!, hip!, ankle!);
 
-    if (bodyLine < 160) {
+    if (bodyAngle < 155) {
       return PostureResult.injury(
-        '🚨 Hips dropping — lift them up',
-        tip: 'Dropped hips strain lower back',
+        '🚨 Hips sagging — squeeze glutes and abs',
+        tip: 'Sagging hips overload lower back muscles',
+        angle: bodyAngle,
       );
     }
 
-    if (bodyLine > 195) {
-      return const PostureResult(
+    if (bodyAngle > 195) {
+      return PostureResult(
         isCorrect: false,
-        feedback: 'Hips too high — bring them down',
+        feedback: 'Hips too high — bring hips down in line with shoulders',
         severity: FormSeverity.medium,
+        angle: bodyAngle,
       );
     }
 
-    return PostureResult.good('Perfect plank position ✓ Hold it!');
+    return PostureResult.good('Solid plank hold ✓ Keep breathing', angle: bodyAngle);
   }
 
   // ════════════════════════════════════════════════
-  //  LUNGE
+  //  LUNGE (Side view)
   // ════════════════════════════════════════════════
   static PostureResult _lunge(Pose pose) {
     final lm = pose.landmarks;
@@ -374,102 +394,36 @@ class PoseAnalyzer {
     final knee = lm[PoseLandmarkType.leftKnee] ?? lm[PoseLandmarkType.rightKnee];
     final ankle =
         lm[PoseLandmarkType.leftAnkle] ?? lm[PoseLandmarkType.rightAnkle];
-    final shoulder =
-        lm[PoseLandmarkType.leftShoulder] ?? lm[PoseLandmarkType.rightShoulder];
 
-    if (!_reliable(knee) || !_reliable(hip) || !_reliable(ankle)) {
+    if (!_reliable(hip) || !_reliable(knee) || !_reliable(ankle)) {
       return const PostureResult(
         isCorrect: false,
-        feedback: 'Full body not visible — step back',
+        feedback: 'Full lower body must be visible from side',
         severity: FormSeverity.low,
       );
     }
 
-    final frontKneeAngle = angle(hip!, knee!, ankle!);
+    final kneeAngle = angle(hip!, knee!, ankle!);
 
-    // Knee going past toe
-    if (knee.x > ankle.x + 30) {
-      return const PostureResult(
-        isCorrect: false,
-        feedback: 'Front knee going past toe — step forward more',
-        severity: FormSeverity.high,
-        isInjuryRisk: true,
-      );
-    }
-
-    // Torso lean
-    if (shoulder != null) {
-      final torsoAngle = angle(shoulder, hip, knee);
-      if (torsoAngle < 150) {
-        return const PostureResult(
-          isCorrect: false,
-          feedback: 'Torso leaning too far — keep chest upright',
-          severity: FormSeverity.medium,
-        );
-      }
-    }
-
-    if (frontKneeAngle > 130) {
+    if (kneeAngle > 135) {
       return PostureResult(
         isCorrect: false,
-        feedback: 'Lunge deeper — 90° at front knee',
+        feedback: 'Step forward and lower deeper into lunge',
         severity: FormSeverity.low,
-        angle: frontKneeAngle,
+        angle: kneeAngle,
       );
     }
 
-    return PostureResult.good(
-      'Good lunge depth ✓ (${frontKneeAngle.round()}°)',
-    );
-  }
-
-  // ════════════════════════════════════════════════
-  //  PULL-UP
-  // ════════════════════════════════════════════════
-  static PostureResult _pullUp(Pose pose) {
-    final lm = pose.landmarks;
-    final shoulder =
-        lm[PoseLandmarkType.leftShoulder] ?? lm[PoseLandmarkType.rightShoulder];
-    final elbow =
-        lm[PoseLandmarkType.leftElbow] ?? lm[PoseLandmarkType.rightElbow];
-    final wrist =
-        lm[PoseLandmarkType.leftWrist] ?? lm[PoseLandmarkType.rightWrist];
-    final hip = lm[PoseLandmarkType.leftHip] ?? lm[PoseLandmarkType.rightHip];
-    final ankle =
-        lm[PoseLandmarkType.leftAnkle] ?? lm[PoseLandmarkType.rightAnkle];
-
-    if (!_reliable(shoulder) || !_reliable(elbow)) {
-      return const PostureResult(
+    if (kneeAngle < 75) {
+      return PostureResult(
         isCorrect: false,
-        feedback: 'Full body not visible — move phone back',
-        severity: FormSeverity.low,
+        feedback: 'Front knee overshooting toes — step farther',
+        severity: FormSeverity.medium,
+        angle: kneeAngle,
       );
     }
 
-    final elbowAngle = angle(shoulder!, elbow!, wrist ?? elbow);
-
-    // Body swinging
-    if (hip != null && ankle != null) {
-      final bodySwing = angle(shoulder, hip, ankle);
-      if (bodySwing < 155 || bodySwing > 205) {
-        return const PostureResult(
-          isCorrect: false,
-          feedback: 'Stop swinging — controlled movement only',
-          severity: FormSeverity.medium,
-          tip: 'Swinging uses momentum, not your lats',
-        );
-      }
-    }
-
-    if (elbowAngle > 160) {
-      return PostureResult.good('Full hang ✓ Pull up — chin over bar!');
-    }
-
-    if (elbowAngle < 60) {
-      return PostureResult.good('Top position ✓ Lower slowly for gains!');
-    }
-
-    return PostureResult.good('Good pull-up form ✓');
+    return PostureResult.good('Ideal 90° lunge angle ✓', angle: kneeAngle);
   }
 
   // ════════════════════════════════════════════════
@@ -483,39 +437,30 @@ class PoseAnalyzer {
         lm[PoseLandmarkType.leftElbow] ?? lm[PoseLandmarkType.rightElbow];
     final hip = lm[PoseLandmarkType.leftHip] ?? lm[PoseLandmarkType.rightHip];
 
-    if (!_reliable(shoulder) || !_reliable(elbow)) {
+    if (!_reliable(shoulder) || !_reliable(elbow) || !_reliable(hip)) {
       return const PostureResult(
         isCorrect: false,
-        feedback: 'Face the camera — both arms visible',
+        feedback: 'Stand facing camera with arms in frame',
         severity: FormSeverity.low,
       );
     }
 
-    final armAngle = angle(hip ?? shoulder!, shoulder!, elbow!);
+    final raiseAngle = angle(hip!, shoulder!, elbow!);
 
-    // Going too high — shoulder impingement risk
-    if (armAngle > 100) {
-      return const PostureResult(
-        isCorrect: false,
-        feedback: 'Too high — stop at shoulder height',
-        severity: FormSeverity.high,
-        isInjuryRisk: true,
-        tip: 'Going above 90° can cause shoulder impingement',
-      );
-    }
-
-    if (armAngle < 70) {
+    if (raiseAngle > 105) {
       return PostureResult(
         isCorrect: false,
-        feedback: 'Raise arms to shoulder height (90°)',
-        severity: FormSeverity.low,
-        angle: armAngle,
+        feedback: 'Raising too high — stop at shoulder level',
+        severity: FormSeverity.medium,
+        angle: raiseAngle,
       );
     }
 
-    return PostureResult.good(
-      'Perfect raise height ✓ (${armAngle.round()}°)',
-    );
+    if (raiseAngle >= 80 && raiseAngle <= 100) {
+      return PostureResult.good('Parallel to floor ✓ Perfect raise', angle: raiseAngle);
+    }
+
+    return PostureResult.good('Good tempo, control the descent', angle: raiseAngle);
   }
 
   // ════════════════════════════════════════════════
@@ -531,37 +476,54 @@ class PoseAnalyzer {
     if (!_reliable(shoulder) || !_reliable(hip) || !_reliable(knee)) {
       return const PostureResult(
         isCorrect: false,
-        feedback: 'Lie sideways to camera — full body visible',
+        feedback: 'Side floor view needed for sit-up tracking',
         severity: FormSeverity.low,
       );
     }
 
-    final torsoAngle = angle(shoulder!, hip!, knee!);
+    final sitAngle = angle(shoulder!, hip!, knee!);
 
-    // Neck strain (pulling head up)
-    final leftWrist = pose.landmarks[PoseLandmarkType.leftWrist];
-    final nose = pose.landmarks[PoseLandmarkType.nose];
-    if (leftWrist != null && nose != null) {
-      if ((leftWrist.x - nose.x).abs() < 30 &&
-          (leftWrist.y - nose.y).abs() < 30) {
-        return const PostureResult(
-          isCorrect: false,
-          feedback: 'Hands off neck — cross arms on chest',
-          severity: FormSeverity.high,
-          isInjuryRisk: true,
-          tip: 'Pulling neck causes cervical strain',
-        );
-      }
+    if (sitAngle < 75) {
+      return PostureResult.good('Top crunch position ✓ Lower slowly', angle: sitAngle);
     }
 
-    if (torsoAngle > 130) {
-      return PostureResult.good('Bottom position ✓ Crunch up!');
+    if (sitAngle > 140) {
+      return PostureResult.good('Bottom position ✓ Contract abs up!', angle: sitAngle);
     }
 
-    if (torsoAngle < 70) {
-      return PostureResult.good('Top position ✓ Squeeze abs!');
+    return PostureResult.good('Keep core engaged (${sitAngle.round()}°)', angle: sitAngle);
+  }
+
+  // ════════════════════════════════════════════════
+  //  PULL-UP
+  // ════════════════════════════════════════════════
+  static PostureResult _pullUp(Pose pose) {
+    final lm = pose.landmarks;
+    final shoulder =
+        lm[PoseLandmarkType.leftShoulder] ?? lm[PoseLandmarkType.rightShoulder];
+    final elbow =
+        lm[PoseLandmarkType.leftElbow] ?? lm[PoseLandmarkType.rightElbow];
+    final wrist =
+        lm[PoseLandmarkType.leftWrist] ?? lm[PoseLandmarkType.rightWrist];
+
+    if (!_reliable(shoulder) || !_reliable(elbow) || !_reliable(wrist)) {
+      return const PostureResult(
+        isCorrect: false,
+        feedback: 'Full upper body must be visible on pull-up bar',
+        severity: FormSeverity.low,
+      );
     }
 
-    return PostureResult.good('Good sit-up form ✓');
+    final pullAngle = angle(shoulder!, elbow!, wrist!);
+
+    if (pullAngle < 70) {
+      return PostureResult.good('Chin over bar ✓ Lower with control', angle: pullAngle);
+    }
+
+    if (pullAngle > 155) {
+      return PostureResult.good('Dead hang ✓ Engage lats and pull up!', angle: pullAngle);
+    }
+
+    return PostureResult.good('Strong pull form ✓ (${pullAngle.round()}°)', angle: pullAngle);
   }
 }

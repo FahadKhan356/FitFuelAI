@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:ui';
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -12,10 +13,10 @@ import '../models/posture_result.dart';
 import '../painters/skeleton_painter.dart';
 import '../services/calories_calculator.dart';
 import '../services/pose_analyzer.dart';
+import '../services/pose_smoother.dart';
 import '../services/posture_audio_service.dart';
 import '../widgets/feedback_banner.dart';
 import '../widgets/rep_counter_widget.dart';
-import '../widgets/stats_summary_widget.dart';
 
 class LivePostureScreen extends StatefulWidget {
   final Exercise exercise;
@@ -27,9 +28,17 @@ class LivePostureScreen extends StatefulWidget {
 
 class _LivePostureScreenState extends State<LivePostureScreen> {
   CameraController? _cameraCtrl;
+  
+  // Trick 3: Stream mode for continuous 30fps real-time BlazePose tracking
   final _detector = PoseDetector(
-    options: PoseDetectorOptions(mode: PoseDetectionMode.stream),
+    options: PoseDetectorOptions(
+      mode: PoseDetectionMode.stream,
+      model: PoseDetectionModel.base,
+    ),
   );
+
+  // Trick 1: EMA Joint Smoother to eliminate jitter & false rep triggers
+  final _smoother = PoseSmoother();
 
   bool _isDetecting = false;
   Pose? _currentPose;
@@ -38,20 +47,21 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
     feedback: 'Get in frame to start form check...',
   );
 
-  // Rep counting
+  // Rep counting state
   int _repCount = 0;
   int _setCount = 1;
   int _totalRepsCompleted = 0;
-  bool _isDown = false; // for rep detection
+  bool _isDown = false; // Rep deflection state tracker
 
   // Session timer
   int _seconds = 0;
   bool _timerRunning = false;
 
-  // Camera image size and rotation for painter
+  // Camera image dimensions and rotation for painter
   Size _imageSize = Size.zero;
-  InputImageRotation _imageRotation = InputImageRotation.rotation0deg;
+  InputImageRotation _imageRotation = InputImageRotation.rotation90deg;
   bool _isFrontCamera = true;
+  bool _showGuideBanner = true;
 
   @override
   void initState() {
@@ -65,7 +75,7 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
       final cameras = await availableCameras();
       if (cameras.isEmpty) return;
 
-      // Prefer front camera
+      // Prefer front camera for interactive visual feedback
       final camera = cameras.firstWhere(
         (c) => c.lensDirection == CameraLensDirection.front,
         orElse: () => cameras.first,
@@ -81,14 +91,15 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
 
       await _cameraCtrl!.initialize();
 
-      // Capture rotation from sensor
+      // Problem 1 Fix: Capture rotation from sensor instead of hardcoding
       _imageRotation = InputImageRotationValue.fromRawValue(
         camera.sensorOrientation,
       ) ?? InputImageRotation.rotation90deg;
 
-      // Image size: note width/height swap for portrait
-      final previewSize = _cameraCtrl!.value.previewSize!;
-      _imageSize = Size(previewSize.height, previewSize.width);
+      final previewSize = _cameraCtrl!.value.previewSize;
+      if (previewSize != null) {
+        _imageSize = Size(previewSize.width, previewSize.height);
+      }
 
       await _cameraCtrl!.startImageStream(_processCameraImage);
       _startTimer();
@@ -125,6 +136,9 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
         return;
       }
 
+      // Problem 2 Fix: Store exact frame dimensions for canvas scaling
+      _imageSize = Size(image.width.toDouble(), image.height.toDouble());
+
       final poses = await _detector.processImage(inputImage);
       if (!mounted) {
         _isDetecting = false;
@@ -132,6 +146,7 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
       }
 
       if (poses.isEmpty) {
+        _smoother.reset();
         if (_currentPose != null) {
           setState(() {
             _currentPose = null;
@@ -146,20 +161,22 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
         return;
       }
 
-      final pose = poses.first;
-      final result = PoseAnalyzer.analyze(widget.exercise.type, pose);
+      // Trick 1: Smooth raw landmarks with Exponential Moving Average
+      final smoothedPose = _smoother.smooth(poses.first);
+      final result = PoseAnalyzer.analyze(widget.exercise.type, smoothedPose);
 
-      _countRep(pose, result);
+      _countRep(smoothedPose, result);
 
-      if (!result.isCorrect || result.isInjuryRisk) {
-        PostureAudioService.speak(result.feedback);
-      }
+      // Voice coaching with intelligent throttling
       if (result.isInjuryRisk) {
+        PostureAudioService.speak(result.feedback, isUrgent: true);
         _triggerVibration();
+      } else if (!result.isCorrect) {
+        PostureAudioService.speak(result.feedback);
       }
 
       setState(() {
-        _currentPose = pose;
+        _currentPose = smoothedPose;
         _result = result;
       });
     } catch (e) {
@@ -173,7 +190,7 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
     try {
       final hasVibrator = await Vibration.hasVibrator();
       if (hasVibrator == true) {
-        await Vibration.vibrate(duration: 400, amplitude: 255);
+        await Vibration.vibrate(duration: 350, amplitude: 255);
       } else {
         await HapticFeedback.heavyImpact();
       }
@@ -182,7 +199,7 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
     }
   }
 
-  // Count reps based on joint angle transitions
+  // ── Joint Angle Transition Rep Counter ────────────────────────────────────
   void _countRep(Pose pose, PostureResult result) {
     final lm = pose.landmarks;
 
@@ -190,35 +207,46 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
       case ExerciseType.squat:
       case ExerciseType.lunge:
         final hip = lm[PoseLandmarkType.leftHip] ?? lm[PoseLandmarkType.rightHip];
-        final knee =
-            lm[PoseLandmarkType.leftKnee] ?? lm[PoseLandmarkType.rightKnee];
-        final ankle =
-            lm[PoseLandmarkType.leftAnkle] ?? lm[PoseLandmarkType.rightAnkle];
+        final knee = lm[PoseLandmarkType.leftKnee] ?? lm[PoseLandmarkType.rightKnee];
+        final ankle = lm[PoseLandmarkType.leftAnkle] ?? lm[PoseLandmarkType.rightAnkle];
         if (hip == null || knee == null || ankle == null) break;
+        if (hip.likelihood < 0.45 || knee.likelihood < 0.45 || ankle.likelihood < 0.45) break;
+
         final a = PoseAnalyzer.angle(hip, knee, ankle);
-        if (a < 100 && !_isDown) _isDown = true;
+        // Squat down threshold (< 100°)
+        if (a < 100 && !_isDown) {
+          _isDown = true;
+        }
+        // Stand back up threshold (> 155°)
         if (a > 155 && _isDown) {
           _isDown = false;
           _repCount++;
           _totalRepsCompleted++;
+          HapticFeedback.mediumImpact();
+          PostureAudioService.speakRep(_repCount);
           _checkSetComplete();
         }
         break;
 
       case ExerciseType.pushUp:
-        final sh =
-            lm[PoseLandmarkType.leftShoulder] ?? lm[PoseLandmarkType.rightShoulder];
-        final el =
-            lm[PoseLandmarkType.leftElbow] ?? lm[PoseLandmarkType.rightElbow];
-        final wr =
-            lm[PoseLandmarkType.leftWrist] ?? lm[PoseLandmarkType.rightWrist];
+        final sh = lm[PoseLandmarkType.leftShoulder] ?? lm[PoseLandmarkType.rightShoulder];
+        final el = lm[PoseLandmarkType.leftElbow] ?? lm[PoseLandmarkType.rightElbow];
+        final wr = lm[PoseLandmarkType.leftWrist] ?? lm[PoseLandmarkType.rightWrist];
         if (sh == null || el == null || wr == null) break;
+        if (sh.likelihood < 0.45 || el.likelihood < 0.45 || wr.likelihood < 0.45) break;
+
         final a = PoseAnalyzer.angle(sh, el, wr);
-        if (a < 90 && !_isDown) _isDown = true;
+        // Push-up bottom (< 90°)
+        if (a < 90 && !_isDown) {
+          _isDown = true;
+        }
+        // Push-up top lockout (> 155°)
         if (a > 155 && _isDown) {
           _isDown = false;
           _repCount++;
           _totalRepsCompleted++;
+          HapticFeedback.mediumImpact();
+          PostureAudioService.speakRep(_repCount);
           _checkSetComplete();
         }
         break;
@@ -240,83 +268,105 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
         final wr = (rConf > lConf) ? (rWr ?? lWr) : (lWr ?? rWr);
 
         if (sh == null || el == null || wr == null) break;
+        if (sh.likelihood < 0.45 || el.likelihood < 0.45 || wr.likelihood < 0.45) break;
+
         final a = PoseAnalyzer.angle(sh, el, wr);
-        if (a < 65 && !_isDown) _isDown = true;
+        // Bicep peak curl contraction (< 65°)
+        if (a < 65 && !_isDown) {
+          _isDown = true;
+        }
+        // Full extension at bottom (> 135°)
         if (a > 135 && _isDown) {
           _isDown = false;
           _repCount++;
           _totalRepsCompleted++;
+          HapticFeedback.mediumImpact();
+          PostureAudioService.speakRep(_repCount);
           _checkSetComplete();
         }
         break;
 
       case ExerciseType.shoulderPress:
       case ExerciseType.lateralRaise:
-        final sh =
-            lm[PoseLandmarkType.leftShoulder] ?? lm[PoseLandmarkType.rightShoulder];
-        final el =
-            lm[PoseLandmarkType.leftElbow] ?? lm[PoseLandmarkType.rightElbow];
-        final wr =
-            lm[PoseLandmarkType.leftWrist] ?? lm[PoseLandmarkType.rightWrist];
+        final sh = lm[PoseLandmarkType.leftShoulder] ?? lm[PoseLandmarkType.rightShoulder];
+        final el = lm[PoseLandmarkType.leftElbow] ?? lm[PoseLandmarkType.rightElbow];
+        final wr = lm[PoseLandmarkType.leftWrist] ?? lm[PoseLandmarkType.rightWrist];
         if (sh == null || el == null || wr == null) break;
+        if (sh.likelihood < 0.45 || el.likelihood < 0.45 || wr.likelihood < 0.45) break;
+
         final a = PoseAnalyzer.angle(sh, el, wr);
-        if (a < 65 && !_isDown) _isDown = true;
-        if (a > 145 && _isDown) {
+        if (a < 75 && !_isDown) {
+          _isDown = true;
+        }
+        if (a > 150 && _isDown) {
           _isDown = false;
           _repCount++;
           _totalRepsCompleted++;
+          HapticFeedback.mediumImpact();
+          PostureAudioService.speakRep(_repCount);
           _checkSetComplete();
         }
         break;
 
       case ExerciseType.sitUp:
-        final sh =
-            lm[PoseLandmarkType.leftShoulder] ?? lm[PoseLandmarkType.rightShoulder];
+        final sh = lm[PoseLandmarkType.leftShoulder] ?? lm[PoseLandmarkType.rightShoulder];
         final hp = lm[PoseLandmarkType.leftHip] ?? lm[PoseLandmarkType.rightHip];
-        final kn =
-            lm[PoseLandmarkType.leftKnee] ?? lm[PoseLandmarkType.rightKnee];
+        final kn = lm[PoseLandmarkType.leftKnee] ?? lm[PoseLandmarkType.rightKnee];
         if (sh == null || hp == null || kn == null) break;
+        if (sh.likelihood < 0.45 || hp.likelihood < 0.45 || kn.likelihood < 0.45) break;
+
         final a = PoseAnalyzer.angle(sh, hp, kn);
-        if (a < 80 && !_isDown) _isDown = true;
+        if (a < 80 && !_isDown) {
+          _isDown = true;
+        }
         if (a > 130 && _isDown) {
           _isDown = false;
           _repCount++;
           _totalRepsCompleted++;
+          HapticFeedback.mediumImpact();
+          PostureAudioService.speakRep(_repCount);
           _checkSetComplete();
         }
         break;
 
       case ExerciseType.deadlift:
-        final sh =
-            lm[PoseLandmarkType.leftShoulder] ?? lm[PoseLandmarkType.rightShoulder];
+        final sh = lm[PoseLandmarkType.leftShoulder] ?? lm[PoseLandmarkType.rightShoulder];
         final hp = lm[PoseLandmarkType.leftHip] ?? lm[PoseLandmarkType.rightHip];
-        final kn =
-            lm[PoseLandmarkType.leftKnee] ?? lm[PoseLandmarkType.rightKnee];
+        final kn = lm[PoseLandmarkType.leftKnee] ?? lm[PoseLandmarkType.rightKnee];
         if (sh == null || hp == null || kn == null) break;
+        if (sh.likelihood < 0.45 || hp.likelihood < 0.45 || kn.likelihood < 0.45) break;
+
         final a = PoseAnalyzer.angle(sh, hp, kn);
-        if (a < 120 && !_isDown) _isDown = true;
+        if (a < 120 && !_isDown) {
+          _isDown = true;
+        }
         if (a > 165 && _isDown) {
           _isDown = false;
           _repCount++;
           _totalRepsCompleted++;
+          HapticFeedback.mediumImpact();
+          PostureAudioService.speakRep(_repCount);
           _checkSetComplete();
         }
         break;
 
       case ExerciseType.pullUp:
-        final sh =
-            lm[PoseLandmarkType.leftShoulder] ?? lm[PoseLandmarkType.rightShoulder];
-        final el =
-            lm[PoseLandmarkType.leftElbow] ?? lm[PoseLandmarkType.rightElbow];
-        final wr =
-            lm[PoseLandmarkType.leftWrist] ?? lm[PoseLandmarkType.rightWrist];
+        final sh = lm[PoseLandmarkType.leftShoulder] ?? lm[PoseLandmarkType.rightShoulder];
+        final el = lm[PoseLandmarkType.leftElbow] ?? lm[PoseLandmarkType.rightElbow];
+        final wr = lm[PoseLandmarkType.leftWrist] ?? lm[PoseLandmarkType.rightWrist];
         if (sh == null || el == null || wr == null) break;
+        if (sh.likelihood < 0.45 || el.likelihood < 0.45 || wr.likelihood < 0.45) break;
+
         final a = PoseAnalyzer.angle(sh, el, wr);
-        if (a < 75 && !_isDown) _isDown = true;
+        if (a < 75 && !_isDown) {
+          _isDown = true;
+        }
         if (a > 150 && _isDown) {
           _isDown = false;
           _repCount++;
           _totalRepsCompleted++;
+          HapticFeedback.mediumImpact();
+          PostureAudioService.speakRep(_repCount);
           _checkSetComplete();
         }
         break;
@@ -328,23 +378,20 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
 
   void _checkSetComplete() {
     if (widget.exercise.hasReps && _repCount >= widget.exercise.targetReps) {
-      PostureAudioService.speak('Set $_setCount complete! Great job, take a rest.');
+      PostureAudioService.speak('Set $_setCount complete! Outstanding work, take a short rest.');
       _setCount++;
       _repCount = 0;
     }
   }
 
-  // Fixed _buildInputImage — correct for both Android formats
   InputImage? _buildInputImage(CameraImage image) {
     try {
-      // NV21 / YUV_420_888
       final WriteBuffer allBytes = WriteBuffer();
       for (final Plane plane in image.planes) {
         allBytes.putUint8List(plane.bytes);
       }
       final bytes = allBytes.done().buffer.asUint8List();
 
-      // Use first plane bytes per row
       final bytesPerRow = image.planes.isNotEmpty
           ? image.planes[0].bytesPerRow
           : image.width;
@@ -367,6 +414,48 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
     }
   }
 
+  // ── Camera Positioning Guidance Helpers ───────────────────────────────────
+  String get _cameraRequirementBadge {
+    switch (widget.exercise.type) {
+      case ExerciseType.squat:
+      case ExerciseType.deadlift:
+      case ExerciseType.lunge:
+        return 'SIDE VIEW REQUIRED';
+      case ExerciseType.pushUp:
+      case ExerciseType.plank:
+      case ExerciseType.sitUp:
+        return 'FLOOR LEVEL SIDE VIEW';
+      case ExerciseType.bicepCurl:
+        return 'FRONT OR SIDE VIEW';
+      case ExerciseType.shoulderPress:
+      case ExerciseType.lateralRaise:
+        return 'FRONT VIEW REQUIRED';
+      case ExerciseType.pullUp:
+        return 'FULL BODY VIEW';
+    }
+  }
+
+  String get _cameraRequirementReason {
+    switch (widget.exercise.type) {
+      case ExerciseType.squat:
+      case ExerciseType.deadlift:
+        return 'Place phone to your side at hip height — checks back rounding & knee depth.';
+      case ExerciseType.pushUp:
+      case ExerciseType.plank:
+        return 'Place phone at floor level to your side — checks straight spine & hip line.';
+      case ExerciseType.bicepCurl:
+        return 'Face phone (seated or standing) — keep full arm visible to check elbow swing.';
+      case ExerciseType.shoulderPress:
+      case ExerciseType.lateralRaise:
+        return 'Face camera with upper body in frame — checks lockout & lower back arch.';
+      case ExerciseType.lunge:
+      case ExerciseType.sitUp:
+        return 'Side view — checks 90° knee angle & abdominal flexion.';
+      case ExerciseType.pullUp:
+        return 'Facing bar — chin over bar & full dead-hang extension.';
+    }
+  }
+
   @override
   void dispose() {
     _timerRunning = false;
@@ -386,10 +475,10 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(color: Color(0xFF5B4EE8)),
+              CircularProgressIndicator(color: Color(0xFF6366F1)),
               SizedBox(height: 16),
               Text(
-                'Starting Camera & Pose Engine...',
+                'Starting MediaPipe BlazePose Engine...',
                 style: TextStyle(color: Colors.white70, fontSize: 13),
               ),
             ],
@@ -431,6 +520,7 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
                         absoluteImageSize: _imageSize,
                         rotation: _imageRotation,
                         cameraDirection: _cameraCtrl!.description.lensDirection,
+                        postureResult: _result,
                       ),
                     ),
                 ],
@@ -551,7 +641,7 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
           // ── Rep & Set Counter (Floating Top Right) ────────────────
           if (widget.exercise.hasReps)
             Positioned(
-              top: 110,
+              top: 105,
               right: 16,
               child: RepCounterWidget(
                 repCount: _repCount,
@@ -560,43 +650,70 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
               ),
             ),
 
-          // ── Camera Position Guide (Shown for first 5 seconds) ──────
-          if (_seconds < 5)
+          // ── Camera Positioning Guide Banner ───────────────────────
+          if (_showGuideBanner)
             Positioned(
-              top: 110,
+              top: 105,
               left: 16,
               right: widget.exercise.hasReps ? 100 : 16,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF5B4EE8).withValues(alpha: 0.92),
+                  color: const Color(0xFF161626).withValues(alpha: 0.94),
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFF6366F1).withValues(alpha: 0.45),
+                    width: 1.2,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF5B4EE8).withValues(alpha: 0.35),
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.25),
                       blurRadius: 14,
                       offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.videocam_rounded,
-                      color: Colors.white,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        widget.exercise.cameraPosition,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          height: 1.35,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF6366F1).withValues(alpha: 0.25),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            _cameraRequirementBadge,
+                            style: const TextStyle(
+                              color: Color(0xFF818CF8),
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
                         ),
+                        GestureDetector(
+                          onTap: () => setState(() => _showGuideBanner = false),
+                          child: const Icon(
+                            Icons.close_rounded,
+                            size: 16,
+                            color: Colors.white54,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      _cameraRequirementReason,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        height: 1.25,
                       ),
                     ),
                   ],
@@ -606,7 +723,7 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
 
           // ── Live Feedback Banner (Bottom) ──────────────────────────
           Positioned(
-            bottom: 110,
+            bottom: 115,
             left: 16,
             right: 16,
             child: FeedbackBanner(result: _result),
@@ -658,10 +775,10 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
                     },
                   ),
 
-                  // Flip Camera Button
+                  // Flip Camera Button (Front / Back switch)
                   _BottomActionBtn(
                     icon: Icons.flip_camera_ios_rounded,
-                    label: 'Flip',
+                    label: _isFrontCamera ? 'Front' : 'Back',
                     onTap: () {
                       HapticFeedback.lightImpact();
                       _flipCamera();
@@ -705,9 +822,12 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
         next.sensorOrientation,
       ) ?? InputImageRotation.rotation90deg;
 
-      final previewSize = _cameraCtrl!.value.previewSize!;
-      _imageSize = Size(previewSize.height, previewSize.width);
+      final previewSize = _cameraCtrl!.value.previewSize;
+      if (previewSize != null) {
+        _imageSize = Size(previewSize.width, previewSize.height);
+      }
 
+      _smoother.reset();
       await _cameraCtrl!.startImageStream(_processCameraImage);
       if (mounted) setState(() {});
     } catch (e) {
@@ -770,7 +890,6 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Handle bar
             Container(
               width: 40,
               height: 4,
@@ -791,7 +910,6 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Stats row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -803,7 +921,6 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
 
             const SizedBox(height: 16),
 
-            // Calories burned card
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 18),
@@ -863,7 +980,6 @@ class _LivePostureScreenState extends State<LivePostureScreen> {
 
             const SizedBox(height: 16),
 
-            // Done button
             SizedBox(
               width: double.infinity,
               height: 52,
